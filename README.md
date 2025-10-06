@@ -16,6 +16,13 @@ TGN_MCP_TC/
 ├── TGN_Test_Cases.md                   # Comprehensive test cases (35 test cases)
 ├── automated_test_scripts.js           # Automated test scripts using MCP
 ├── Test_Execution_Guide.md             # Step-by-step execution guide
+├── Login_Test_Report.md                # Positive login test results
+├── Negative_Login_Test_Report.md       # Negative login test results
+├── Registration_Test_Report.md          # Positive registration test results
+├── Negative_Registration_Test_Report.md # Negative registration test results
+├── GitHub_Integration_Guide.md         # GitHub setup guide
+├── package.json                        # Node.js project configuration
+├── .gitignore                          # Git ignore rules
 └── .playwright-mcp/                    # Screenshots and test artifacts
     ├── tgn_homepage_full.png
     ├── homepage_initial_load.png

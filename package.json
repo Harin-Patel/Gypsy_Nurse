@@ -1,0 +1,44 @@
+{
+  "name": "tgn-mcp-testing",
+  "version": "1.0.0",
+  "description": "TGN Website Testing Project using Chrome DevTools MCP for automated testing",
+  "main": "automated_test_scripts.js",
+  "scripts": {
+    "test": "node automated_test_scripts.js",
+    "test:login": "node -e \"require('./automated_test_scripts.js').testUserLogin()\"",
+    "test:registration": "node -e \"require('./automated_test_scripts.js').testUserRegistration()\"",
+    "test:negative": "node -e \"require('./automated_test_scripts.js').testNegativeScenarios()\"",
+    "test:all": "node -e \"require('./automated_test_scripts.js').runAllTests()\""
+  },
+  "keywords": [
+    "testing",
+    "mcp",
+    "playwright",
+    "automation",
+    "tgn",
+    "healthcare",
+    "web-testing",
+    "chrome-devtools",
+    "cursor"
+  ],
+  "author": "TGN Testing Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/tgn-mcp-testing.git"
+  },
+  "homepage": "https://github.com/YOUR_USERNAME/tgn-mcp-testing#readme",
+  "bugs": {
+    "url": "https://github.com/YOUR_USERNAME/tgn-mcp-testing/issues"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}
+

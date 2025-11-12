@@ -2,25 +2,39 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, Heart, Star, Briefcase } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, Heart, Star, Briefcase, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function LoginPage() {
+  const router = useRouter()
+  const { login } = useAuth()
   const [loginType, setLoginType] = useState<'email' | 'mobile'>('email')
   const [email, setEmail] = useState('')
   const [mobile, setMobile] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setTimeout(() => {
-      setIsLoading(false)
-    }, 2000)
+    setError('')
+
+    const loginEmail = loginType === 'email' ? email : mobile
+    const result = await login(loginEmail, password, 'jobseeker')
+
+    if (result.success) {
+      router.push('/')
+    } else {
+      setError(result.error || 'Login failed')
+    }
+    
+    setIsLoading(false)
   }
 
   return (
@@ -114,19 +128,37 @@ export default function LoginPage() {
                     }}
                     className="relative"
                   >
-                    {/* Glow Effect */}
-                    <motion.div 
-                      className="absolute -inset-4 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-full blur-2xl opacity-30"
+                    {/* Rotating Ring Effect */}
+                    <motion.div
+                      className="absolute inset-0 -m-3"
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 8,
+                        repeat: Infinity,
+                        ease: "linear"
+                      }}
+                    >
+                      <div className="absolute inset-0 rounded-full border-2 border-transparent bg-gradient-to-r from-primary-400/40 via-transparent to-primary-400/40 bg-clip-border" 
+                           style={{ 
+                             maskImage: 'linear-gradient(to right, transparent, white, transparent)',
+                             WebkitMaskImage: 'linear-gradient(to right, transparent, white, transparent)'
+                           }}
+                      />
+                    </motion.div>
+                    
+                    {/* Glass Reflection */}
+                    <motion.div
+                      className="absolute inset-0 -m-2 rounded-full bg-gradient-to-br from-white/20 via-transparent to-transparent"
                       animate={{
-                        scale: [1, 1.2, 1],
-                        opacity: [0.3, 0.5, 0.3],
+                        opacity: [0.3, 0.6, 0.3],
                       }}
                       transition={{
-                        duration: 2,
+                        duration: 2.5,
                         repeat: Infinity,
                         ease: "easeInOut"
                       }}
                     />
+                    
                     <div className="relative">
                       <img 
                         src="/logo.svg" 
@@ -146,7 +178,7 @@ export default function LoginPage() {
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
                       Job Seeker Login
                     </h1>
-                    <p className="text-base text-gray-600">Sign in to your account</p>
+                    <p className="text-base text-gray-600">Log in to your account</p>
                   </motion.div>
 
                 {/* Email/Mobile Toggle */}
@@ -330,6 +362,21 @@ export default function LoginPage() {
                     </motion.div>
                   )}
 
+                  {/* Error Message */}
+                  <AnimatePresence>
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl"
+                      >
+                        <AlertCircle className="w-5 h-5 text-red-500" />
+                        <span className="text-sm text-red-600">{error}</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {/* Submit Button */}
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -389,7 +436,7 @@ export default function LoginPage() {
                             <span>{loginType === 'email' ? 'Logging in...' : 'Sending OTP...'}</span>
                           </>
                         ) : (
-                          <span>{loginType === 'email' ? 'Sign In' : 'Send OTP'}</span>
+                          <span>{loginType === 'email' ? 'Log In' : 'Send OTP'}</span>
                         )}
                       </span>
                     </motion.button>

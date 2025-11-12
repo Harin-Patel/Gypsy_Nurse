@@ -127,19 +127,37 @@ export default function AgencyRegisterPage() {
                     }}
                     className="relative"
                   >
-                    {/* Glow Effect */}
-                    <motion.div 
-                      className="absolute -inset-4 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-full blur-2xl opacity-30"
+                    {/* Rotating Ring Effect */}
+                    <motion.div
+                      className="absolute inset-0 -m-3"
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 8,
+                        repeat: Infinity,
+                        ease: "linear"
+                      }}
+                    >
+                      <div className="absolute inset-0 rounded-full border-2 border-transparent bg-gradient-to-r from-primary-400/40 via-transparent to-primary-400/40 bg-clip-border" 
+                           style={{ 
+                             maskImage: 'linear-gradient(to right, transparent, white, transparent)',
+                             WebkitMaskImage: 'linear-gradient(to right, transparent, white, transparent)'
+                           }}
+                      />
+                    </motion.div>
+                    
+                    {/* Glass Reflection */}
+                    <motion.div
+                      className="absolute inset-0 -m-2 rounded-full bg-gradient-to-br from-white/20 via-transparent to-transparent"
                       animate={{
-                        scale: [1, 1.2, 1],
-                        opacity: [0.3, 0.5, 0.3],
+                        opacity: [0.3, 0.6, 0.3],
                       }}
                       transition={{
-                        duration: 2,
+                        duration: 2.5,
                         repeat: Infinity,
                         ease: "easeInOut"
                       }}
                     />
+                    
                     <div className="relative">
                       <img 
                         src="/logo.svg" 
@@ -441,7 +459,7 @@ export default function AgencyRegisterPage() {
                     </motion.button>
                   </motion.div>
 
-                  {/* Already have an account? Sign in to Agency Account */}
+                  {/* Already have an account? Log in to Agency Account */}
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -455,7 +473,7 @@ export default function AgencyRegisterPage() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        Sign in to Agency Account
+                        Log in to Agency Account
                       </motion.span>
                     </Link>
                   </motion.div>

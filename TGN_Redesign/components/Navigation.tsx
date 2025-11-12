@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, ChevronDown, Sparkles, User, LogOut, Bookmark, Lock, FileText } from 'lucide-react'
+import { Menu, X, ChevronDown, User, LogOut, Bookmark, Lock, FileText } from 'lucide-react'
 import Link from 'next/link'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -13,19 +14,15 @@ export default function Navigation() {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [isProfileHovered, setIsProfileHovered] = useState(false)
   
-  // Mock authentication state - In real app, this would come from context/redux
-  const [isAuthenticated, setIsAuthenticated] = useState(true) // Set to true to show profile
-  const [user, setUser] = useState({
-    name: 'Julia Roberts',
-    email: 'julia@mailnesia.com',
-    avatar: 'https://ui-avatars.com/api/?name=Julia+Roberts&background=7f2860&color=fff&size=128'
-  })
+  // Use real authentication
+  const { user, isAuthenticated, logout } = useAuth()
 
   const handleLogout = () => {
     setShowLogoutConfirm(false)
     setShowProfileDropdown(false)
-    setIsAuthenticated(false)
+    logout()
   }
 
   useEffect(() => {
@@ -106,11 +103,8 @@ export default function Navigation() {
       )}
 
       {/* Full Width Navigation Bar with Glass Effect */}
-      <motion.nav
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className={`fixed w-full z-50 transition-all duration-500 ${
+      <nav
+        className={`fixed top-0 left-0 right-0 w-full z-50 transition-all duration-300 ${
           isScrolled 
             ? 'bg-white/80 backdrop-blur-2xl shadow-2xl py-3' 
             : 'bg-white/90 backdrop-blur-xl shadow-lg py-4'
@@ -122,21 +116,21 @@ export default function Navigation() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-              {/* Logo with Glow Effect */}
+              {/* Logo with Subtle Tilt Effect */}
               <Link href="/">
               <motion.div
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ rotateY: 5, rotateZ: -2 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex items-center cursor-pointer relative group"
+                className="flex items-center cursor-pointer relative overflow-hidden rounded-xl"
+                style={{ transformStyle: 'preserve-3d' }}
               >
+                {/* Shine Effect on Hover */}
                 <motion.div
-                  className="absolute -inset-2 bg-gradient-to-r from-primary-500/20 to-primary-400/20 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  animate={{
-                    scale: [1, 1.1, 1],
-                  }}
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                  initial={{ x: '-100%', opacity: 0 }}
+                  whileHover={{ x: '100%', opacity: 1 }}
                   transition={{
-                    duration: 2,
-                    repeat: Infinity,
+                    duration: 0.6,
                     ease: "easeInOut"
                   }}
                 />
@@ -152,12 +146,9 @@ export default function Navigation() {
 
             {/* Desktop Navigation with Fancy Effects */}
             <div className="hidden lg:flex items-center space-x-10">
-              {navItems.map((item, index) => (
-                <motion.div
+              {navItems.map((item) => (
+                <div
                   key={item.name}
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1, duration: 0.5 }}
                   className="relative py-1"
                   onMouseEnter={() => {
                     item.dropdown && setActiveDropdown(item.name)
@@ -185,23 +176,38 @@ export default function Navigation() {
                           </motion.div>
                         )}
                         
-                        {/* Animated Underline */}
+                        {/* Glass Hover Effect */}
                         <motion.div
-                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-400 rounded-full"
-                          initial={{ scaleX: 0 }}
-                          animate={{ scaleX: hoveredItem === item.name ? 1 : 0 }}
-                          transition={{ duration: 0.3 }}
-                        />
-                        
-                        {/* Hover Glow */}
-                        <motion.div
-                          className="absolute -inset-1 bg-primary-50 rounded-xl -z-10"
+                          className="absolute -inset-1 bg-white/70 backdrop-blur-xl rounded-xl border border-primary-200/50 shadow-lg -z-10 overflow-hidden"
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ 
                             opacity: hoveredItem === item.name ? 1 : 0,
                             scale: hoveredItem === item.name ? 1 : 0.9
                           }}
                           transition={{ duration: 0.2 }}
+                        >
+                          {/* Shine Effect */}
+                          {hoveredItem === item.name && (
+                            <motion.div
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                              initial={{ x: '-100%' }}
+                              animate={{ x: '100%' }}
+                              transition={{
+                                duration: 0.6,
+                                ease: "easeInOut"
+                              }}
+                            />
+                          )}
+                        </motion.div>
+                        
+                        {/* Subtle Gradient Overlay */}
+                        <motion.div
+                          className="absolute -inset-1 bg-gradient-to-br from-primary-100/50 via-primary-50/30 to-transparent rounded-xl -z-10"
+                          initial={{ opacity: 0 }}
+                          animate={{ 
+                            opacity: hoveredItem === item.name ? 1 : 0
+                          }}
+                          transition={{ duration: 0.3 }}
                         />
                       </motion.div>
                     </Link>
@@ -222,23 +228,38 @@ export default function Navigation() {
                       </motion.div>
                     )}
                     
-                    {/* Animated Underline */}
+                    {/* Glass Hover Effect */}
                     <motion.div
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-400 rounded-full"
-                      initial={{ scaleX: 0 }}
-                      animate={{ scaleX: hoveredItem === item.name ? 1 : 0 }}
-                      transition={{ duration: 0.3 }}
-                    />
-                    
-                    {/* Hover Glow */}
-                    <motion.div
-                      className="absolute -inset-1 bg-primary-50 rounded-xl -z-10"
+                      className="absolute -inset-1 bg-white/70 backdrop-blur-xl rounded-xl border border-primary-200/50 shadow-lg -z-10 overflow-hidden"
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ 
                         opacity: hoveredItem === item.name ? 1 : 0,
                         scale: hoveredItem === item.name ? 1 : 0.9
                       }}
                       transition={{ duration: 0.2 }}
+                    >
+                      {/* Shine Effect */}
+                      {hoveredItem === item.name && (
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                          initial={{ x: '-100%' }}
+                          animate={{ x: '100%' }}
+                          transition={{
+                            duration: 0.6,
+                            ease: "easeInOut"
+                          }}
+                        />
+                      )}
+                    </motion.div>
+                    
+                    {/* Subtle Gradient Overlay */}
+                    <motion.div
+                      className="absolute -inset-1 bg-gradient-to-br from-primary-100/50 via-primary-50/30 to-transparent rounded-xl -z-10"
+                      initial={{ opacity: 0 }}
+                      animate={{ 
+                        opacity: hoveredItem === item.name ? 1 : 0
+                      }}
+                      transition={{ duration: 0.3 }}
                     />
                   </motion.button>
                   )}
@@ -281,7 +302,7 @@ export default function Navigation() {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </motion.div>
+                </div>
               ))}
             </div>
 
@@ -292,31 +313,68 @@ export default function Navigation() {
                 <div className="relative">
                   <motion.button
                     onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                    whileHover={{ scale: 1.02 }}
+                    onMouseEnter={() => setIsProfileHovered(true)}
+                    onMouseLeave={() => setIsProfileHovered(false)}
+                    whileHover={{ scale: 1.02, y: -2 }}
                     whileTap={{ scale: 0.98 }}
-                    className="flex items-center gap-3 px-4 py-2 bg-white border-2 border-gray-200 hover:border-primary-300 rounded-xl transition-all shadow-sm group"
+                    className="relative flex items-center gap-3 px-4 py-2 bg-white border-2 border-gray-200 rounded-xl transition-all shadow-sm group"
                   >
                     {/* Profile Picture */}
-                    <div className="relative">
+                    <div className="relative z-10">
                       <img 
                         src={user.avatar} 
                         alt={user.name}
-                        className="w-9 h-9 rounded-full object-cover ring-2 ring-primary-100 group-hover:ring-primary-300 transition-all"
+                        className="w-9 h-9 rounded-full object-cover ring-2 ring-primary-100 transition-all"
                       />
                     </div>
                     
                     {/* Username */}
-                    <span className="text-sm font-semibold text-gray-700 group-hover:text-primary-600 transition-colors">
+                    <span className="relative z-10 text-sm font-semibold text-gray-700 group-hover:text-primary-600 transition-colors">
                       {user.name}
                     </span>
                     
                     {/* Chevron */}
                     <motion.div
+                      className="relative z-10"
                       animate={{ rotate: showProfileDropdown ? 180 : 0 }}
                       transition={{ duration: 0.3 }}
                     >
                       <ChevronDown size={16} className="text-gray-500" />
                     </motion.div>
+                    
+                    {/* Glass Hover Effect */}
+                    <motion.div
+                      className="absolute inset-0 bg-white/70 backdrop-blur-xl rounded-xl border-2 border-primary-200/50 shadow-lg -z-10 overflow-hidden"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ 
+                        opacity: isProfileHovered ? 1 : 0,
+                        scale: isProfileHovered ? 1 : 0.9
+                      }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {/* Shine Effect */}
+                      {isProfileHovered && (
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                          initial={{ x: '-100%' }}
+                          animate={{ x: '100%' }}
+                          transition={{
+                            duration: 0.6,
+                            ease: "easeInOut"
+                          }}
+                        />
+                      )}
+                    </motion.div>
+                    
+                    {/* Subtle Gradient Overlay */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-br from-primary-100/50 via-primary-50/30 to-transparent rounded-xl -z-10"
+                      initial={{ opacity: 0 }}
+                      animate={{ 
+                        opacity: isProfileHovered ? 1 : 0
+                      }}
+                      transition={{ duration: 0.3 }}
+                    />
                   </motion.button>
 
                   {/* Profile Dropdown Menu */}
@@ -366,59 +424,65 @@ export default function Navigation() {
                             </motion.button>
                           </Link>
 
-                          <motion.button
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.05 }}
-                            className="w-full px-4 py-3 text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100/50 hover:text-primary-700 rounded-xl transition-all text-sm font-medium text-left flex items-center gap-3 group"
-                            whileHover={{ x: 4 }}
-                          >
-                            <FileText className="w-4 h-4 text-gray-500 group-hover:text-primary-600 transition-colors" />
-                            <span className="flex-1">My Applications</span>
-                            <motion.span
-                              className="opacity-0 group-hover:opacity-100 text-primary-600"
-                              initial={{ x: -5 }}
-                              whileHover={{ x: 0 }}
+                          <Link href="/applications" className="block">
+                            <motion.button
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.05 }}
+                              className="w-full px-4 py-3 text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100/50 hover:text-primary-700 rounded-xl transition-all text-sm font-medium text-left flex items-center gap-3 group"
+                              whileHover={{ x: 4 }}
                             >
-                              →
-                            </motion.span>
-                          </motion.button>
+                              <FileText className="w-4 h-4 text-gray-500 group-hover:text-primary-600 transition-colors" />
+                              <span className="flex-1">My Applications</span>
+                              <motion.span
+                                className="opacity-0 group-hover:opacity-100 text-primary-600"
+                                initial={{ x: -5 }}
+                                whileHover={{ x: 0 }}
+                              >
+                                →
+                              </motion.span>
+                            </motion.button>
+                          </Link>
 
-                          <motion.button
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="w-full px-4 py-3 text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100/50 hover:text-primary-700 rounded-xl transition-all text-sm font-medium text-left flex items-center gap-3 group"
-                            whileHover={{ x: 4 }}
-                          >
-                            <Bookmark className="w-4 h-4 text-gray-500 group-hover:text-primary-600 transition-colors" />
-                            <span className="flex-1">My Bookmarks</span>
-                            <motion.span
-                              className="opacity-0 group-hover:opacity-100 text-primary-600"
-                              initial={{ x: -5 }}
-                              whileHover={{ x: 0 }}
+                          <Link href="/bookmarks">
+                            <motion.button
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.1 }}
+                              className="w-full px-4 py-3 text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100/50 hover:text-primary-700 rounded-xl transition-all text-sm font-medium text-left flex items-center gap-3 group"
+                              whileHover={{ x: 4 }}
                             >
-                              →
-                            </motion.span>
-                          </motion.button>
+                              <Bookmark className="w-4 h-4 text-gray-500 group-hover:text-primary-600 transition-colors" />
+                              <span className="flex-1">My Bookmarks</span>
+                              <motion.span
+                                className="opacity-0 group-hover:opacity-100 text-primary-600"
+                                initial={{ x: -5 }}
+                                whileHover={{ x: 0 }}
+                              >
+                                →
+                              </motion.span>
+                            </motion.button>
+                          </Link>
 
-                          <motion.button
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.15 }}
-                            className="w-full px-4 py-3 text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100/50 hover:text-primary-700 rounded-xl transition-all text-sm font-medium text-left flex items-center gap-3 group"
-                            whileHover={{ x: 4 }}
-                          >
-                            <Lock className="w-4 h-4 text-gray-500 group-hover:text-primary-600 transition-colors" />
-                            <span className="flex-1">Change Password</span>
-                            <motion.span
-                              className="opacity-0 group-hover:opacity-100 text-primary-600"
-                              initial={{ x: -5 }}
-                              whileHover={{ x: 0 }}
+                          <Link href="/change-password">
+                            <motion.button
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.15 }}
+                              className="w-full px-4 py-3 text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100/50 hover:text-primary-700 rounded-xl transition-all text-sm font-medium text-left flex items-center gap-3 group"
+                              whileHover={{ x: 4 }}
                             >
-                              →
-                            </motion.span>
-                          </motion.button>
+                              <Lock className="w-4 h-4 text-gray-500 group-hover:text-primary-600 transition-colors" />
+                              <span className="flex-1">Change Password</span>
+                              <motion.span
+                                className="opacity-0 group-hover:opacity-100 text-primary-600"
+                                initial={{ x: -5 }}
+                                whileHover={{ x: 0 }}
+                              >
+                                →
+                              </motion.span>
+                            </motion.button>
+                          </Link>
 
                           <div className="my-2 h-px bg-gray-200"></div>
 
@@ -444,23 +508,17 @@ export default function Navigation() {
               ) : (
                 /* Login Buttons */
                 <>
-              {/* Log in Dropdown with Gradient Border */}
+              {/* Log in Dropdown with Glass Effect */}
               <div 
                 className="relative"
                 onMouseEnter={() => setShowLoginDropdown(true)}
                 onMouseLeave={() => setShowLoginDropdown(false)}
               >
                 <motion.button
+                  whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
-                  className="relative px-6 py-2.5 text-gray-700 font-semibold transition-all duration-200 ease-out flex items-center space-x-2 rounded-xl border-2 border-gray-200 bg-white group overflow-visible hover:text-primary-600 hover:border-primary-300 hover:bg-primary-50/50 hover:shadow-md"
+                  className="relative px-6 py-2.5 text-gray-700 font-semibold transition-all duration-200 flex items-center space-x-2 rounded-xl border-2 border-gray-200 bg-white group overflow-hidden hover:text-primary-600"
                 >
-                  {/* Shine Effect */}
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none rounded-xl"
-                    initial={{ x: '-100%' }}
-                    whileHover={{ x: '100%' }}
-                    transition={{ duration: 0.6 }}
-                  />
                   <span className="relative z-10">Log in</span>
                   <motion.div
                     className="relative z-10"
@@ -469,6 +527,38 @@ export default function Navigation() {
                   >
                     <ChevronDown size={16} />
                   </motion.div>
+                  
+                  {/* Glass Hover Effect */}
+                  <motion.div
+                    className="absolute inset-0 bg-white/70 backdrop-blur-xl rounded-xl border-2 border-primary-200/50 shadow-lg -z-10 overflow-hidden"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileHover={{ 
+                      opacity: 1,
+                      scale: 1
+                    }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {/* Shine Effect */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                      initial={{ x: '-100%' }}
+                      whileHover={{ x: '100%' }}
+                      transition={{
+                        duration: 0.5,
+                        ease: "easeInOut"
+                      }}
+                    />
+                  </motion.div>
+                  
+                  {/* Subtle Gradient Overlay */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-br from-primary-100/50 via-primary-50/30 to-transparent rounded-xl -z-10"
+                    initial={{ opacity: 0 }}
+                    whileHover={{ 
+                      opacity: 1
+                    }}
+                    transition={{ duration: 0.3 }}
+                  />
                 </motion.button>
                 
                 {/* Enhanced Login Dropdown Menu */}
@@ -572,34 +662,43 @@ export default function Navigation() {
               {/* Fancy Join Button with Gradient and Sparkle */}
               <Link href="/register">
               <motion.button
+                whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
-                className="relative px-8 py-2.5 bg-gradient-to-r from-primary-600 via-primary-500 to-primary-600 bg-size-200 bg-pos-0 hover:bg-pos-100 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all duration-300 ease-out overflow-visible group"
+                className="relative px-8 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold rounded-xl shadow-lg transition-all overflow-hidden group"
               >
-                {/* Animated Background Gradient */}
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-primary-700 via-primary-600 to-primary-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"
-                  animate={{
-                    backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "linear"
-                  }}
-                />
+                {/* Content */}
+                <span className="relative z-10">Join Gypsy Nurse</span>
                 
-                {/* Sparkle Icon */}
-                <span className="relative z-10 flex items-center space-x-2">
-                  <Sparkles className="w-4 h-4 opacity-80 group-hover:opacity-100 transition-opacity" />
-                  <span>Join Gypsy Nurse</span>
-                </span>
-                
-                {/* Shine Effect */}
+                {/* Glass Hover Effect */}
                 <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none rounded-xl"
-                  initial={{ x: '-100%' }}
-                  whileHover={{ x: '100%' }}
-                  transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 1 }}
+                  className="absolute inset-0 bg-white/20 backdrop-blur-sm rounded-xl -z-10 overflow-hidden"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileHover={{ 
+                    opacity: 1,
+                    scale: 1
+                  }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {/* Shine Effect */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                    initial={{ x: '-100%' }}
+                    whileHover={{ x: '100%' }}
+                    transition={{
+                      duration: 0.5,
+                      ease: "easeInOut"
+                    }}
+                  />
+                </motion.div>
+                
+                {/* Darker Gradient Overlay on Hover */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-primary-700 to-primary-800 rounded-xl -z-10"
+                  initial={{ opacity: 0 }}
+                  whileHover={{ 
+                    opacity: 1
+                  }}
+                  transition={{ duration: 0.3 }}
                 />
               </motion.button>
               </Link>
@@ -623,7 +722,7 @@ export default function Navigation() {
             </motion.button>
           </div>
         </div>
-      </motion.nav>
+      </nav>
 
       {/* Mobile Menu */}
       <AnimatePresence>

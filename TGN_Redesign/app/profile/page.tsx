@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import ProtectedRoute from '@/components/ProtectedRoute'
+import { useAuth } from '@/contexts/AuthContext'
 import { 
   Mail, MapPin, Calendar, Shield, Award, Briefcase, 
   GraduationCap, Users, Edit, Download, Upload,
@@ -11,6 +13,7 @@ import {
 } from 'lucide-react'
 
 export default function ProfilePage() {
+  const { user: authUser } = useAuth()
   const [activeTab, setActiveTab] = useState('Professional Licenses')
   const [showEditModal, setShowEditModal] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
@@ -30,6 +33,11 @@ export default function ProfilePage() {
   
   // Selected Item for Editing
   const [selectedItem, setSelectedItem] = useState<any>(null)
+  
+  // Delete Confirmation Modal States
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteItem, setDeleteItem] = useState<any>(null)
+  const [deleteSection, setDeleteSection] = useState<string>('')
   
   // Work History Modal States (Add)
   const [currentlyWorking, setCurrentlyWorking] = useState(false)
@@ -65,11 +73,32 @@ export default function ProfilePage() {
     }
   }, [showEditEducationModal, selectedItem])
 
-  // Mock user data
+  // Delete Handler
+  const handleDeleteClick = (item: any, section: string) => {
+    setDeleteItem(item)
+    setDeleteSection(section)
+    setShowDeleteModal(true)
+  }
+
+  const handleDeleteConfirm = () => {
+    // Here you would typically call an API to delete the item
+    console.log(`Deleting ${deleteSection}:`, deleteItem)
+    setShowDeleteModal(false)
+    setDeleteItem(null)
+    setDeleteSection('')
+  }
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false)
+    setDeleteItem(null)
+    setDeleteSection('')
+  }
+
+  // Use real user data with defaults
   const user = {
-    name: 'Julia Roberts',
-    email: 'julia@mailnesia.com',
-    avatar: 'https://ui-avatars.com/api/?name=Julia+Roberts&background=7f2860&color=fff&size=256',
+    name: authUser?.name || 'User',
+    email: authUser?.email || 'user@example.com',
+    avatar: authUser?.avatar || 'https://ui-avatars.com/api/?name=User&background=7f2860&color=fff&size=256',
     experience: '25 Years Experience',
     address: '3371 Columbia Boulevard, Baltimore, Maryland 21218',
     dob: '03/20/1997',
@@ -270,8 +299,9 @@ export default function ProfilePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-white">
-      <Navigation />
+    <ProtectedRoute>
+      <div className="min-h-screen bg-white">
+        <Navigation />
 
       <div className="pt-32 pb-12 px-4 max-w-7xl mx-auto">
         {/* Profile Header Card with Glass Effect */}
@@ -376,50 +406,107 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Tabs Navigation with Glass Effect */}
+            {/* Integrated Tabs and Content Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/50 p-2"
+              className="relative"
             >
-              <div className="flex overflow-x-auto gap-2 scrollbar-hide">
-                {tabs.map((tab, index) => (
-                  <motion.button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: 0.05 * index }}
-                    className={`relative px-5 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${
-                      activeTab === tab
-                        ? 'text-white'
-                        : 'text-gray-600 hover:text-primary-600 hover:bg-white/50'
-                    }`}
-                  >
-                    {activeTab === tab && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className="absolute inset-0 bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl shadow-lg"
-                        transition={{ type: "spring", duration: 0.6 }}
-                      />
-                    )}
-                    <span className="relative z-10">{tab}</span>
-                  </motion.button>
-                ))}
+              {/* Tabs Navigation */}
+              <div className="flex overflow-x-auto gap-3 px-2 scrollbar-hide mb-[-1px] relative z-10">
+                {tabs.map((tab, index) => {
+                  const isActive = activeTab === tab
+                  
+                  return (
+                    <motion.button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      whileHover={{ y: isActive ? 0 : -3 }}
+                      whileTap={{ scale: 0.98 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ 
+                        duration: 0.4, 
+                        delay: 0.05 * index,
+                        type: "spring",
+                        stiffness: 300
+                      }}
+                      className="relative group"
+                    >
+                      <div className={`relative px-6 py-3.5 font-semibold text-sm whitespace-nowrap transition-all duration-300 ${
+                        isActive
+                          ? 'text-white rounded-t-2xl'
+                          : 'text-gray-600 hover:text-primary-700 rounded-2xl'
+                      }`}>
+                        
+                        {/* Active tab with refined glass effect */}
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeTabBg"
+                            className="absolute inset-0 rounded-t-2xl overflow-hidden"
+                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                          >
+                            {/* Solid gradient background */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-primary-600 to-primary-700" />
+                            
+                            {/* Subtle glass overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent" />
+                            
+                            {/* Refined shine effect */}
+                            <motion.div
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                              animate={{ x: ['-200%', '200%'] }}
+                              transition={{ 
+                                duration: 3,
+                                repeat: Infinity,
+                                repeatDelay: 3,
+                                ease: "easeInOut"
+                              }}
+                            />
+                            
+                            {/* Subtle top border highlight */}
+                            <div className="absolute inset-x-0 top-0 h-[1px] bg-white/30" />
+                          </motion.div>
+                        )}
+                        
+                        {/* Inactive tab hover effect */}
+                        {!isActive && (
+                          <motion.div
+                            className="absolute inset-0 bg-white/50 rounded-2xl opacity-0 group-hover:opacity-100 backdrop-blur-sm"
+                            transition={{ duration: 0.2 }}
+                          />
+                        )}
+                        
+                        {/* Tab text with icon */}
+                        <span className="relative z-10 flex items-center gap-2">
+                          {tab}
+                          {isActive && (
+                            <motion.span
+                              initial={{ scale: 0, rotate: -180 }}
+                              animate={{ scale: 1, rotate: 0 }}
+                              transition={{ type: "spring", delay: 0.15, duration: 0.5 }}
+                              className="inline-flex items-center justify-center w-5 h-5 bg-white/30 rounded-full text-xs font-bold"
+                            >
+                              ✓
+                            </motion.span>
+                          )}
+                        </span>
+                      </div>
+                    </motion.button>
+                  )
+                })}
               </div>
-            </motion.div>
-
-            {/* Content Area with Glass Effect */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/50 p-6"
-            >
-              {/* Header */}
+              
+              {/* Content Area - Integrated with active tab */}
+              <motion.div
+                layout
+                className="bg-white/70 backdrop-blur-xl rounded-2xl rounded-tl-none shadow-lg border border-white/50 p-6 relative"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                {/* Header */}
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
@@ -556,6 +643,7 @@ export default function ProfilePage() {
                             <Edit className="w-4 h-4" />
                           </motion.button>
                           <motion.button
+                            onClick={() => handleDeleteClick(license, 'License')}
                             whileHover={{ scale: 1.1, rotate: -5 }}
                             whileTap={{ scale: 0.95 }}
                             className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
@@ -695,6 +783,7 @@ export default function ProfilePage() {
                             <Edit className="w-4 h-4" />
                           </motion.button>
                           <motion.button
+                            onClick={() => handleDeleteClick(cert, 'Certificate')}
                             whileHover={{ scale: 1.1, rotate: -5 }}
                             whileTap={{ scale: 0.95 }}
                             className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
@@ -822,6 +911,7 @@ export default function ProfilePage() {
                             <Edit className="w-4 h-4" />
                           </motion.button>
                           <motion.button
+                            onClick={() => handleDeleteClick(specialty, 'Specialty')}
                             whileHover={{ scale: 1.1, rotate: -5 }}
                             whileTap={{ scale: 0.95 }}
                             className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
@@ -938,6 +1028,7 @@ export default function ProfilePage() {
                                 <Edit className="w-4 h-4" />
                               </motion.button>
                               <motion.button
+                                onClick={() => handleDeleteClick(work, 'Work History')}
                                 whileHover={{ scale: 1.1, rotate: -5 }}
                                 whileTap={{ scale: 0.95 }}
                                 className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
@@ -1100,6 +1191,7 @@ export default function ProfilePage() {
                                 <Edit className="w-4 h-4" />
                               </motion.button>
                               <motion.button
+                                onClick={() => handleDeleteClick(edu, 'Education')}
                                 whileHover={{ scale: 1.1, rotate: -5 }}
                                 whileTap={{ scale: 0.95 }}
                                 className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
@@ -1250,6 +1342,7 @@ export default function ProfilePage() {
                                 <Edit className="w-4 h-4" />
                               </motion.button>
                               <motion.button
+                                onClick={() => handleDeleteClick(ref, 'Reference')}
                                 whileHover={{ scale: 1.1, rotate: -5 }}
                                 whileTap={{ scale: 0.95 }}
                                 className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
@@ -1325,6 +1418,7 @@ export default function ProfilePage() {
                   )}
                 </>
               )}
+              </motion.div>
             </motion.div>
           </div>
 
@@ -4639,6 +4733,142 @@ export default function ProfilePage() {
           </motion.div>
         </>
       )}
-    </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <>
+          {/* Backdrop */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={handleDeleteCancel}
+          >
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+              className="relative w-full max-w-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Glow effect behind modal */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-red-500/10 via-red-400/10 to-red-500/10 rounded-3xl blur-3xl" />
+              
+              {/* Main modal container */}
+              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+                
+                {/* Header Section */}
+                <div className="relative px-8 pt-8 pb-6">
+                  {/* Icon and Title */}
+                  <div className="flex items-start gap-5">
+                    {/* Animated Icon */}
+                    <motion.div
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ 
+                        type: "spring",
+                        stiffness: 200,
+                        damping: 15,
+                        delay: 0.1
+                      }}
+                      className="relative"
+                    >
+                      <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/30">
+                        <Trash2 className="w-8 h-8 text-white" />
+                      </div>
+                      {/* Pulsing ring */}
+                      <motion.div
+                        animate={{
+                          scale: [1, 1.2, 1],
+                          opacity: [0.5, 0, 0.5]
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                        className="absolute inset-0 bg-red-500 rounded-2xl"
+                      />
+                    </motion.div>
+                    
+                    {/* Title and Description */}
+                    <div className="flex-1 pt-1">
+                      <motion.h2
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.4, delay: 0.2 }}
+                        className="text-2xl font-bold text-gray-900 mb-1"
+                      >
+                        Delete {deleteSection}
+                      </motion.h2>
+                      <motion.p
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.4, delay: 0.3 }}
+                        className="text-sm text-gray-600"
+                      >
+                        Are you sure you want to delete this {deleteSection.toLowerCase()}? This action cannot be undone.
+                      </motion.p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="px-8">
+                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                </div>
+
+                {/* Footer */}
+                <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                  <div className="flex items-center justify-center gap-3">
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3, delay: 0.5 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleDeleteCancel}
+                      className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow"
+                    >
+                      Cancel
+                    </motion.button>
+                    
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3, delay: 0.6 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleDeleteConfirm}
+                      className="group relative px-8 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-semibold shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 transition-all overflow-hidden"
+                    >
+                      <span className="relative z-10 flex items-center gap-2">
+                        <Trash2 className="w-5 h-5" />
+                        Delete
+                      </span>
+                      {/* Shine effect */}
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
+                        animate={{ x: ['-200%', '200%'] }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          repeatDelay: 1,
+                          ease: "easeInOut"
+                        }}
+                      />
+                    </motion.button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        </>
+      )}
+      </div>
+    </ProtectedRoute>
   )
 }

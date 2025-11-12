@@ -2,12 +2,16 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, Lock, Eye, EyeOff, User, Phone, Briefcase, MapPin, ArrowRight, Sparkles, Heart, Star, Zap } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, User, Phone, Briefcase, MapPin, ArrowRight, Sparkles, Heart, Star, Zap, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function RegisterPage() {
+  const router = useRouter()
+  const { signup } = useAuth()
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -20,6 +24,7 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [agreeToTerms, setAgreeToTerms] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
   const [currentStep, setCurrentStep] = useState(1)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -32,9 +37,30 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setTimeout(() => {
+    setError('')
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords don't match")
       setIsLoading(false)
-    }, 2000)
+      return
+    }
+
+    if (!agreeToTerms) {
+      setError("Please agree to the terms and conditions")
+      setIsLoading(false)
+      return
+    }
+
+    const fullName = `${formData.firstName} ${formData.lastName}`.trim()
+    const result = await signup(fullName, formData.email, formData.password, 'jobseeker')
+
+    if (result.success) {
+      router.push('/')
+    } else {
+      setError(result.error || 'Registration failed')
+    }
+    
+    setIsLoading(false)
   }
 
   const professions = [
@@ -137,19 +163,37 @@ export default function RegisterPage() {
                     }}
                     className="relative"
                   >
-                    {/* Glow Effect */}
-                    <motion.div 
-                      className="absolute -inset-4 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-full blur-2xl opacity-30"
+                    {/* Rotating Ring Effect */}
+                    <motion.div
+                      className="absolute inset-0 -m-3"
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 8,
+                        repeat: Infinity,
+                        ease: "linear"
+                      }}
+                    >
+                      <div className="absolute inset-0 rounded-full border-2 border-transparent bg-gradient-to-r from-primary-400/40 via-transparent to-primary-400/40 bg-clip-border" 
+                           style={{ 
+                             maskImage: 'linear-gradient(to right, transparent, white, transparent)',
+                             WebkitMaskImage: 'linear-gradient(to right, transparent, white, transparent)'
+                           }}
+                      />
+                    </motion.div>
+                    
+                    {/* Glass Reflection */}
+                    <motion.div
+                      className="absolute inset-0 -m-2 rounded-full bg-gradient-to-br from-white/20 via-transparent to-transparent"
                       animate={{
-                        scale: [1, 1.2, 1],
-                        opacity: [0.3, 0.5, 0.3],
+                        opacity: [0.3, 0.6, 0.3],
                       }}
                       transition={{
-                        duration: 2,
+                        duration: 2.5,
                         repeat: Infinity,
                         ease: "easeInOut"
                       }}
                     />
+                    
                     <div className="relative">
                       <img 
                         src="/logo.svg" 
@@ -437,6 +481,21 @@ export default function RegisterPage() {
                     </label>
                   </motion.div>
 
+                  {/* Error Message */}
+                  <AnimatePresence>
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl"
+                      >
+                        <AlertCircle className="w-5 h-5 text-red-500" />
+                        <span className="text-sm text-red-600">{error}</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {/* Create Account Button */}
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -502,7 +561,7 @@ export default function RegisterPage() {
                     </motion.button>
                   </motion.div>
 
-                  {/* Already have an account? Sign in here */}
+                  {/* Already have an account? Log in here */}
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -516,7 +575,7 @@ export default function RegisterPage() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        Sign in here
+                        Log in here
                       </motion.span>
                     </Link>
                   </motion.div>

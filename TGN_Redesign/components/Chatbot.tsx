@@ -91,7 +91,7 @@ export default function Chatbot() {
 
   return (
     <>
-      {/* Floating Particles around button */}
+      {/* Floating Particles around button - Responsive */}
       <AnimatePresence>
         {!isOpen && (
           <>
@@ -111,21 +111,21 @@ export default function Chatbot() {
                   delay: i * 0.6,
                   ease: "easeInOut"
                 }}
-                className="fixed bottom-10 right-10 z-40 w-2 h-2 bg-primary-400 rounded-full blur-sm"
+                className="fixed bottom-8 right-8 sm:bottom-10 sm:right-10 z-40 w-2 h-2 bg-primary-400 rounded-full blur-sm"
               />
             ))}
           </>
         )}
       </AnimatePresence>
 
-      {/* Chatbot Toggle Button - Ultra Premium */}
+      {/* Chatbot Toggle Button - Ultra Premium & Responsive */}
       <AnimatePresence>
         {!isOpen && (
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             exit={{ scale: 0, rotate: 180 }}
-            className="fixed bottom-6 right-6 z-50"
+            className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50"
           >
             {/* Outer Glow Ring */}
             <motion.div
@@ -278,7 +278,7 @@ export default function Chatbot() {
         )}
       </AnimatePresence>
 
-      {/* Chatbot Window - Ultra Premium Design */}
+      {/* Chatbot Window - Ultra Premium Design & Responsive */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -287,13 +287,15 @@ export default function Chatbot() {
               opacity: 1, 
               y: 0, 
               scale: 1,
-              rotateX: 0,
-              height: isMinimized ? 'auto' : '650px'
+              rotateX: 0
             }}
             exit={{ opacity: 0, y: 100, scale: 0.3, rotateX: 15 }}
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className="fixed bottom-6 right-6 z-50 w-[420px]"
-            style={{ perspective: '1000px' }}
+            className="fixed bottom-0 left-0 right-0 sm:bottom-4 sm:right-4 sm:left-auto z-50 w-full sm:w-[420px] sm:max-w-[calc(100vw-2rem)]"
+            style={{ 
+              perspective: '1000px',
+              maxHeight: isMinimized ? 'auto' : 'calc(100vh - 2rem)'
+            }}
           >
             {/* Outer Glow */}
             <motion.div
@@ -310,9 +312,9 @@ export default function Chatbot() {
             />
 
             {/* Main Card with Glassmorphism */}
-            <div className="relative bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden border border-white/60">
+            <div className="relative bg-white/95 backdrop-blur-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-white/60">
               {/* Gradient Border Effect */}
-              <div className="absolute inset-0 rounded-3xl p-[2px] bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600 opacity-20" />
+              <div className="absolute inset-0 rounded-t-3xl sm:rounded-3xl p-[2px] bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600 opacity-20" />
               
               {/* Animated Background Pattern */}
               <motion.div
@@ -332,7 +334,7 @@ export default function Chatbot() {
               />
             {/* Header */}
             <motion.div
-              className="relative bg-gradient-to-r from-primary-600 to-primary-500 p-4 text-white overflow-hidden"
+              className="relative bg-gradient-to-r from-primary-600 to-primary-500 p-3 sm:p-4 text-white overflow-hidden"
               whileHover={{ backgroundPosition: '100% 50%' }}
               style={{ backgroundSize: '200% 100%' }}
             >
@@ -354,7 +356,7 @@ export default function Chatbot() {
               />
 
               <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 sm:space-x-3">
                   {/* Bot Avatar with Animation */}
                   <motion.div
                     animate={{
@@ -375,9 +377,10 @@ export default function Chatbot() {
                   </motion.div>
                   
                   <div>
-                    <h3 className="font-bold text-lg flex items-center gap-2">
-                      Gypsy Nurse Assistant
-                      <Sparkles className="w-4 h-4" />
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-1.5 sm:gap-2">
+                      <span className="hidden sm:inline">Gypsy Nurse Assistant</span>
+                      <span className="sm:hidden">GN Assistant</span>
+                      <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </h3>
                     <motion.p
                       className="text-xs text-white/80"
@@ -416,7 +419,7 @@ export default function Chatbot() {
             {/* Chat Messages */}
             {!isMinimized && (
               <>
-                <div className="h-96 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white">
+                <div className="h-64 sm:h-80 md:h-96 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white">
                   <AnimatePresence>
                     {messages.map((message, index) => (
                       <motion.div
@@ -427,27 +430,27 @@ export default function Chatbot() {
                         transition={{ delay: index * 0.1 }}
                         className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div className={`flex items-end space-x-2 max-w-[80%] ${message.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                        <div className={`flex items-end space-x-1.5 sm:space-x-2 max-w-[85%] sm:max-w-[80%] ${message.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                           {/* Avatar */}
                           <motion.div
                             whileHover={{ scale: 1.1, rotate: 5 }}
-                            className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                            className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
                               message.sender === 'user'
                                 ? 'bg-gradient-to-br from-primary-500 to-primary-600'
                                 : 'bg-gradient-to-br from-gray-600 to-gray-700'
                             }`}
                           >
                             {message.sender === 'user' ? (
-                              <User className="w-4 h-4 text-white" />
+                              <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                             ) : (
-                              <Bot className="w-4 h-4 text-white" />
+                              <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                             )}
                           </motion.div>
 
                           {/* Message Bubble */}
                           <motion.div
                             whileHover={{ scale: 1.02 }}
-                            className={`relative px-4 py-3 rounded-2xl ${
+                            className={`relative px-3 py-2 sm:px-4 sm:py-3 rounded-2xl ${
                               message.sender === 'user'
                                 ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white rounded-br-sm'
                                 : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm shadow-md'
@@ -507,7 +510,7 @@ export default function Chatbot() {
                 </div>
 
                 {/* Input Area with Glass Effect */}
-                <div className="relative p-4 border-t border-white/20 bg-gradient-to-br from-white/60 via-white/40 to-white/60 backdrop-blur-xl">
+                <div className="relative p-3 sm:p-4 border-t border-white/20 bg-gradient-to-br from-white/60 via-white/40 to-white/60 backdrop-blur-xl">
                   {/* Subtle animated background */}
                   <motion.div
                     className="absolute inset-0 opacity-30"
@@ -563,7 +566,7 @@ export default function Chatbot() {
                       whileTap={{ scale: 0.92 }}
                       onClick={handleSendMessage}
                       disabled={!inputMessage.trim()}
-                      className="relative p-3 bg-gradient-to-br from-white/80 to-white/70 backdrop-blur-sm border-2 border-primary-200/50 rounded-2xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden group hover:border-primary-400 transition-all duration-300"
+                      className="relative p-2.5 sm:p-3 bg-gradient-to-br from-white/80 to-white/70 backdrop-blur-sm border-2 border-primary-200/50 rounded-2xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden group hover:border-primary-400 transition-all duration-300"
                     >
                       {/* Gradient overlay on hover */}
                       <motion.div

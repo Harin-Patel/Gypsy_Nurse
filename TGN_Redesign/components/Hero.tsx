@@ -3,14 +3,16 @@
 import { motion } from 'framer-motion'
 import { Search, MapPin, Briefcase, ArrowRight } from 'lucide-react'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function Hero() {
   const [searchQuery, setSearchQuery] = useState('')
   const [location, setLocation] = useState('')
+  const router = useRouter()
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Searching for:', searchQuery, 'in', location)
+    router.push('/jobs')
   }
 
   return (

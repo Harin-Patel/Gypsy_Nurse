@@ -100,16 +100,18 @@ export default function Footer() {
               {/* Social Links */}
               <div className="flex space-x-3">
                 {[
-                  { icon: Facebook, label: 'Facebook' },
-                  { icon: Twitter, label: 'Twitter' },
-                  { icon: Instagram, label: 'Instagram' },
-                  { icon: Linkedin, label: 'LinkedIn' },
+                  { icon: Facebook, label: 'Facebook', href: 'https://www.facebook.com/TheGypsyNurseFan/' },
+                  { icon: Twitter, label: 'Twitter', href: 'https://x.com/thegypsynurse' },
+                  { icon: Instagram, label: 'Instagram', href: 'https://www.instagram.com/thegypsynurse/' },
+                  { icon: Linkedin, label: 'LinkedIn', href: 'https://www.linkedin.com/company/gypsy-nurse-consulting-llc/' },
                 ].map((social, index) => {
                   const Icon = social.icon
                   return (
                     <motion.a
                       key={index}
-                      href="#"
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       whileHover={{ scale: 1.1, y: -2 }}
                       whileTap={{ scale: 0.9 }}
                       className="w-10 h-10 bg-primary-50 backdrop-blur-lg border border-primary-200 rounded-lg flex items-center justify-center text-primary-600 hover:bg-primary-500 hover:text-white transition-all"
@@ -202,4 +204,3 @@ export default function Footer() {
     </footer>
   )
 }
-

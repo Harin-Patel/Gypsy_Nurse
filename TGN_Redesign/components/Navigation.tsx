@@ -23,7 +23,8 @@ export default function Navigation() {
   const handleLogout = () => {
     setShowLogoutConfirm(false)
     setShowProfileDropdown(false)
-    logout()
+    // Explicitly redirect to job seeker login when logging out from main web app
+    logout('/login')
   }
 
   useEffect(() => {

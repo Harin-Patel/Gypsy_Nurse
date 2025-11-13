@@ -18,7 +18,7 @@ interface AuthContextType {
   isLoading: boolean
   login: (email: string, password: string, role: string) => Promise<{ success: boolean; error?: string }>
   signup: (name: string, email: string, password: string, role: string) => Promise<{ success: boolean; error?: string }>
-  logout: () => void
+  logout: (redirectPath?: string) => void
   updateUser: (userData: Partial<User>) => void
 }
 
@@ -110,14 +110,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { success: true }
   }
 
-  const logout = () => {
+  const logout = (redirectPath?: string) => {
+    // Get user role BEFORE clearing user state
+    const userRole = user?.role
+    
+    // Determine redirect path based on role if not provided
+    if (!redirectPath) {
+      if (userRole === 'agency') {
+        redirectPath = '/agency-login'
+      } else if (userRole === 'recruiter') {
+        redirectPath = '/recruiter-login'
+      } else if (userRole === 'admin') {
+        redirectPath = '/admin-login'
+      } else {
+        // Default to job seeker login for jobseeker role or any undefined/null role
+        redirectPath = '/login'
+      }
+    }
+    
+    // Store redirect path before clearing state
+    const finalRedirectPath = redirectPath
+    
+    // Clear user state and localStorage
     setUser(null)
     localStorage.removeItem('auth_user')
+    
     toast.success('Logged out successfully. See you soon!', {
       icon: '👋',
       duration: 3000,
     })
-    router.push('/login')
+    
+    // Use window.location.href for immediate hard redirect (bypasses React router)
+    // This ensures the redirect happens before ProtectedRoute can interfere
+    window.location.href = finalRedirectPath
   }
 
   const updateUser = (userData: Partial<User>) => {

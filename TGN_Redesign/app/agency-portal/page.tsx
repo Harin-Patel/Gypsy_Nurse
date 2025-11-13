@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard,
@@ -28,7 +28,9 @@ import {
   ArrowDownRight,
   TrendingUp,
   FileEdit,
-  Building
+  Building,
+  Mail,
+  MapPin
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
@@ -51,31 +53,7 @@ const tabs: Tab[] = [
   { key: 'applications', label: 'My Applications', icon: FileText },
 ]
 
-export default function AgencyPortalPage() {
-  const router = useRouter()
-  const { user, logout, isAuthenticated } = useAuth()
-  const [activeTab, setActiveTab] = useState<TabKey>('dashboard')
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [showProfileDropdown, setShowProfileDropdown] = useState(false)
-  const [isProfileHovered, setIsProfileHovered] = useState(false)
-  const [showProfileModal, setShowProfileModal] = useState(false)
-
-  // Redirect if not agency user (only after authentication is confirmed)
-  useEffect(() => {
-    if (isAuthenticated && user && user.role !== 'agency') {
-      router.push('/')
-      toast.error('Access denied. Agency portal only.')
-    }
-  }, [user, isAuthenticated, router])
-
-  const handleLogout = () => {
-    logout()
-    router.push('/agency-login')
-    toast.success('Logged out successfully')
-  }
-
-  const StatCard = ({ 
+const StatCard = ({ 
     title, 
     value, 
     icon: Icon, 
@@ -86,56 +64,160 @@ export default function AgencyPortalPage() {
     icon: React.ElementType
     color?: 'green' | 'blue' | 'purple' | 'orange'
   }) => {
-    const colorClasses = {
-      green: 'bg-green-500',
-      blue: 'bg-blue-500',
-      purple: 'bg-purple-500',
-      orange: 'bg-orange-500',
-    }
-
+    const [isHovered, setIsHovered] = useState(false)
+    
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300"
+        whileHover={{ y: -5, scale: 1.02 }}
+        className="relative group"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="flex items-center gap-4 mb-4">
-          <div className={`p-3 rounded-xl ${colorClasses[color]} shadow-lg`}>
-            <Icon className="w-6 h-6 text-white" />
+        {/* Glass Card - Same as Menu Bar Hover Effect */}
+        <div className="relative bg-white/20 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/40 overflow-hidden">
+          {/* Glass Hover Effect - Same as Menu Bar */}
+          <motion.div
+            className="absolute -inset-1 bg-white/70 backdrop-blur-xl rounded-2xl border border-primary-200/50 shadow-lg -z-10 overflow-hidden"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ 
+              opacity: isHovered ? 1 : 0,
+              scale: isHovered ? 1 : 0.9
+            }}
+            transition={{ duration: 0.2 }}
+          >
+            {/* Shine Effect */}
+            {isHovered && (
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                initial={{ x: '-100%' }}
+                animate={{ x: '100%' }}
+                transition={{
+                  duration: 0.6,
+                  ease: "easeInOut"
+                }}
+              />
+            )}
+          </motion.div>
+          
+          {/* Subtle Gradient Overlay */}
+          <motion.div
+            className="absolute -inset-1 bg-gradient-to-br from-primary-100/50 via-primary-50/30 to-transparent rounded-2xl -z-10"
+            initial={{ opacity: 0 }}
+            animate={{ 
+              opacity: isHovered ? 1 : 0
+            }}
+            transition={{ duration: 0.3 }}
+          />
+          
+          {/* Content */}
+          <div className="relative z-10">
+            <div className="flex items-center gap-4 mb-4">
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                className="p-3 rounded-xl bg-primary-600 shadow-lg"
+              >
+                <Icon className="w-6 h-6 text-white" />
+              </motion.div>
+            </div>
+            <h3 className="text-3xl font-bold text-gray-900 mb-1">{value}</h3>
+            <p className="text-sm font-medium text-gray-600">{title}</p>
           </div>
         </div>
-        <h3 className="text-3xl font-bold text-gray-900 mb-1">{value}</h3>
-        <p className="text-sm font-medium text-gray-600">{title}</p>
       </motion.div>
     )
+}
+
+export default function AgencyPortalPage() {
+  const router = useRouter()
+  const { user, logout, isAuthenticated } = useAuth()
+  const [activeTab, setActiveTab] = useState<TabKey>('dashboard')
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false)
+  const [isProfileHovered, setIsProfileHovered] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const [isWelcomeHovered, setIsWelcomeHovered] = useState(false)
+  const [hoveredActionIndex, setHoveredActionIndex] = useState<number | null>(null)
+  const [hoveredModuleIndex, setHoveredModuleIndex] = useState<number | null>(null)
+
+  // Redirect if not agency user (only after authentication is confirmed)
+  useEffect(() => {
+    if (isAuthenticated && user && user.role !== 'agency') {
+      router.push('/')
+      toast.error('Access denied. Agency portal only.')
+    }
+  }, [user, isAuthenticated, router])
+
+  const handleLogout = () => {
+    setShowLogoutModal(false)
+    logout('/agency-login')
   }
 
   const renderDashboard = () => (
     <div className="space-y-6">
-      {/* Welcome Section */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-8 text-white shadow-xl"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.name || 'Agency'}! 👋</h1>
-            <p className="text-primary-100 text-lg">Here's what's happening with your agency today.</p>
-          </div>
-          <div className="hidden md:flex items-center gap-4">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setActiveTab('jobs')}
-              className="px-6 py-3 bg-white/20 backdrop-blur-md rounded-xl font-semibold hover:bg-white/30 transition-all flex items-center gap-2"
+        {/* Welcome Section - Transparent Glass with Theme Color */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-3xl"
+          onMouseEnter={() => setIsWelcomeHovered(true)}
+          onMouseLeave={() => setIsWelcomeHovered(false)}
+        >
+          {/* Glass Card - Same as Menu Bar Hover Effect */}
+          <div className="relative bg-white/20 backdrop-blur-2xl border border-white/40 rounded-3xl p-8 shadow-2xl overflow-hidden">
+            {/* Glass Hover Effect - Same as Menu Bar */}
+            <motion.div
+              className="absolute -inset-1 bg-white/70 backdrop-blur-xl rounded-3xl border border-primary-200/50 shadow-lg -z-10 overflow-hidden"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ 
+                opacity: isWelcomeHovered ? 1 : 0,
+                scale: isWelcomeHovered ? 1 : 0.95
+              }}
+              transition={{ duration: 0.2 }}
             >
-              <Plus className="w-5 h-5" />
-              Post New Job
-            </motion.button>
+              {/* Shine Effect */}
+              {isWelcomeHovered && (
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                  initial={{ x: '-100%' }}
+                  animate={{ x: '100%' }}
+                  transition={{
+                    duration: 0.6,
+                    ease: "easeInOut"
+                  }}
+                />
+              )}
+            </motion.div>
+            
+            {/* Subtle Gradient Overlay */}
+            <motion.div
+              className="absolute -inset-1 bg-gradient-to-br from-primary-100/50 via-primary-50/30 to-transparent rounded-3xl -z-10"
+              initial={{ opacity: 0 }}
+              animate={{ 
+                opacity: isWelcomeHovered ? 1 : 0
+              }}
+              transition={{ duration: 0.3 }}
+            />
+            
+            <div className="relative z-10">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <h1 className="text-4xl font-bold mb-3 text-gray-900">
+                  Welcome back, {user?.name || 'Agency'}! 👋
+                </h1>
+                <p className="text-gray-600 text-lg font-medium">
+                  Here's what's happening with your agency today.
+                </p>
+              </motion.div>
+            </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
 
       {/* Overview Statistics */}
       <div>
@@ -168,71 +250,172 @@ export default function AgencyPortalPage() {
         </div>
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions - Glass Design */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
+        <motion.h2
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="text-2xl font-bold text-gray-900 mb-6"
+        >
+          Quick Actions
+        </motion.h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { icon: Plus, title: 'Create New Job', description: 'Post a new job opening', onClick: () => setActiveTab('jobs') },
-            { icon: Users, title: 'Manage Recruiters', description: 'Add and manage your team', onClick: () => setActiveTab('recruiters') },
-            { icon: FileText, title: 'View Applications', description: 'Review candidate applications', onClick: () => setActiveTab('applications') },
-            { icon: FileEdit, title: 'Edit Profile', description: 'Update agency information', onClick: () => setShowProfileModal(true) },
+            { icon: Plus, title: 'Create New Job', description: 'Post a new job opening', onClick: () => setActiveTab('jobs'), color: 'from-blue-400 to-blue-500' },
+            { icon: Users, title: 'Manage Recruiters', description: 'Add and manage your team', onClick: () => setActiveTab('recruiters'), color: 'from-purple-400 to-purple-500' },
+            { icon: FileText, title: 'View Applications', description: 'Review candidate applications', onClick: () => setActiveTab('applications'), color: 'from-green-400 to-green-500' },
+            { icon: FileEdit, title: 'Edit Profile', description: 'Update agency information', onClick: () => setShowProfileModal(true), color: 'from-orange-400 to-orange-500' },
           ].map((action, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              onClick={action.onClick}
-              className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 cursor-pointer group"
-            >
-              <div className="flex items-center gap-4 mb-3">
-                <div className="p-3 rounded-xl bg-gray-100 group-hover:bg-gray-200 transition-colors">
-                  <action.icon className="w-6 h-6 text-gray-600" />
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                onClick={action.onClick}
+                whileHover={{ y: -8, scale: 1.02 }}
+                className="relative group cursor-pointer"
+                onMouseEnter={() => setHoveredActionIndex(index)}
+                onMouseLeave={() => setHoveredActionIndex(null)}
+              >
+                {/* Glass Card - Same as Menu Bar Hover Effect */}
+                <div className="relative bg-white/20 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/40 overflow-hidden">
+                  {/* Glass Hover Effect - Same as Menu Bar */}
+                  <motion.div
+                    className="absolute -inset-1 bg-white/70 backdrop-blur-xl rounded-2xl border border-primary-200/50 shadow-lg -z-10 overflow-hidden"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ 
+                      opacity: hoveredActionIndex === index ? 1 : 0,
+                      scale: hoveredActionIndex === index ? 1 : 0.95
+                    }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {/* Shine Effect */}
+                    {hoveredActionIndex === index && (
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                        initial={{ x: '-100%' }}
+                        animate={{ x: '100%' }}
+                        transition={{
+                          duration: 0.6,
+                          ease: "easeInOut"
+                        }}
+                      />
+                    )}
+                  </motion.div>
+                  
+                  {/* Subtle Gradient Overlay */}
+                  <motion.div
+                    className="absolute -inset-1 bg-gradient-to-br from-primary-100/50 via-primary-50/30 to-transparent rounded-2xl -z-10"
+                    initial={{ opacity: 0 }}
+                    animate={{ 
+                      opacity: hoveredActionIndex === index ? 1 : 0
+                    }}
+                    transition={{ duration: 0.3 }}
+                  />
+                
+                {/* Content */}
+                <div className="relative z-10">
+                  <div className="flex items-center gap-4 mb-3">
+                    <motion.div
+                      whileHover={{ scale: 1.15, rotate: 5 }}
+                      className="p-3 rounded-xl bg-primary-600 shadow-lg"
+                    >
+                      <action.icon className="w-6 h-6 text-white" />
+                    </motion.div>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-gray-700 transition-colors">
+                    {action.title}
+                  </h3>
+                  <p className="text-sm text-gray-600">{action.description}</p>
                 </div>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">{action.title}</h3>
-              <p className="text-sm text-gray-600">{action.description}</p>
             </motion.div>
           ))}
         </div>
       </div>
 
-      {/* Agency Modules */}
+      {/* Agency Modules - Enhanced Glass Design */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Agency Modules</h2>
+        <motion.h2
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="text-2xl font-bold text-gray-900 mb-6"
+        >
+          Agency Modules
+        </motion.h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { icon: Briefcase, title: 'Job Management', description: 'Create, edit, and manage job postings', color: 'green', onClick: () => setActiveTab('jobs') },
-            { icon: Users, title: 'Recruiter Management', description: 'Manage your recruitment team', color: 'blue', onClick: () => setActiveTab('recruiters') },
-            { icon: FileText, title: 'Application Review', description: 'Review and manage job applications', color: 'purple', onClick: () => setActiveTab('applications') },
-            { icon: Building, title: 'Agency Profile', description: 'Update agency information and settings', color: 'orange', onClick: () => setShowProfileModal(true) },
-          ].map((module, index) => {
-            const colorClasses = {
-              green: 'bg-green-500',
-              blue: 'bg-blue-500',
-              purple: 'bg-purple-500',
-              orange: 'bg-orange-500',
-            }
-            return (
+            { icon: Briefcase, title: 'Job Management', description: 'Create, edit, and manage job postings', color: 'from-green-400 to-green-500', glow: 'rgba(34, 197, 94, 0.1)', onClick: () => setActiveTab('jobs') },
+            { icon: Users, title: 'Recruiter Management', description: 'Manage your recruitment team', color: 'from-blue-400 to-blue-500', glow: 'rgba(59, 130, 246, 0.1)', onClick: () => setActiveTab('recruiters') },
+            { icon: FileText, title: 'Application Review', description: 'Review and manage job applications', color: 'from-purple-400 to-purple-500', glow: 'rgba(168, 85, 247, 0.1)', onClick: () => setActiveTab('applications') },
+            { icon: Building, title: 'Agency Profile', description: 'Update agency information and settings', color: 'from-orange-400 to-orange-500', glow: 'rgba(249, 115, 22, 0.1)', onClick: () => setShowProfileModal(true) },
+          ].map((module, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 onClick={module.onClick}
-                className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 cursor-pointer group"
+                whileHover={{ y: -8, scale: 1.02 }}
+                className="relative group cursor-pointer h-full"
+                onMouseEnter={() => setHoveredModuleIndex(index)}
+                onMouseLeave={() => setHoveredModuleIndex(null)}
               >
-                <div className="flex items-center gap-4 mb-3">
-                  <div className={`p-3 rounded-xl ${colorClasses[module.color as keyof typeof colorClasses]} shadow-lg`}>
-                    <module.icon className="w-6 h-6 text-white" />
+                {/* Glass Card - Same as Menu Bar Hover Effect */}
+                <div className="relative bg-white/20 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/40 overflow-hidden h-full flex flex-col">
+                  {/* Glass Hover Effect - Same as Menu Bar */}
+                  <motion.div
+                    className="absolute -inset-1 bg-white/70 backdrop-blur-xl rounded-2xl border border-primary-200/50 shadow-lg -z-10 overflow-hidden"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ 
+                      opacity: hoveredModuleIndex === index ? 1 : 0,
+                      scale: hoveredModuleIndex === index ? 1 : 0.95
+                    }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {/* Shine Effect */}
+                    {hoveredModuleIndex === index && (
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                        initial={{ x: '-100%' }}
+                        animate={{ x: '100%' }}
+                        transition={{
+                          duration: 0.6,
+                          ease: "easeInOut"
+                        }}
+                      />
+                    )}
+                  </motion.div>
+                  
+                  {/* Subtle Gradient Overlay */}
+                  <motion.div
+                    className="absolute -inset-1 bg-gradient-to-br from-primary-100/50 via-primary-50/30 to-transparent rounded-2xl -z-10"
+                    initial={{ opacity: 0 }}
+                    animate={{ 
+                      opacity: hoveredModuleIndex === index ? 1 : 0
+                    }}
+                    transition={{ duration: 0.3 }}
+                  />
+                  
+                  {/* Content */}
+                  <div className="relative z-10 flex flex-col flex-1">
+                    <div className="flex items-center gap-4 mb-3">
+                      <motion.div
+                        whileHover={{ scale: 1.15, rotate: 5 }}
+                        className="p-3 rounded-xl bg-primary-600 shadow-lg"
+                      >
+                        <module.icon className="w-6 h-6 text-white" />
+                      </motion.div>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-gray-700 transition-colors">
+                      {module.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 flex-1">{module.description}</p>
                   </div>
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-1">{module.title}</h3>
-                <p className="text-sm text-gray-600">{module.description}</p>
               </motion.div>
-            )
-          })}
+            ))
+          }
         </div>
       </div>
     </div>
@@ -344,80 +527,165 @@ export default function AgencyPortalPage() {
 
   const renderProfile = () => (
     <div className="space-y-6">
-      <p className="text-gray-600 mb-6">Manage your agency profile and account settings</p>
-      <div className="bg-gray-50 rounded-xl p-8 border border-gray-200">
-        <div className="flex items-center gap-6 mb-8">
-          <div className="w-24 h-24 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white text-3xl font-bold">
+      {/* Profile Picture Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.5 }}
+        className="flex items-center gap-6 pb-6 border-b border-gray-200"
+      >
+        <div className="relative">
+          <div className="w-24 h-24 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-lg">
             {user?.name?.charAt(0).toUpperCase() || 'A'}
           </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">{user?.name || 'Agency Name'}</h2>
-            <p className="text-gray-600">{user?.email || 'agency@example.com'}</p>
-            <p className="text-sm text-gray-500 mt-1">Agency Account</p>
-          </div>
+          <motion.div
+            animate={{
+              scale: [1, 1.1, 1],
+              opacity: [0.3, 0, 0.3]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="absolute inset-0 bg-primary-500 rounded-full -z-10"
+          />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Information</h3>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Agency Name</label>
-              <input
-                type="text"
-                defaultValue={user?.name || ''}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-              <input
-                type="email"
-                defaultValue={user?.email || ''}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-              <input
-                type="tel"
-                placeholder="+1 (555) 123-4567"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Company Website</label>
-              <input
-                type="url"
-                placeholder="https://www.example.com"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-          </div>
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Company Description</label>
-              <textarea
-                rows={4}
-                placeholder="Tell us about your agency..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-              <input
-                type="text"
-                placeholder="City, State"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors"
-            >
-              Save Changes
-            </motion.button>
-          </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">{user?.name || 'Agency Name'}</h2>
+          <p className="text-gray-600">{user?.email || 'agency@example.com'}</p>
+          <p className="text-sm text-gray-500 mt-1">Agency Account</p>
+        </div>
+      </motion.div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Profile Information */}
+        <div className="space-y-5">
+          <motion.h3
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.6 }}
+            className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2"
+          >
+            <User className="w-5 h-5 text-primary-600" />
+            Profile Information
+          </motion.h3>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.7 }}
+          >
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <Building2 className="w-4 h-4 text-primary-600" />
+              Agency Name
+            </label>
+            <input
+              type="text"
+              defaultValue={user?.name || ''}
+              className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700"
+            />
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.8 }}
+          >
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <Mail className="w-4 h-4 text-primary-600" />
+              Email Address
+            </label>
+            <input
+              type="email"
+              defaultValue={user?.email || ''}
+              className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700"
+            />
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.9 }}
+          >
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              Phone Number
+            </label>
+            <input
+              type="tel"
+              placeholder="+1 (555) 123-4567"
+              className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
+            />
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 1.0 }}
+          >
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+              </svg>
+              Company Website
+            </label>
+            <input
+              type="url"
+              placeholder="https://www.example.com"
+              className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
+            />
+          </motion.div>
+        </div>
+        
+        {/* Additional Information */}
+        <div className="space-y-5">
+          <motion.h3
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.6 }}
+            className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2"
+          >
+            <FileText className="w-5 h-5 text-primary-600" />
+            Additional Information
+          </motion.h3>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 1.1 }}
+            className="md:col-span-2"
+          >
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Company Description
+            </label>
+            <textarea
+              rows={4}
+              placeholder="Tell us about your agency..."
+              className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400 resize-none"
+            />
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 1.2 }}
+          >
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <MapPin className="w-4 h-4 text-primary-600" />
+              Location
+            </label>
+            <input
+              type="text"
+              placeholder="City, State"
+              className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
+            />
+          </motion.div>
         </div>
       </div>
     </div>
@@ -625,9 +893,11 @@ export default function AgencyPortalPage() {
           
           <div className="flex flex-col h-full relative z-10">
             {/* Logo/Header */}
-            <div className="p-6 border-b border-white/30 backdrop-blur-sm">
-              <div className="flex items-center justify-between">
-                {!isSidebarCollapsed && (
+            <div className={`border-b border-white/30 backdrop-blur-sm ${
+              isSidebarCollapsed ? 'p-3' : 'p-6'
+            }`}>
+              {!isSidebarCollapsed ? (
+                <div className="flex items-center justify-between">
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -638,23 +908,38 @@ export default function AgencyPortalPage() {
                     </div>
                     <div>
                       <h2 className="font-bold text-gray-900">Agency Portal</h2>
-                      <p className="text-xs text-gray-500">Dashboard</p>
                     </div>
                   </motion.div>
-                )}
-                <motion.button
-                  onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="p-2 hover:bg-white/50 rounded-lg transition-colors backdrop-blur-sm"
-                >
-                  <Menu className="w-5 h-5 text-gray-700" />
-                </motion.button>
-              </div>
+                  <motion.button
+                    onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="p-2 hover:bg-white/50 rounded-lg transition-colors backdrop-blur-sm"
+                  >
+                    <Menu className="w-5 h-5 text-gray-700" />
+                  </motion.button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <Building2 className="w-6 h-6 text-white" />
+                  </div>
+                  <motion.button
+                    onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="p-2 hover:bg-white/50 rounded-lg transition-colors backdrop-blur-sm"
+                  >
+                    <Menu className="w-5 h-5 text-gray-700" />
+                  </motion.button>
+                </div>
+              )}
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 p-4 space-y-2 overflow-y-auto scrollbar-hide" style={{
+            <nav className={`flex-1 space-y-2 overflow-y-auto scrollbar-hide ${
+              isSidebarCollapsed ? 'p-2' : 'p-4'
+            }`} style={{
               scrollbarWidth: 'thin',
               scrollbarColor: 'rgba(127, 40, 96, 0.3) transparent',
             }}>
@@ -668,9 +953,13 @@ export default function AgencyPortalPage() {
                       setActiveTab(tab.key)
                       setIsMobileMenuOpen(false)
                     }}
-                    whileHover={{ x: 5, scale: 1.02 }}
+                    whileHover={{ x: isSidebarCollapsed ? 0 : 5, scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className={`relative w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all overflow-hidden group ${
+                    className={`relative w-full flex items-center rounded-xl transition-all overflow-hidden group ${
+                      isSidebarCollapsed 
+                        ? 'px-2 py-3 justify-center' 
+                        : 'gap-4 px-4 py-3'
+                    } ${
                       isActive
                         ? 'text-primary-700 font-semibold'
                         : 'text-gray-700'
@@ -706,13 +995,19 @@ export default function AgencyPortalPage() {
                     )}
                     
                     {/* Content */}
-                    <div className="relative z-10 flex items-center gap-4 w-full">
-                      <div className={`p-2 rounded-lg transition-colors ${
+                    <div className={`relative z-10 flex items-center w-full ${
+                      isSidebarCollapsed ? 'justify-center' : 'gap-4'
+                    }`}>
+                      <div className={`rounded-lg transition-colors ${
+                        isSidebarCollapsed 
+                          ? 'p-2.5' 
+                          : 'p-2'
+                      } ${
                         isActive 
                           ? 'bg-primary-500/20 text-primary-600' 
                           : 'bg-white/50 text-gray-500 group-hover:bg-primary-100/50 group-hover:text-primary-600'
                       }`}>
-                        <Icon className="w-5 h-5" />
+                        <Icon className={isSidebarCollapsed ? "w-5 h-5" : "w-5 h-5"} />
                       </div>
                       {!isSidebarCollapsed && (
                         <span className="flex-1 text-left">{tab.label}</span>
@@ -743,11 +1038,6 @@ export default function AgencyPortalPage() {
                 </h1>
               </div>
               <div className="flex items-center gap-4">
-                <button className="p-2 hover:bg-gray-100 rounded-lg relative">
-                  <Bell className="w-5 h-5 text-gray-600" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                </button>
-                
                 {/* Profile Dropdown */}
                 <div 
                   className="relative"
@@ -863,7 +1153,7 @@ export default function AgencyPortalPage() {
                               transition={{ delay: 0.1 }}
                               onClick={() => {
                                 setShowProfileDropdown(false)
-                                handleLogout()
+                                setShowLogoutModal(true)
                               }}
                               className="w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all text-sm font-medium text-left flex items-center gap-3"
                               whileHover={{ x: 4 }}
@@ -897,38 +1187,264 @@ export default function AgencyPortalPage() {
           </main>
         </div>
 
-        {/* Profile Modal */}
+        {/* Profile Modal - Matching Add License Modal Style */}
         <AnimatePresence>
           {showProfileModal && (
             <>
+              {/* Backdrop */}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                onClick={() => setShowProfileModal(false)}
+              >
+                {/* Modal */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                  transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+                  className="relative w-full max-w-4xl"
+                  style={{ maxHeight: '90vh' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Glow effect behind modal */}
+                  <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
+                  
+                  {/* Main modal container */}
+                  <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+                    
+                    {/* Header Section */}
+                    <div className="relative px-8 pt-8 pb-6">
+                      {/* Icon and Title */}
+                      <div className="flex items-start gap-5">
+                        {/* Animated Icon */}
+                        <motion.div
+                          initial={{ scale: 0, rotate: -180 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          transition={{ 
+                            type: "spring",
+                            stiffness: 200,
+                            damping: 15,
+                            delay: 0.1
+                          }}
+                          className="relative"
+                        >
+                          <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
+                            <Building2 className="w-8 h-8 text-white" />
+                          </div>
+                          {/* Pulsing ring */}
+                          <motion.div
+                            animate={{
+                              scale: [1, 1.2, 1],
+                              opacity: [0.5, 0, 0.5]
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              ease: "easeInOut"
+                            }}
+                            className="absolute inset-0 bg-primary-500 rounded-2xl"
+                          />
+                        </motion.div>
+                        
+                        {/* Title and Description */}
+                        <div className="flex-1 pt-1">
+                          <motion.h2
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.4, delay: 0.2 }}
+                            className="text-2xl font-bold text-gray-900 mb-1"
+                          >
+                            My Profile
+                          </motion.h2>
+                          <motion.p
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.4, delay: 0.3 }}
+                            className="text-sm text-gray-600"
+                          >
+                            Manage your agency profile and account settings
+                          </motion.p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="px-8">
+                      <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                    </div>
+
+                    {/* Content Area - Scrollable */}
+                    <div className="px-8 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 300px)' }}>
+                      {renderProfile()}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                      <div className="flex items-center justify-between gap-4">
+                        {/* Info text */}
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.4, delay: 0.9 }}
+                          className="text-xs text-gray-500 flex items-center gap-1.5"
+                        >
+                          <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          Your information is secure and encrypted
+                        </motion.p>
+                        
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-3">
+                          <motion.button
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.3, delay: 1.0 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setShowProfileModal(false)}
+                            className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow"
+                          >
+                            Cancel
+                          </motion.button>
+                          
+                          <motion.button
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.3, delay: 1.1 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => {
+                              toast.success('Profile updated successfully')
+                              setShowProfileModal(false)
+                            }}
+                            className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
+                          >
+                            <span className="relative z-10 flex items-center gap-2">
+                              <Edit className="w-5 h-5" />
+                              Save Changes
+                            </span>
+                            {/* Shine effect */}
+                            <motion.div
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
+                              animate={{ x: ['-200%', '200%'] }}
+                              transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                repeatDelay: 1,
+                                ease: "easeInOut"
+                              }}
+                            />
+                          </motion.button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Logout Confirmation Modal */}
+        <AnimatePresence>
+          {showLogoutModal && (
+            <>
+              {/* Backdrop */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
                 className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
-                onClick={() => setShowProfileModal(false)}
+                onClick={() => setShowLogoutModal(false)}
               />
+
+              {/* Modal Container - Centered */}
               <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 pointer-events-none">
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                  className="relative bg-white rounded-3xl shadow-2xl border border-gray-200 w-full max-w-4xl max-h-[90vh] overflow-y-auto pointer-events-auto"
+                  transition={{ duration: 0.3, type: "spring" }}
+                  className="w-full max-w-md pointer-events-auto"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-                    <h2 className="text-2xl font-bold text-gray-900">My Profile</h2>
-                    <button
-                      onClick={() => setShowProfileModal(false)}
-                      className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="p-6">
-                    {renderProfile()}
+                  {/* Glassmorphic Card */}
+                  <div className="relative bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
+                    {/* Gradient Border Effect */}
+                    <div className="absolute inset-0 rounded-3xl p-[2px] bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600 opacity-20 pointer-events-none" />
+                    
+                    {/* Card Content */}
+                    <div className="relative bg-white rounded-3xl p-8">
+                      {/* Icon with Gradient Background */}
+                      <div className="flex justify-center mb-6">
+                        <motion.div
+                          animate={{ 
+                            scale: [1, 1.1, 1],
+                            rotate: [0, 5, -5, 0]
+                          }}
+                          transition={{ 
+                            duration: 2,
+                            repeat: Infinity,
+                            repeatDelay: 1
+                          }}
+                          className="relative"
+                        >
+                          <div className="absolute inset-0 bg-red-100 rounded-2xl blur-xl opacity-60" />
+                          <div className="relative w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <LogOut className="w-8 h-8 text-white" />
+                          </div>
+                        </motion.div>
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="text-2xl font-bold text-center mb-2 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                        Log Out
+                      </h3>
+                      <p className="text-center text-gray-600 mb-6">
+                        Are you sure you want to sign out from your account?
+                      </p>
+
+                      {/* Decorative Divider */}
+                      <div className="mb-6 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-3">
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setShowLogoutModal(false)}
+                          className="flex-1 px-6 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold transition-all shadow-sm"
+                        >
+                          Cancel
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={handleLogout}
+                          className="relative flex-1 px-6 py-3.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-semibold transition-all shadow-lg overflow-hidden group"
+                        >
+                          {/* Shine Effect */}
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                            animate={{
+                              x: ['-200%', '200%']
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              repeatDelay: 1,
+                              ease: "easeInOut"
+                            }}
+                          />
+                          <span className="relative z-10">Log Out</span>
+                        </motion.button>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               </div>

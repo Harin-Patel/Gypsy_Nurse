@@ -6,6 +6,7 @@ import { Mail, Lock, Eye, EyeOff, Briefcase, Phone, Globe, MapPin, Sparkles } fr
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import toast from 'react-hot-toast'
 
 export default function AgencyRegisterPage() {
   const [formData, setFormData] = useState({
@@ -31,7 +32,15 @@ export default function AgencyRegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords don't match")
+      setIsLoading(false)
+      return
+    }
+    
     setTimeout(() => {
+      toast.success('Agency account created successfully!')
       setIsLoading(false)
     }, 2000)
   }

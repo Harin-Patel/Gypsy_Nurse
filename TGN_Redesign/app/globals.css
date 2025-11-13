@@ -12,6 +12,14 @@
     overflow-x: hidden;
     width: 100%;
     max-width: 100vw;
+    scroll-padding-top: 224px; /* Account for navigation (70px) + collapsed header (~140px) */
+  }
+  
+  /* Smooth scrolling with custom easing */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
   
   body {
@@ -107,5 +115,26 @@
     backdrop-filter: saturate(180%) blur(24px);
     -webkit-backdrop-filter: saturate(180%) blur(24px);
   }
+}
+
+/* Scrollbar hiding utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth scroll snap for sections */
+.scroll-smooth-sections {
+  scroll-snap-type: y proximity;
+  scroll-padding-top: 224px;
+}
+
+.scroll-snap-section {
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
 }
 

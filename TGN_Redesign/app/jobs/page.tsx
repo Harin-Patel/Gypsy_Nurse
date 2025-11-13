@@ -25,6 +25,8 @@ import {
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import toast from 'react-hot-toast'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface Job {
   id: string
@@ -43,59 +45,60 @@ interface Job {
 const SAMPLE_JOBS: Job[] = [
   {
     id: '1',
-    title: 'Long Term Care Job',
-    location: 'Harvard',
-    state: 'Illinois',
+    title: 'Travel ER (Emergency Room) RN (Registered Nurse)',
+    location: 'Sioux Falls',
+    state: 'South Dakota',
     shift: 'Day Shift',
     shiftHours: '12 Hours',
-    salary: '$17.55',
-    postedDate: 'Nov 10, 2025',
+    salary: '$58',
+    postedDate: 'Nov 7, 2025',
     facilityAvailable: false,
     staffingCompany: 'AB Staffing Solutions',
-    tags: ['DAY Shift', 'Registered Nurse', 'Long Term Care']
+    tags: ['Day Shift', 'Emergency Room', 'Registered Nurse', '13 Weeks']
   },
   {
     id: '2',
-    title: 'Interventional Radiology Job',
-    location: 'Rockford',
-    state: 'Illinois',
-    shift: 'Mid Shift',
-    shiftHours: '8 Hours',
-    salary: '$25.74',
-    postedDate: 'Nov 10, 2025',
+    title: 'Emergency Room Job in Greenbrae, CA',
+    location: 'Greenbrae',
+    state: 'California',
+    shift: 'Day Shift',
+    shiftHours: '12 Hours',
+    salary: '$68',
+    postedDate: 'Nov 6, 2025',
     facilityAvailable: false,
     staffingCompany: 'AB Staffing Solutions',
-    tags: ['MID Shift', 'Registered Nurse', 'Interventional Radiology']
+    tags: ['Day Shift', 'Emergency Room', 'Registered Nurse', '13 Weeks']
   },
   {
     id: '3',
-    title: 'RN Job',
-    location: 'Lake Isabella',
-    state: 'California',
+    title: 'Strike',
+    location: 'Merrill',
+    state: 'New Mexico',
     shift: 'Day Shift',
-    shiftHours: '8 Hours',
-    salary: '$12.87',
-    postedDate: 'Nov 10, 2025',
+    shiftHours: '12 Hours',
+    salary: '$48',
+    postedDate: 'Oct 11, 2025',
     facilityAvailable: true,
     staffingCompany: 'AB Staffing Solutions',
-    tags: ['DAY Shift', 'Registered Nurse', 'RN']
+    tags: ['Strike', 'Clinical Lab Scientist', '8 Weeks']
   },
   {
     id: '4',
-    title: 'Ultrasound Technologist Job',
-    location: 'Lawton',
-    state: 'Oklahoma',
-    shift: 'Day Shift',
-    shiftHours: '8 Hours',
-    salary: '$20.80',
+    title: 'ICU Travel Nurse - Phoenix, AZ',
+    location: 'Phoenix',
+    state: 'Arizona',
+    shift: 'Night Shift',
+    shiftHours: '12 Hours',
+    salary: '$65',
     postedDate: 'Nov 10, 2025',
-    facilityAvailable: false,
+    facilityAvailable: true,
     staffingCompany: 'AB Staffing Solutions',
-    tags: ['DAY Shift', 'Registered Nurse', 'Ultrasound Technologist']
+    tags: ['Night Shift', 'ICU', 'Registered Nurse', '13 Weeks']
   }
 ]
 
 export default function JobsPage() {
+  const { isAuthenticated } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('relevance')
   const [showFilters, setShowFilters] = useState(false)
@@ -152,6 +155,7 @@ export default function JobsPage() {
 
   const handleApplyFilters = () => {
     // Apply filters logic here
+    toast.success('Filters applied successfully')
     setShowFilters(false)
   }
 
@@ -818,26 +822,26 @@ export default function JobsPage() {
       <main className="flex-1 max-w-7xl mx-auto px-4 py-6 w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {jobs.map((job, index) => (
-            <motion.div
-              key={job.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ 
-                duration: 0.4, 
-                delay: index * 0.1,
-                ease: [0.25, 0.46, 0.45, 0.94]
-              }}
-              className="group relative bg-white rounded-xl border-2 border-gray-200 transition-all duration-300 overflow-hidden flex flex-col cursor-pointer"
-              style={{
-                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-              }}
-              onHoverStart={() => {}}
-              whileHover={{
-                y: -6,
-                boxShadow: '0 12px 24px rgba(127, 40, 96, 0.15)',
-                transition: { duration: 0.2, ease: "easeOut" }
-              }}
-            >
+            <Link key={job.id} href={`/jobs/${job.id}`}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ 
+                  duration: 0.4, 
+                  delay: index * 0.1,
+                  ease: [0.25, 0.46, 0.45, 0.94]
+                }}
+                className="group relative bg-white rounded-xl border-2 border-gray-200 transition-all duration-300 overflow-hidden flex flex-col cursor-pointer h-full"
+                style={{
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                }}
+                onHoverStart={() => {}}
+                whileHover={{
+                  y: -6,
+                  boxShadow: '0 12px 24px rgba(127, 40, 96, 0.15)',
+                  transition: { duration: 0.2, ease: "easeOut" }
+                }}
+              >
               {/* Animated gradient border on hover - Theme Color */}
               <motion.div
                 className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -889,73 +893,78 @@ export default function JobsPage() {
                   </motion.div>
                   
                   <div className="flex items-center gap-2">
-                    {/* Like Button */}
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleLikeJob(job.id)
-                      }}
-                      className={`relative p-2 rounded-lg transition-all ${
-                        likedJobs.includes(job.id)
-                          ? 'bg-green-50 text-green-600'
-                          : 'bg-gray-50 text-gray-400 hover:bg-green-50 hover:text-green-600'
-                      }`}
-                    >
-                      <motion.div
-                        animate={likedJobs.includes(job.id) ? {
-                          scale: [1, 1.3, 1],
-                          rotate: [0, -15, 15, 0]
-                        } : {}}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                      >
-                        <ThumbsUp className={`w-4 h-4 transition-all ${likedJobs.includes(job.id) ? 'fill-current' : ''}`} />
-                      </motion.div>
-                      {likedJobs.includes(job.id) && (
-                        <motion.div
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: [0, 1.5, 0], opacity: [0, 1, 0] }}
-                          transition={{ duration: 0.6 }}
-                          className="absolute inset-0 rounded-lg bg-green-400"
-                          style={{ pointerEvents: 'none' }}
-                        />
-                      )}
-                    </motion.button>
+                    {/* Like/Dislike Buttons - Only show when logged in */}
+                    {isAuthenticated && (
+                      <>
+                        {/* Like Button */}
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleLikeJob(job.id)
+                          }}
+                          className={`relative p-2 rounded-lg transition-all ${
+                            likedJobs.includes(job.id)
+                              ? 'bg-green-50 text-green-600'
+                              : 'bg-gray-50 text-gray-400 hover:bg-green-50 hover:text-green-600'
+                          }`}
+                        >
+                          <motion.div
+                            animate={likedJobs.includes(job.id) ? {
+                              scale: [1, 1.3, 1],
+                              rotate: [0, -15, 15, 0]
+                            } : {}}
+                            transition={{ duration: 0.4, ease: "easeOut" }}
+                          >
+                            <ThumbsUp className={`w-4 h-4 transition-all ${likedJobs.includes(job.id) ? 'fill-current' : ''}`} />
+                          </motion.div>
+                          {likedJobs.includes(job.id) && (
+                            <motion.div
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: [0, 1.5, 0], opacity: [0, 1, 0] }}
+                              transition={{ duration: 0.6 }}
+                              className="absolute inset-0 rounded-lg bg-green-400"
+                              style={{ pointerEvents: 'none' }}
+                            />
+                          )}
+                        </motion.button>
 
-                    {/* Dislike Button */}
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleDislikeJob(job.id)
-                      }}
-                      className={`relative p-2 rounded-lg transition-all ${
-                        dislikedJobs.includes(job.id)
-                          ? 'bg-red-50 text-red-600'
-                          : 'bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600'
-                      }`}
-                    >
-                      <motion.div
-                        animate={dislikedJobs.includes(job.id) ? {
-                          scale: [1, 1.3, 1],
-                          rotate: [0, 15, -15, 0]
-                        } : {}}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                      >
-                        <ThumbsDown className={`w-4 h-4 transition-all ${dislikedJobs.includes(job.id) ? 'fill-current' : ''}`} />
-                      </motion.div>
-                      {dislikedJobs.includes(job.id) && (
-                        <motion.div
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: [0, 1.5, 0], opacity: [0, 1, 0] }}
-                          transition={{ duration: 0.6 }}
-                          className="absolute inset-0 rounded-lg bg-red-400"
-                          style={{ pointerEvents: 'none' }}
-                        />
-                      )}
-                    </motion.button>
+                        {/* Dislike Button */}
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleDislikeJob(job.id)
+                          }}
+                          className={`relative p-2 rounded-lg transition-all ${
+                            dislikedJobs.includes(job.id)
+                              ? 'bg-red-50 text-red-600'
+                              : 'bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600'
+                          }`}
+                        >
+                          <motion.div
+                            animate={dislikedJobs.includes(job.id) ? {
+                              scale: [1, 1.3, 1],
+                              rotate: [0, 15, -15, 0]
+                            } : {}}
+                            transition={{ duration: 0.4, ease: "easeOut" }}
+                          >
+                            <ThumbsDown className={`w-4 h-4 transition-all ${dislikedJobs.includes(job.id) ? 'fill-current' : ''}`} />
+                          </motion.div>
+                          {dislikedJobs.includes(job.id) && (
+                            <motion.div
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: [0, 1.5, 0], opacity: [0, 1, 0] }}
+                              transition={{ duration: 0.6 }}
+                              className="absolute inset-0 rounded-lg bg-red-400"
+                              style={{ pointerEvents: 'none' }}
+                            />
+                          )}
+                        </motion.button>
+                      </>
+                    )}
 
                     {/* Bookmark Button */}
                     <motion.button
@@ -1099,6 +1108,7 @@ export default function JobsPage() {
                 </motion.button>
               </div>
             </motion.div>
+            </Link>
           ))}
         </div>
 

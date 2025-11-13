@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 
 interface User {
   id: string
@@ -112,7 +113,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null)
     localStorage.removeItem('auth_user')
-    router.push('/')
+    toast.success('Logged out successfully. See you soon!', {
+      icon: '👋',
+      duration: 3000,
+    })
+    router.push('/login')
   }
 
   const updateUser = (userData: Partial<User>) => {

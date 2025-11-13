@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import Chatbot from '@/components/Chatbot'
@@ -10,6 +11,7 @@ import {
   Building2, FileText, Clock, TrendingUp, Sparkles,
   CheckCircle2, XCircle, AlertCircle, ArrowUpRight
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 interface Application {
   id: string
@@ -370,24 +372,24 @@ export default function ApplicationsPage() {
                 const StatusIcon = statusConfig.icon
 
                 return (
-                  <motion.div
-                    key={job.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      duration: 0.4,
-                      delay: index * 0.1
-                    }}
-                    whileHover={{
-                      y: -6,
-                      boxShadow: '0 12px 24px rgba(127, 40, 96, 0.15)',
-                      transition: { duration: 0.2 }
-                    }}
-                    className="group relative bg-white rounded-xl border-2 border-gray-200 transition-all duration-300 overflow-hidden flex flex-col cursor-pointer"
-                    style={{
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
-                    }}
-                  >
+                  <Link key={job.id} href={`/jobs/${job.id}?from=applications`}>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: 0.4,
+                        delay: index * 0.1
+                      }}
+                      whileHover={{
+                        y: -6,
+                        boxShadow: '0 12px 24px rgba(127, 40, 96, 0.15)',
+                        transition: { duration: 0.2 }
+                      }}
+                      className="group relative bg-white rounded-xl border-2 border-gray-200 transition-all duration-300 overflow-hidden flex flex-col cursor-pointer"
+                      style={{
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+                      }}
+                    >
                     {/* Card Header */}
                     <div className="relative p-5 border-b border-gray-100">
                       <div className="flex items-start justify-between gap-3 mb-3">
@@ -492,7 +494,7 @@ export default function ApplicationsPage() {
                       )}
 
                       {/* View Details Button */}
-                      <motion.button
+                      <motion.div
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         className="mt-auto w-full py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-lg font-semibold shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 group"
@@ -504,9 +506,10 @@ export default function ApplicationsPage() {
                         >
                           <ArrowUpRight className="w-4 h-4" />
                         </motion.div>
-                      </motion.button>
+                      </motion.div>
                     </div>
                   </motion.div>
+                  </Link>
                 )
               })
             )}

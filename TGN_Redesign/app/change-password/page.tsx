@@ -6,6 +6,7 @@ import { Lock, Eye, EyeOff, ArrowRight, CheckCircle2, AlertCircle } from 'lucide
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import toast from 'react-hot-toast'
 
 export default function ChangePasswordPage() {
   const [currentPassword, setCurrentPassword] = useState('')
@@ -24,12 +25,16 @@ export default function ChangePasswordPage() {
 
     // Validation
     if (newPassword !== confirmPassword) {
-      setError("New passwords don't match")
+      const errorMsg = "New passwords don't match"
+      setError(errorMsg)
+      toast.error(errorMsg)
       return
     }
 
     if (newPassword.length < 8) {
-      setError("New password must be at least 8 characters long")
+      const errorMsg = "New password must be at least 8 characters long"
+      setError(errorMsg)
+      toast.error(errorMsg)
       return
     }
 
@@ -39,6 +44,7 @@ export default function ChangePasswordPage() {
     setTimeout(() => {
       setIsLoading(false)
       setShowSuccessModal(true)
+      toast.success('Password updated successfully!')
       // Reset form
       setCurrentPassword('')
       setNewPassword('')

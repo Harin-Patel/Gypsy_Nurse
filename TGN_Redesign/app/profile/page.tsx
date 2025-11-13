@@ -11,6 +11,7 @@ import {
   GraduationCap, Users, Edit, Download, Upload,
   Plus, Trash2, Clock, ArrowUpRight, FileX, Inbox, X
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 export default function ProfilePage() {
   const { user: authUser } = useAuth()
@@ -83,6 +84,7 @@ export default function ProfilePage() {
   const handleDeleteConfirm = () => {
     // Here you would typically call an API to delete the item
     console.log(`Deleting ${deleteSection}:`, deleteItem)
+    toast.success(`${deleteSection} deleted successfully`)
     setShowDeleteModal(false)
     setDeleteItem(null)
     setDeleteSection('')
@@ -92,6 +94,50 @@ export default function ProfilePage() {
     setShowDeleteModal(false)
     setDeleteItem(null)
     setDeleteSection('')
+  }
+
+  // Update Handlers for Edit Modals
+  const handleUpdateLicense = () => {
+    // In a real app, you would get form values and call an API
+    // For now, we'll just show success and close the modal
+    toast.success('License updated successfully!')
+    setShowEditLicenseModal(false)
+    setSelectedItem(null)
+  }
+
+  const handleUpdateCertificate = () => {
+    toast.success('Certificate updated successfully!')
+    setShowEditCertificateModal(false)
+    setSelectedItem(null)
+  }
+
+  const handleUpdateSpecialty = () => {
+    toast.success('Specialty updated successfully!')
+    setShowEditSpecialtyModal(false)
+    setSelectedItem(null)
+  }
+
+  const handleUpdateWorkHistory = () => {
+    toast.success('Work history updated successfully!')
+    setShowEditWorkHistoryModal(false)
+    setSelectedItem(null)
+    setEditCurrentlyWorking(false)
+    setEditTravelAssignment(false)
+    setEditPerDiem(false)
+    setEditChargeExperience(false)
+  }
+
+  const handleUpdateEducation = () => {
+    toast.success('Education updated successfully!')
+    setShowEditEducationModal(false)
+    setSelectedItem(null)
+    setEditDidGraduate(false)
+  }
+
+  const handleUpdateReference = () => {
+    toast.success('Reference updated successfully!')
+    setShowEditReferenceModal(false)
+    setSelectedItem(null)
   }
 
   // Use real user data with defaults
@@ -1858,6 +1904,10 @@ export default function ProfilePage() {
                       transition={{ duration: 0.3, delay: 1.1 }}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        toast.success('Profile updated successfully')
+                        setShowEditModal(false)
+                      }}
                       className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
                     >
                       <span className="relative z-10 flex items-center gap-2">
@@ -2110,6 +2160,10 @@ export default function ProfilePage() {
                         transition={{ duration: 0.3, delay: 1.1 }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          toast.success('License added successfully')
+                          setShowAddModal(false)
+                        }}
                         className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
                       >
                         <span className="relative z-10 flex items-center gap-2">
@@ -2339,6 +2393,10 @@ export default function ProfilePage() {
                         transition={{ duration: 0.3, delay: 1.1 }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          toast.success('Certificate added successfully')
+                          setShowAddCertificateModal(false)
+                        }}
                         className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
                       >
                         <span className="relative z-10 flex items-center gap-2">
@@ -2567,6 +2625,10 @@ export default function ProfilePage() {
                         transition={{ duration: 0.3, delay: 0.9 }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          toast.success('Specialty added successfully')
+                          setShowAddSpecialtyModal(false)
+                        }}
                         className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
                       >
                         <span className="relative z-10 flex items-center gap-2">
@@ -2953,6 +3015,14 @@ export default function ProfilePage() {
                         transition={{ duration: 0.3, delay: 1.7 }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          toast.success('Work history added successfully')
+                          setShowAddWorkHistoryModal(false)
+                          setCurrentlyWorking(false)
+                          setTravelAssignment(false)
+                          setPerDiem(false)
+                          setChargeExperience(false)
+                        }}
                         className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
                       >
                         <span className="relative z-10 flex items-center gap-2">
@@ -3239,6 +3309,11 @@ export default function ProfilePage() {
                         transition={{ duration: 0.3, delay: 1.0 }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          toast.success('Education added successfully')
+                          setShowAddEducationModal(false)
+                          setDidGraduate(false)
+                        }}
                         className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
                       >
                         <span className="relative z-10 flex items-center gap-2">
@@ -3521,6 +3596,10 @@ export default function ProfilePage() {
                         transition={{ duration: 0.3, delay: 1.2 }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          toast.success('Reference added successfully')
+                          setShowAddReferenceModal(false)
+                        }}
                         className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
                       >
                         <span className="relative z-10 flex items-center gap-2">
@@ -3787,6 +3866,7 @@ export default function ProfilePage() {
                         transition={{ duration: 0.3, delay: 1.1 }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        onClick={handleUpdateLicense}
                         className="group relative px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
                       >
                         <span className="relative z-10 flex items-center gap-2">
@@ -4038,6 +4118,7 @@ export default function ProfilePage() {
                         transition={{ duration: 0.3, delay: 1.0 }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        onClick={handleUpdateCertificate}
                         className="group relative px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
                       >
                         <span className="relative z-10 flex items-center gap-2">
@@ -4213,6 +4294,7 @@ export default function ProfilePage() {
                         transition={{ duration: 0.3, delay: 0.9 }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        onClick={handleUpdateSpecialty}
                         className="group relative px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
                       >
                         <span className="relative z-10 flex items-center gap-2">
@@ -4442,7 +4524,7 @@ export default function ProfilePage() {
                     </motion.p>
                     <div className="flex items-center gap-3">
                       <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.0 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setShowEditWorkHistoryModal(false); setSelectedItem(null); setEditCurrentlyWorking(false); setEditTravelAssignment(false); setEditPerDiem(false); setEditChargeExperience(false); }} className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow">Cancel</motion.button>
-                      <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.1 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="group relative px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden">
+                      <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.1 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleUpdateWorkHistory} className="group relative px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden">
                         <span className="relative z-10 flex items-center gap-2">
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                           Update
@@ -4591,7 +4673,7 @@ export default function ProfilePage() {
                     </motion.p>
                     <div className="flex items-center gap-3">
                       <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 0.9 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setShowEditEducationModal(false); setSelectedItem(null); setEditDidGraduate(false); }} className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow">Cancel</motion.button>
-                      <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.0 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="group relative px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden">
+                      <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.0 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleUpdateEducation} className="group relative px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden">
                         <span className="relative z-10 flex items-center gap-2">
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                           Update
@@ -4718,7 +4800,7 @@ export default function ProfilePage() {
                     </motion.p>
                     <div className="flex items-center gap-3">
                       <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.0 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setShowEditReferenceModal(false); setSelectedItem(null); }} className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow">Cancel</motion.button>
-                      <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.1 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="group relative px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden">
+                      <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.1 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleUpdateReference} className="group relative px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden">
                         <span className="relative z-10 flex items-center gap-2">
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                           Update

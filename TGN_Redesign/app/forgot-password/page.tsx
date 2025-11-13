@@ -6,6 +6,7 @@ import { Mail, ArrowLeft, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import toast from 'react-hot-toast'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -19,6 +20,7 @@ export default function ForgotPasswordPage() {
     setTimeout(() => {
       setIsLoading(false)
       setIsSubmitted(true)
+      toast.success(`Password reset link sent to ${email}`)
     }, 2000)
   }
 

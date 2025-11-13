@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { useAuth } from '@/contexts/AuthContext'
+import toast from 'react-hot-toast'
 
 export default function AgencyLoginPage() {
   const router = useRouter()
@@ -26,9 +27,12 @@ export default function AgencyLoginPage() {
     const result = await login(email, password, 'agency')
 
     if (result.success) {
-      router.push('/')
+      toast.success('Agency login successful! Welcome back!')
+      router.push('/agency-portal')
     } else {
-      setError(result.error || 'Login failed')
+      const errorMsg = result.error || 'Login failed'
+      setError(errorMsg)
+      toast.error(errorMsg)
     }
     
     setIsLoading(false)

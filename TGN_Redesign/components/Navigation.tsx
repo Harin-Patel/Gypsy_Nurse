@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, ChevronDown, User, LogOut, Bookmark, Lock, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
+import toast from 'react-hot-toast'
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -17,7 +18,7 @@ export default function Navigation() {
   const [isProfileHovered, setIsProfileHovered] = useState(false)
   
   // Use real authentication
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, isLoading, logout } = useAuth()
 
   const handleLogout = () => {
     setShowLogoutConfirm(false)
@@ -167,14 +168,6 @@ export default function Navigation() {
                         whileTap={{ scale: 0.98 }}
                       >
                         <span className="relative z-10">{item.name}</span>
-                        {item.dropdown && (
-                          <motion.div
-                            animate={{ rotate: activeDropdown === item.name ? 180 : 0 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <ChevronDown size={16} className="relative z-10" />
-                          </motion.div>
-                        )}
                         
                         {/* Glass Hover Effect */}
                         <motion.div
@@ -308,7 +301,13 @@ export default function Navigation() {
 
             {/* Auth Section - Show Profile or Login Buttons */}
             <div className="hidden lg:flex items-center space-x-3 py-1">
-              {isAuthenticated ? (
+              {isLoading ? (
+                /* Loading State */
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 bg-gray-200 rounded-full animate-pulse"></div>
+                  <div className="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              ) : isAuthenticated ? (
                 /* Profile Dropdown */
                 <div className="relative">
                   <motion.button
@@ -322,15 +321,15 @@ export default function Navigation() {
                     {/* Profile Picture */}
                     <div className="relative z-10">
                       <img 
-                        src={user.avatar} 
-                        alt={user.name}
+                        src={user?.avatar || '/default-avatar.png'} 
+                        alt={user?.name || 'User'}
                         className="w-9 h-9 rounded-full object-cover ring-2 ring-primary-100 transition-all"
                       />
                     </div>
                     
                     {/* Username */}
                     <span className="relative z-10 text-sm font-semibold text-gray-700 group-hover:text-primary-600 transition-colors">
-                      {user.name}
+                      {user?.name || 'User'}
                     </span>
                     
                     {/* Chevron */}
@@ -391,13 +390,13 @@ export default function Navigation() {
                         <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-br from-primary-50/50 to-purple-50/50">
                           <div className="flex items-center gap-3">
                             <img 
-                              src={user.avatar} 
-                              alt={user.name}
+                              src={user?.avatar || '/default-avatar.png'} 
+                              alt={user?.name || 'User'}
                               className="w-12 h-12 rounded-full object-cover ring-2 ring-primary-200"
                             />
                             <div>
-                              <p className="font-bold text-gray-900">{user.name}</p>
-                              <p className="text-xs text-gray-600">{user.email}</p>
+                              <p className="font-bold text-gray-900">{user?.name || 'User'}</p>
+                              <p className="text-xs text-gray-600">{user?.email || ''}</p>
                             </div>
                           </div>
                         </div>
@@ -498,7 +497,7 @@ export default function Navigation() {
                             whileHover={{ x: 4 }}
                           >
                             <LogOut className="w-4 h-4" />
-                            <span className="flex-1">Sign Out</span>
+                            <span className="flex-1">Log Out</span>
                           </motion.button>
                         </div>
                       </motion.div>
@@ -789,40 +788,97 @@ export default function Navigation() {
                     </div>
                   ))}
                   
-                  <div className="pt-6 space-y-3">
-                    <div className="space-y-2">
-                      <div className="text-sm font-semibold text-gray-700 px-4">Log in:</div>
-                      <Link
-                        href="/login"
-                        className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 font-medium transition-colors border border-primary-300"
-                      >
-                        For Job Seeker
-                      </Link>
-                      <Link
-                        href="/agency-login"
-                        className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 font-medium transition-colors border border-primary-300"
-                      >
-                        For Agency
-                      </Link>
-                      <Link
-                        href="/recruiter-login"
-                        className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 font-medium transition-colors border border-primary-300"
-                      >
-                        For Recruiter
-                      </Link>
-                      <Link
-                        href="/admin-login"
-                        className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 font-medium transition-colors border border-primary-300"
-                      >
-                        For Admin
-                      </Link>
+                  {!isLoading && (
+                    <div className="pt-6 space-y-3">
+                      {isAuthenticated ? (
+                        /* Mobile Authenticated Menu */
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200">
+                            <img 
+                              src={user?.avatar || '/default-avatar.png'} 
+                              alt={user?.name || 'User'}
+                              className="w-10 h-10 rounded-full object-cover ring-2 ring-primary-200"
+                            />
+                            <div>
+                              <p className="font-bold text-gray-900">{user?.name || 'User'}</p>
+                              <p className="text-xs text-gray-600">{user?.email || ''}</p>
+                            </div>
+                          </div>
+                          <Link href="/profile">
+                            <button className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 font-medium transition-colors flex items-center gap-3">
+                              <User className="w-4 h-4" />
+                              My Profile
+                            </button>
+                          </Link>
+                          <Link href="/applications">
+                            <button className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 font-medium transition-colors flex items-center gap-3">
+                              <FileText className="w-4 h-4" />
+                              My Applications
+                            </button>
+                          </Link>
+                          <Link href="/bookmarks">
+                            <button className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 font-medium transition-colors flex items-center gap-3">
+                              <Bookmark className="w-4 h-4" />
+                              My Bookmarks
+                            </button>
+                          </Link>
+                          <Link href="/change-password">
+                            <button className="w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 font-medium transition-colors flex items-center gap-3">
+                              <Lock className="w-4 h-4" />
+                              Change Password
+                            </button>
+                          </Link>
+                          <div className="my-2 h-px bg-gray-200"></div>
+                          <button 
+                            onClick={() => {
+                              setShowLogoutConfirm(true)
+                              setIsMobileMenuOpen(false)
+                            }}
+                            className="w-full text-left px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 font-medium transition-colors flex items-center gap-3"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            Log Out
+                          </button>
+                        </div>
+                      ) : (
+                        /* Mobile Login/Register Buttons */
+                        <>
+                          <div className="space-y-2">
+                            <div className="text-sm font-semibold text-gray-700 px-4">Log in:</div>
+                            <Link
+                              href="/login"
+                              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 font-medium transition-colors border border-primary-300"
+                            >
+                              For Job Seeker
+                            </Link>
+                            <Link
+                              href="/agency-login"
+                              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 font-medium transition-colors border border-primary-300"
+                            >
+                              For Agency
+                            </Link>
+                            <Link
+                              href="/recruiter-login"
+                              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 font-medium transition-colors border border-primary-300"
+                            >
+                              For Recruiter
+                            </Link>
+                            <Link
+                              href="/admin-login"
+                              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 font-medium transition-colors border border-primary-300"
+                            >
+                              For Admin
+                            </Link>
+                          </div>
+                          <Link href="/register">
+                            <button className="w-full btn-primary">
+                              Join Gypsy Nurse
+                            </button>
+                          </Link>
+                        </>
+                      )}
                     </div>
-                    <Link href="/register">
-                    <button className="w-full btn-primary">
-                      Join Gypsy Nurse
-                    </button>
-                    </Link>
-                  </div>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -884,7 +940,7 @@ export default function Navigation() {
 
                     {/* Title */}
                     <h3 className="text-2xl font-bold text-center mb-2 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                      Sign Out
+                      Log Out
                     </h3>
                     <p className="text-center text-gray-600 mb-6">
                       Are you sure you want to sign out from your account?
@@ -922,7 +978,7 @@ export default function Navigation() {
                             ease: "easeInOut"
                           }}
                         />
-                        <span className="relative z-10">Sign Out</span>
+                        <span className="relative z-10">Log Out</span>
                       </motion.button>
                     </div>
                   </div>

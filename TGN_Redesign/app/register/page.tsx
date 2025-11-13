@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { useAuth } from '@/contexts/AuthContext'
+import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -40,13 +41,17 @@ export default function RegisterPage() {
     setError('')
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords don't match")
+      const errorMsg = "Passwords don't match"
+      setError(errorMsg)
+      toast.error(errorMsg)
       setIsLoading(false)
       return
     }
 
     if (!agreeToTerms) {
-      setError("Please agree to the terms and conditions")
+      const errorMsg = "Please agree to the terms and conditions"
+      setError(errorMsg)
+      toast.error(errorMsg)
       setIsLoading(false)
       return
     }
@@ -55,9 +60,12 @@ export default function RegisterPage() {
     const result = await signup(fullName, formData.email, formData.password, 'jobseeker')
 
     if (result.success) {
+      toast.success('Registration successful! Welcome to The Gypsy Nurse!')
       router.push('/')
     } else {
-      setError(result.error || 'Registration failed')
+      const errorMsg = result.error || 'Registration failed'
+      setError(errorMsg)
+      toast.error(errorMsg)
     }
     
     setIsLoading(false)

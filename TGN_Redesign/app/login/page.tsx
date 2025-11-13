@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { useAuth } from '@/contexts/AuthContext'
+import toast from 'react-hot-toast'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -26,12 +27,23 @@ export default function LoginPage() {
     setError('')
 
     const loginEmail = loginType === 'email' ? email : mobile
+    
+    // Handle mobile OTP
+    if (loginType === 'mobile') {
+      toast.success('OTP sent successfully! Check your phone.')
+      setIsLoading(false)
+      return
+    }
+
     const result = await login(loginEmail, password, 'jobseeker')
 
     if (result.success) {
+      toast.success('Login successful! Welcome back!')
       router.push('/')
     } else {
-      setError(result.error || 'Login failed')
+      const errorMsg = result.error || 'Login failed'
+      setError(errorMsg)
+      toast.error(errorMsg)
     }
     
     setIsLoading(false)

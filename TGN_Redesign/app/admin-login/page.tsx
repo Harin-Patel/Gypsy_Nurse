@@ -28,7 +28,7 @@ export default function AdminLoginPage() {
 
     if (result.success) {
       toast.success('Admin login successful! Welcome back!')
-      router.push('/')
+      router.push('/admin-portal')
     } else {
       const errorMsg = result.error || 'Login failed'
       setError(errorMsg)
@@ -345,7 +345,7 @@ export default function AdminLoginPage() {
                               animate={{ rotate: 360 }}
                               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                             />
-                            <span>Signing in...</span>
+                            <span>Logging in...</span>
                           </>
                         ) : (
                           <span>Log In</span>

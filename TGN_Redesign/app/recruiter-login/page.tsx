@@ -28,7 +28,7 @@ export default function RecruiterLoginPage() {
 
     if (result.success) {
       toast.success('Recruiter login successful! Welcome back!')
-      router.push('/')
+      router.push('/recruiter-portal')
     } else {
       const errorMsg = result.error || 'Login failed'
       setError(errorMsg)
@@ -351,7 +351,7 @@ export default function RecruiterLoginPage() {
                               animate={{ rotate: 360 }}
                               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                             />
-                            <span>Signing in...</span>
+                            <span>Logging in...</span>
                           </>
                         ) : (
                           <span>Log In</span>

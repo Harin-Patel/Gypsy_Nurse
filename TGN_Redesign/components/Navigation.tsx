@@ -270,28 +270,31 @@ export default function Navigation() {
                         style={{ zIndex: 100 }}
                       >
                         <div className="p-2">
-                          {item.dropdown.map((subItem, idx) => (
-                            <motion.a
-                              key={subItem}
-                              href="#"
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: idx * 0.03 }}
-                              className="block px-4 py-3 text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100/50 hover:text-primary-700 rounded-xl transition-all text-sm font-medium group"
-                              whileHover={{ x: 4 }}
-                            >
-                              <span className="flex items-center justify-between">
-                                {subItem}
-                                <motion.span
-                                  className="opacity-0 group-hover:opacity-100"
-                                  initial={{ x: -5 }}
-                                  whileHover={{ x: 0 }}
-                                >
-                                  →
-                                </motion.span>
-                              </span>
-                            </motion.a>
-                          ))}
+                          {item.dropdown.map((subItem, idx) => {
+                            const href = subItem === 'Advertise With Us' ? '/advertise-with-us' : '#'
+                            return (
+                              <motion.a
+                                key={subItem}
+                                href={href}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.03 }}
+                                className="block px-4 py-3 text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100/50 hover:text-primary-700 rounded-xl transition-all text-sm font-medium group"
+                                whileHover={{ x: 4 }}
+                              >
+                                <span className="flex items-center justify-between">
+                                  {subItem}
+                                  <motion.span
+                                    className="opacity-0 group-hover:opacity-100"
+                                    initial={{ x: -5 }}
+                                    whileHover={{ x: 0 }}
+                                  >
+                                    →
+                                  </motion.span>
+                                </span>
+                              </motion.a>
+                            )
+                          })}
                         </div>
                       </motion.div>
                     )}
@@ -775,15 +778,18 @@ export default function Navigation() {
                       )}
                       {item.dropdown && (
                         <div className="ml-4 mt-2 space-y-2">
-                          {item.dropdown.map((subItem) => (
-                            <a
-                              key={subItem}
-                              href="#"
-                              className="block px-4 py-2 text-sm text-primary-600 hover:text-primary-700"
-                            >
-                              {subItem}
-                            </a>
-                          ))}
+                          {item.dropdown.map((subItem) => {
+                            const href = subItem === 'Advertise With Us' ? '/advertise-with-us' : '#'
+                            return (
+                              <a
+                                key={subItem}
+                                href={href}
+                                className="block px-4 py-2 text-sm text-primary-600 hover:text-primary-700"
+                              >
+                                {subItem}
+                              </a>
+                            )
+                          })}
                         </div>
                       )}
                     </div>

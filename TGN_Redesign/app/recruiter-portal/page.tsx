@@ -8,7 +8,6 @@ import {
   Users,
   FileText,
   User,
-  Bell,
   Search,
   Plus,
   Filter,
@@ -16,7 +15,6 @@ import {
   Eye,
   Edit,
   Trash2,
-  ChevronRight,
   ChevronDown,
   Menu,
   X,
@@ -28,16 +26,17 @@ import {
   ArrowDownRight,
   TrendingUp,
   FileEdit,
-  Building,
   Mail,
-  MapPin
+  MapPin,
+  UserCheck,
+  CheckCircle
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import toast from 'react-hot-toast'
 
-type TabKey = 'dashboard' | 'recruiters' | 'jobs' | 'applications'
+type TabKey = 'dashboard' | 'jobs' | 'applications' | 'candidates'
 
 interface Tab {
   key: TabKey
@@ -48,9 +47,9 @@ interface Tab {
 
 const tabs: Tab[] = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { key: 'recruiters', label: 'My Recruiters', icon: Users },
   { key: 'jobs', label: 'My Jobs', icon: Briefcase },
-  { key: 'applications', label: 'My Applications', icon: FileText },
+  { key: 'applications', label: 'Applications', icon: FileText },
+  { key: 'candidates', label: 'Candidates', icon: Users },
 ]
 
 const StatCard = ({ 
@@ -129,7 +128,7 @@ const StatCard = ({
     )
 }
 
-export default function AgencyPortalPage() {
+export default function RecruiterPortalPage() {
   const router = useRouter()
   const { user, logout, isAuthenticated } = useAuth()
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard')
@@ -142,17 +141,17 @@ export default function AgencyPortalPage() {
   const [hoveredActionIndex, setHoveredActionIndex] = useState<number | null>(null)
   const [hoveredModuleIndex, setHoveredModuleIndex] = useState<number | null>(null)
 
-  // Redirect if not agency user (only after authentication is confirmed)
+  // Redirect if not recruiter user
   useEffect(() => {
-    if (isAuthenticated && user && user.role !== 'agency') {
+    if (isAuthenticated && user && user.role !== 'recruiter') {
       router.push('/')
-      toast.error('Access denied. Agency portal only.')
+      toast.error('Access denied. Recruiter portal only.')
     }
   }, [user, isAuthenticated, router])
 
   const handleLogout = () => {
     setShowLogoutModal(false)
-    logout('/agency-login')
+    logout('/recruiter-login')
   }
 
   const renderDashboard = () => (
@@ -192,10 +191,10 @@ export default function AgencyPortalPage() {
                 transition={{ delay: 0.2 }}
               >
                 <h1 className="text-4xl font-bold mb-3 text-gray-900">
-                  Welcome back, {user?.name || 'Agency'}! 👋
+                  Welcome back, {user?.name || 'Recruiter'}! 👋
                 </h1>
                 <p className="text-gray-600 text-lg font-medium">
-                  Here's what's happening with your agency today.
+                  Here's what's happening with your recruitment activities today.
                 </p>
               </motion.div>
             </div>
@@ -207,27 +206,27 @@ export default function AgencyPortalPage() {
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Overview</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
-            title="Total Jobs"
+            title="My Jobs"
             value="0"
             icon={Briefcase}
             color="blue"
           />
           <StatCard
-            title="Active Jobs"
-            value="0"
-            icon={TrendingUp}
-            color="green"
-          />
-          <StatCard
             title="Applications"
             value="0"
             icon={FileText}
+            color="green"
+          />
+          <StatCard
+            title="Candidates"
+            value="0"
+            icon={Users}
             color="purple"
           />
           <StatCard
-            title="Recruiters"
+            title="Placements"
             value="0"
-            icon={Users}
+            icon={CheckCircle}
             color="orange"
           />
         </div>
@@ -244,10 +243,10 @@ export default function AgencyPortalPage() {
         </motion.h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { icon: Plus, title: 'Create New Job', description: 'Post a new job opening', onClick: () => setActiveTab('jobs'), color: 'from-blue-400 to-blue-500' },
-            { icon: Users, title: 'Manage Recruiters', description: 'Add and manage your team', onClick: () => setActiveTab('recruiters'), color: 'from-purple-400 to-purple-500' },
-            { icon: FileText, title: 'View Applications', description: 'Review candidate applications', onClick: () => setActiveTab('applications'), color: 'from-green-400 to-green-500' },
-            { icon: FileEdit, title: 'Edit Profile', description: 'Update agency information', onClick: () => setShowProfileModal(true), color: 'from-orange-400 to-orange-500' },
+            { icon: Briefcase, title: 'View Jobs', description: 'Manage assigned jobs', onClick: () => setActiveTab('jobs'), color: 'from-blue-400 to-blue-500' },
+            { icon: FileText, title: 'Review Applications', description: 'Review candidate applications', onClick: () => setActiveTab('applications'), color: 'from-purple-400 to-purple-500' },
+            { icon: Users, title: 'Manage Candidates', description: 'View and manage candidates', onClick: () => setActiveTab('candidates'), color: 'from-green-400 to-green-500' },
+            { icon: FileEdit, title: 'Edit Profile', description: 'Update recruiter information', onClick: () => setShowProfileModal(true), color: 'from-orange-400 to-orange-500' },
           ].map((action, index) => (
               <motion.div
                 key={index}
@@ -317,21 +316,21 @@ export default function AgencyPortalPage() {
         </div>
       </div>
 
-      {/* Agency Modules - Enhanced Glass Design */}
+      {/* Recruiter Modules - Enhanced Glass Design */}
       <div>
         <motion.h2
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="text-2xl font-bold text-gray-900 mb-6"
         >
-          Agency Modules
+          Recruiter Modules
         </motion.h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { icon: Briefcase, title: 'Job Management', description: 'Create, edit, and manage job postings', color: 'from-green-400 to-green-500', glow: 'rgba(34, 197, 94, 0.1)', onClick: () => setActiveTab('jobs') },
-            { icon: Users, title: 'Recruiter Management', description: 'Manage your recruitment team', color: 'from-blue-400 to-blue-500', glow: 'rgba(59, 130, 246, 0.1)', onClick: () => setActiveTab('recruiters') },
-            { icon: FileText, title: 'Application Review', description: 'Review and manage job applications', color: 'from-purple-400 to-purple-500', glow: 'rgba(168, 85, 247, 0.1)', onClick: () => setActiveTab('applications') },
-            { icon: Building, title: 'Agency Profile', description: 'Update agency information and settings', color: 'from-orange-400 to-orange-500', glow: 'rgba(249, 115, 22, 0.1)', onClick: () => setShowProfileModal(true) },
+            { icon: Briefcase, title: 'Job Management', description: 'Manage assigned job postings', color: 'from-green-400 to-green-500', glow: 'rgba(34, 197, 94, 0.1)', onClick: () => setActiveTab('jobs') },
+            { icon: FileText, title: 'Application Review', description: 'Review and manage applications', color: 'from-blue-400 to-blue-500', glow: 'rgba(59, 130, 246, 0.1)', onClick: () => setActiveTab('applications') },
+            { icon: Users, title: 'Candidate Pool', description: 'Manage your candidate database', color: 'from-purple-400 to-purple-500', glow: 'rgba(168, 85, 247, 0.1)', onClick: () => setActiveTab('candidates') },
+            { icon: User, title: 'Recruiter Profile', description: 'Update your profile and settings', color: 'from-orange-400 to-orange-500', glow: 'rgba(249, 115, 22, 0.1)', onClick: () => setShowProfileModal(true) },
           ].map((module, index) => (
               <motion.div
                 key={index}
@@ -409,7 +408,7 @@ export default function AgencyPortalPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">My Jobs</h1>
-          <p className="text-gray-600">Manage and track all your job postings</p>
+          <p className="text-gray-600">Manage and track all your assigned job postings</p>
         </div>
         <motion.button
           whileHover={{ scale: 1.05 }}
@@ -417,7 +416,7 @@ export default function AgencyPortalPage() {
           className="px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold shadow-lg hover:bg-primary-700 transition-all flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
-          Post New Job
+          Create Job
         </motion.button>
       </div>
 
@@ -508,245 +507,11 @@ export default function AgencyPortalPage() {
     </div>
   )
 
-  const renderProfile = () => (
-    <div className="space-y-6">
-      {/* Profile Picture Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.5 }}
-        className="flex items-center gap-6 pb-6 border-b border-gray-200"
-      >
-        <div className="relative">
-          <div className="w-24 h-24 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-            {user?.name?.charAt(0).toUpperCase() || 'A'}
-          </div>
-          <motion.div
-            animate={{
-              scale: [1, 1.1, 1],
-              opacity: [0.3, 0, 0.3]
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            className="absolute inset-0 bg-primary-500 rounded-full -z-10"
-          />
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-1">{user?.name || 'Agency Name'}</h2>
-          <p className="text-gray-600">{user?.email || 'agency@example.com'}</p>
-          <p className="text-sm text-gray-500 mt-1">Agency Account</p>
-        </div>
-      </motion.div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Profile Information */}
-        <div className="space-y-5">
-          <motion.h3
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.6 }}
-            className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2"
-          >
-            <User className="w-5 h-5 text-primary-600" />
-            Profile Information
-          </motion.h3>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.7 }}
-          >
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-              <Building2 className="w-4 h-4 text-primary-600" />
-              Agency Name
-            </label>
-            <input
-              type="text"
-              defaultValue={user?.name || ''}
-              className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700"
-            />
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.8 }}
-          >
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-              <Mail className="w-4 h-4 text-primary-600" />
-              Email Address
-            </label>
-            <input
-              type="email"
-              defaultValue={user?.email || ''}
-              className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700"
-            />
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.9 }}
-          >
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-              <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              placeholder="+1 (555) 123-4567"
-              className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-            />
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 1.0 }}
-          >
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-              <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-              </svg>
-              Company Website
-            </label>
-            <input
-              type="url"
-              placeholder="https://www.example.com"
-              className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-            />
-          </motion.div>
-        </div>
-        
-        {/* Additional Information */}
-        <div className="space-y-5">
-          <motion.h3
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.6 }}
-            className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2"
-          >
-            <FileText className="w-5 h-5 text-primary-600" />
-            Additional Information
-          </motion.h3>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 1.1 }}
-            className="md:col-span-2"
-          >
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-              <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Company Description
-            </label>
-            <textarea
-              rows={4}
-              placeholder="Tell us about your agency..."
-              className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400 resize-none"
-            />
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 1.2 }}
-          >
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-              <MapPin className="w-4 h-4 text-primary-600" />
-              Location
-            </label>
-            <input
-              type="text"
-              placeholder="City, State"
-              className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-            />
-          </motion.div>
-        </div>
-      </div>
-    </div>
-  )
-
-  const renderRecruiters = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Recruiters</h1>
-          <p className="text-gray-600">Manage your recruiting team members</p>
-        </div>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold shadow-lg hover:bg-primary-700 transition-all flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          Add Recruiter
-        </motion.button>
-      </div>
-
-      {/* Recruiters Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[
-          { name: 'Sarah Johnson', email: 'sarah@agency.com', jobs: 12, status: 'active' },
-          { name: 'Michael Chen', email: 'michael@agency.com', jobs: 8, status: 'active' },
-          { name: 'Emily Davis', email: 'emily@agency.com', jobs: 15, status: 'active' },
-          { name: 'David Wilson', email: 'david@agency.com', jobs: 6, status: 'inactive' },
-          { name: 'Jessica Brown', email: 'jessica@agency.com', jobs: 10, status: 'active' },
-          { name: 'Robert Taylor', email: 'robert@agency.com', jobs: 9, status: 'active' },
-        ].map((recruiter, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all"
-          >
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                {recruiter.name.split(' ').map(n => n[0]).join('')}
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-900">{recruiter.name}</h3>
-                <p className="text-sm text-gray-600">{recruiter.email}</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-gray-600">Active Jobs</p>
-                <p className="text-xl font-bold text-gray-900">{recruiter.jobs}</p>
-              </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                recruiter.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-              }`}>
-                {recruiter.status}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold text-gray-700 transition-colors">
-                View Details
-              </button>
-              <button className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-                <Edit className="w-4 h-4 text-gray-600" />
-              </button>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  )
-
   const renderApplications = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Applications</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Applications</h1>
           <p className="text-gray-600">Review and manage job applications</p>
         </div>
         <div className="flex items-center gap-4">
@@ -830,18 +595,192 @@ export default function AgencyPortalPage() {
     </div>
   )
 
+  const renderCandidates = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Candidates</h1>
+          <p className="text-gray-600">Manage your candidate database</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <button className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+            <Search className="w-4 h-4" />
+            Search
+          </button>
+          <button className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+            <Filter className="w-4 h-4" />
+            Filter
+          </button>
+        </div>
+      </div>
+
+      {/* Candidates Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[
+          { name: 'Sarah Johnson', email: 'sarah@example.com', location: 'Phoenix, AZ', experience: '5 years', status: 'active' },
+          { name: 'Michael Chen', email: 'michael@example.com', location: 'Boston, MA', experience: '3 years', status: 'active' },
+          { name: 'Emily Davis', email: 'emily@example.com', location: 'Seattle, WA', experience: '7 years', status: 'active' },
+          { name: 'David Wilson', email: 'david@example.com', location: 'Miami, FL', experience: '4 years', status: 'inactive' },
+          { name: 'Jessica Brown', email: 'jessica@example.com', location: 'Chicago, IL', experience: '6 years', status: 'active' },
+          { name: 'Robert Taylor', email: 'robert@example.com', location: 'New York, NY', experience: '8 years', status: 'active' },
+        ].map((candidate, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all"
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                {candidate.name.split(' ').map(n => n[0]).join('')}
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-900">{candidate.name}</h3>
+                <p className="text-sm text-gray-600">{candidate.email}</p>
+              </div>
+            </div>
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <MapPin className="w-4 h-4" />
+                {candidate.location}
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Briefcase className="w-4 h-4" />
+                {candidate.experience} experience
+              </div>
+            </div>
+            <div className="flex items-center justify-between mb-4">
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                candidate.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+              }`}>
+                {candidate.status}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold text-gray-700 transition-colors">
+                View Profile
+              </button>
+              <button className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                <Edit className="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  )
+
+  const renderProfile = () => (
+    <div className="space-y-6">
+      {/* Profile Picture Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.5 }}
+        className="flex items-center gap-6 pb-6 border-b border-gray-200"
+      >
+        <div className="relative">
+          <div className="w-24 h-24 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+            {user?.name?.charAt(0).toUpperCase() || 'R'}
+          </div>
+          <motion.div
+            animate={{
+              scale: [1, 1.1, 1],
+              opacity: [0.3, 0, 0.3]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="absolute inset-0 bg-primary-500 rounded-full -z-10"
+          />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">{user?.name || 'Recruiter'}</h2>
+          <p className="text-gray-600">{user?.email || 'recruiter@example.com'}</p>
+          <p className="text-sm text-gray-500 mt-1">Recruiter Account</p>
+        </div>
+      </motion.div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Profile Information */}
+        <div className="space-y-5">
+          <motion.h3
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.6 }}
+            className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2"
+          >
+            <User className="w-5 h-5 text-primary-600" />
+            Profile Information
+          </motion.h3>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.7 }}
+          >
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <User className="w-4 h-4 text-primary-600" />
+              Full Name
+            </label>
+            <input
+              type="text"
+              defaultValue={user?.name || ''}
+              className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700"
+            />
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.8 }}
+          >
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <Mail className="w-4 h-4 text-primary-600" />
+              Email Address
+            </label>
+            <input
+              type="email"
+              defaultValue={user?.email || ''}
+              className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700"
+            />
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.9 }}
+          >
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <Building2 className="w-4 h-4 text-primary-600" />
+              Agency
+            </label>
+            <input
+              type="text"
+              placeholder="Your Agency Name"
+              className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
+            />
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  )
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return renderDashboard()
-      case 'recruiters': return renderRecruiters()
       case 'jobs': return renderJobs()
       case 'applications': return renderApplications()
+      case 'candidates': return renderCandidates()
       default: return renderDashboard()
     }
   }
 
-  // Don't render if user is authenticated but not an agency
-  if (isAuthenticated && user && user.role !== 'agency') {
+  // Don't render if user is authenticated but not a recruiter
+  if (isAuthenticated && user && user.role !== 'recruiter') {
     return null
   }
 
@@ -887,17 +826,17 @@ export default function AgencyPortalPage() {
                     className="flex items-center gap-3"
                   >
                     <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg">
-                      <Building2 className="w-6 h-6 text-white" />
+                      <UserCheck className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h2 className="font-bold text-gray-900">Agency Portal</h2>
+                      <h2 className="font-bold text-gray-900">Recruiter Portal</h2>
                     </div>
                   </motion.div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <Building2 className="w-6 h-6 text-white" />
+                    <UserCheck className="w-6 h-6 text-white" />
                   </div>
                 </div>
               )}
@@ -1013,13 +952,13 @@ export default function AgencyPortalPage() {
                     {/* Profile Picture */}
                     <div className="relative z-10">
                       <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {user?.name?.charAt(0).toUpperCase() || 'A'}
+                        {user?.name?.charAt(0).toUpperCase() || 'R'}
                       </div>
                     </div>
                     
                     {/* Username */}
                     <span className="relative z-10 text-sm font-semibold text-gray-700 group-hover:text-primary-600 transition-colors">
-                      {user?.name || 'Agency'}
+                      {user?.name || 'Recruiter'}
                     </span>
                     
                     {/* Chevron */}
@@ -1072,11 +1011,11 @@ export default function AgencyPortalPage() {
                           <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-br from-primary-50/50 to-purple-50/50">
                             <div className="flex items-center gap-3">
                               <div className="w-12 h-12 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                                {user?.name?.charAt(0).toUpperCase() || 'A'}
+                                {user?.name?.charAt(0).toUpperCase() || 'R'}
                               </div>
                               <div>
-                                <p className="font-bold text-gray-900">{user?.name || 'Agency'}</p>
-                                <p className="text-xs text-gray-600">{user?.email || 'agency@example.com'}</p>
+                                <p className="font-bold text-gray-900">{user?.name || 'Recruiter'}</p>
+                                <p className="text-xs text-gray-600">{user?.email || 'recruiter@example.com'}</p>
                               </div>
                             </div>
                           </div>
@@ -1192,7 +1131,7 @@ export default function AgencyPortalPage() {
                           className="relative"
                         >
                           <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                            <Building2 className="w-8 h-8 text-white" />
+                            <UserCheck className="w-8 h-8 text-white" />
                           </div>
                           {/* Pulsing ring */}
                           <motion.div
@@ -1225,7 +1164,7 @@ export default function AgencyPortalPage() {
                             transition={{ duration: 0.4, delay: 0.3 }}
                             className="text-sm text-gray-600"
                           >
-                            Manage your agency profile and account settings
+                            Manage your recruiter profile and account settings
                           </motion.p>
                         </div>
                       </div>
@@ -1284,7 +1223,7 @@ export default function AgencyPortalPage() {
                             className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
                           >
                             <span className="relative z-10 flex items-center gap-2">
-                              <Edit className="w-5 h-5" />
+                              <FileEdit className="w-5 h-5" />
                               Save Changes
                             </span>
                             {/* Shine effect */}

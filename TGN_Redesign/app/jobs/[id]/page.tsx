@@ -608,6 +608,7 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
   const [isDisliked, setIsDisliked] = useState(isDislikedFromList)
   const [activeTab, setActiveTab] = useState('overview')
   const [isTabBarFixed, setIsTabBarFixed] = useState(false)
+  const [navHeight, setNavHeight] = useState(80)
   
   // Refs for scroll tracking
   const overviewRef = useRef<HTMLDivElement>(null)
@@ -617,6 +618,26 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
   const costOfLivingRef = useRef<HTMLDivElement>(null)
   const tabBarRef = useRef<HTMLDivElement>(null)
   const tabBarPlaceholderRef = useRef<HTMLDivElement>(null)
+
+  // Calculate navigation height
+  useEffect(() => {
+    const updateNavHeight = () => {
+      const nav = document.querySelector('nav')
+      if (nav) {
+        const height = nav.getBoundingClientRect().height
+        setNavHeight(height)
+      }
+    }
+    
+    updateNavHeight()
+    window.addEventListener('resize', updateNavHeight)
+    window.addEventListener('scroll', updateNavHeight)
+    
+    return () => {
+      window.removeEventListener('resize', updateNavHeight)
+      window.removeEventListener('scroll', updateNavHeight)
+    }
+  }, [])
 
   // Update state when job ID changes (user navigates to different job)
   useEffect(() => {
@@ -657,8 +678,8 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
 
       // Check if tab bar should be fixed
       const scrollPosition = window.scrollY
-      // Tab bar should become fixed when its natural position would be at 80px from viewport top
-      const shouldBeFixed = scrollPosition >= tabBarInitialTop - 80
+      // Tab bar should become fixed when its natural position would be at navHeight from viewport top
+      const shouldBeFixed = scrollPosition >= tabBarInitialTop - navHeight
       
       if (shouldBeFixed !== isTabBarFixed) {
         setIsTabBarFixed(shouldBeFixed)
@@ -673,8 +694,8 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
         { ref: costOfLivingRef, id: 'cost-of-living' }
       ]
 
-      // Account for navigation (80px) + tab bar (64px) = 144px + buffer
-      const scrollPos = window.scrollY + 164
+      // Account for navigation + tab bar + buffer
+      const scrollPos = window.scrollY + navHeight + 84
 
       for (let i = sections.length - 1; i >= 0; i--) {
         const section = sections[i]
@@ -702,13 +723,13 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
       window.removeEventListener('scroll', handleScroll)
       window.removeEventListener('resize', updateTabBarPosition)
     }
-  }, [isTabBarFixed, job])
+  }, [isTabBarFixed, job, navHeight])
 
   // Smooth scroll to section
   const scrollToSection = (sectionRef: React.RefObject<HTMLDivElement>) => {
     if (sectionRef.current) {
-      // Navigation (80px) + Tab Bar (64px) = 144px
-      const offset = 154
+      // Navigation + Tab Bar (64px) + buffer
+      const offset = navHeight + 74
       const elementPosition = sectionRef.current.getBoundingClientRect().top + window.pageYOffset
       const offsetPosition = elementPosition - offset
 
@@ -998,10 +1019,10 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
             isTabBarFixed 
               ? { 
                   position: 'fixed', 
-                  top: '80px', 
+                  top: `${navHeight}px`, 
                   left: 0, 
                   right: 0, 
-                  zIndex: 51,
+                  zIndex: 40,
                   boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1), 0 1px 8px rgba(0, 0, 0, 0.08)',
                 }
               : { position: 'relative' }

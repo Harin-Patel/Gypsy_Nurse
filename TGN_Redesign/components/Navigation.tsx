@@ -99,14 +99,14 @@ export default function Navigation() {
       {/* Backdrop for Profile Dropdown - Rendered at root level */}
       {showProfileDropdown && (
         <div 
-          className="fixed inset-0 bg-transparent z-[45]" 
+          className="fixed inset-0 bg-transparent z-[40]" 
           onClick={() => setShowProfileDropdown(false)}
         />
       )}
 
       {/* Full Width Navigation Bar with Glass Effect */}
       <nav
-        className={`fixed top-0 left-0 right-0 w-full z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 w-full z-[100] transition-all duration-300 ${
           isScrolled 
             ? 'bg-white/80 backdrop-blur-2xl shadow-2xl py-3' 
             : 'bg-white/90 backdrop-blur-xl shadow-lg py-4'
@@ -267,7 +267,7 @@ export default function Navigation() {
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.2, ease: "easeOut" }}
                         className="absolute top-full left-0 mt-4 w-64 bg-white/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden max-h-[70vh] overflow-y-auto"
-                        style={{ zIndex: 100 }}
+                        style={{ zIndex: 101 }}
                       >
                         <div className="p-2">
                           {item.dropdown.map((subItem, idx) => {
@@ -388,7 +388,8 @@ export default function Navigation() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.2, ease: "easeOut" }}
-                        className="absolute top-full right-0 mt-4 w-64 bg-white/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden z-[60]"
+                        className="absolute top-full right-0 mt-4 w-64 bg-white/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden"
+                        style={{ zIndex: 101 }}
                       >
                         {/* User Info Header */}
                         <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-br from-primary-50/50 to-purple-50/50">
@@ -573,7 +574,7 @@ export default function Navigation() {
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
                       className="absolute top-full right-0 mt-4 w-56 bg-white/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden"
-                      style={{ zIndex: 100 }}
+                      style={{ zIndex: 101 }}
                     >
                       <div className="p-2">
                         <Link href="/login">

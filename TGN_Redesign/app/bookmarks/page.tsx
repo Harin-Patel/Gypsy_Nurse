@@ -175,8 +175,18 @@ export default function BookmarksPage() {
           ) : (
             bookmarkedJobs.map((job, index) => {
               return (
-                <Link key={job.id} href={`/jobs/${job.id}?from=bookmarks`}>
-                  <motion.div
+                <div key={job.id} className="relative group">
+                  <Link 
+                    href={`/jobs/${job.id}?from=bookmarks`} 
+                    className="block"
+                    onClick={(e) => {
+                      // Prevent navigation if clicking on delete button's parent
+                      if ((e.target as HTMLElement).closest('button[title="Remove from bookmarks"]')) {
+                        e.preventDefault()
+                      }
+                    }}
+                  >
+                    <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
@@ -214,16 +224,21 @@ export default function BookmarksPage() {
                           <Heart className="w-3.5 h-3.5 fill-current" />
                           <span>SAVED</span>
                         </div>
-
+                        
                         {/* Delete Icon Button */}
                         <motion.button
                           onClick={(e) => {
+                            e.preventDefault()
                             e.stopPropagation()
                             handleDeleteClick(job.id)
                           }}
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                          }}
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-all border border-red-200 hover:border-red-300"
+                          className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-all border border-red-200 hover:border-red-300 relative z-10"
                           title="Remove from bookmarks"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -297,8 +312,9 @@ export default function BookmarksPage() {
                       </motion.div>
                     </motion.div>
                   </div>
-                </motion.div>
-                </Link>
+                    </motion.div>
+                  </Link>
+                </div>
               )
             })
           )}

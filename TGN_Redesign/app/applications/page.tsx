@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
@@ -12,6 +12,16 @@ import {
   CheckCircle2, XCircle, AlertCircle, ArrowUpRight
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import {
+  getLikedJobs,
+  getDislikedJobs,
+  getPendingJobs
+} from '@/utils/jobStorage'
+import {
+  SAMPLE_JOBS,
+  getJobById,
+  jobToApplication
+} from '@/utils/jobData'
 
 interface Application {
   id: string
@@ -29,93 +39,77 @@ interface Application {
 
 export default function ApplicationsPage() {
   const [activeTab, setActiveTab] = useState<'applied' | 'liked' | 'disliked'>('applied')
+  const [appliedJobs, setAppliedJobs] = useState<Application[]>([])
+  const [likedJobs, setLikedJobs] = useState<Application[]>([])
+  const [dislikedJobs, setDislikedJobs] = useState<Application[]>([])
 
-  const appliedJobs: Application[] = [
-    {
-      id: '1',
-      jobTitle: 'Travel ER (Emergency Room) RN (Registered Nurse)',
-      facility: 'Facility information not available',
-      facilityAvailable: false,
-      jobType: 'Emergency Room - Registered Nurse',
-      appliedDate: '11/7/2025',
-      location: 'South Dakota',
-      status: 'pending',
-      coverLetter: 'Testing Cover Letter',
-      salary: '$2,800/week',
-      duration: '13 weeks'
-    },
-    {
-      id: '2',
-      jobTitle: 'Emergency Room Job in Greenbrae, CA',
-      facility: 'Facility information not available',
-      facilityAvailable: false,
-      jobType: 'Emergency Room - Registered Nurse',
-      appliedDate: '11/6/2025',
-      location: 'California',
-      status: 'pending',
-      coverLetter: "I'm an experienced registered nurse with a background in Medical-Surgical nursing, seeking a travel opportunity with Travel Nurs...",
-      salary: '$3,200/week',
-      duration: '13 weeks'
-    },
-    {
-      id: '3',
-      jobTitle: 'Strike',
-      facility: 'Aspirus Merrill',
-      facilityAvailable: true,
-      jobType: 'Strike - Clinical Lab Scientist',
-      appliedDate: '10/11/2025',
-      location: 'New Mexico',
-      status: 'pending',
-      coverLetter: 'Testing Cover Letter',
-      salary: '$2,500/week',
-      duration: '8 weeks'
-    }
-  ]
+  // Function to load jobs from localStorage
+  const loadJobs = () => {
+    if (typeof window === 'undefined') return
 
-  const likedJobs: Application[] = [
-    {
-      id: '4',
-      jobTitle: 'ICU Travel Nurse - Phoenix, AZ',
-      facility: 'Banner Health System',
-      facilityAvailable: true,
-      jobType: 'ICU - Registered Nurse',
-      appliedDate: '11/10/2025',
-      location: 'Arizona',
-      status: 'pending',
-      coverLetter: 'Interested in this ICU position with excellent benefits and competitive pay.',
-      salary: '$3,500/week',
-      duration: '13 weeks'
-    },
-    {
-      id: '5',
-      jobTitle: 'Med-Surg RN - Seattle, WA',
-      facility: 'Seattle Medical Center',
-      facilityAvailable: true,
-      jobType: 'Medical-Surgical - Registered Nurse',
-      appliedDate: '11/9/2025',
-      location: 'Washington',
-      status: 'pending',
-      coverLetter: 'Great opportunity in the Pacific Northwest with housing stipend included.',
-      salary: '$3,000/week',
-      duration: '13 weeks'
+    // Load pending jobs (applied)
+    const pendingJobIds = getPendingJobs()
+    const applied = pendingJobIds
+      .map(jobId => {
+        const job = getJobById(jobId)
+        if (job) {
+          return jobToApplication(job)
+        }
+        return null
+      })
+      .filter((job): job is Application => job !== null)
+    setAppliedJobs(applied)
+
+    // Load liked jobs
+    const likedJobIds = getLikedJobs()
+    const liked = likedJobIds
+      .map(jobId => {
+        const job = getJobById(jobId)
+        if (job) {
+          return jobToApplication(job)
+        }
+        return null
+      })
+      .filter((job): job is Application => job !== null)
+    setLikedJobs(liked)
+
+    // Load disliked jobs
+    const dislikedJobIds = getDislikedJobs()
+    const disliked = dislikedJobIds
+      .map(jobId => {
+        const job = getJobById(jobId)
+        if (job) {
+          return jobToApplication(job)
+        }
+        return null
+      })
+      .filter((job): job is Application => job !== null)
+    setDislikedJobs(disliked)
+  }
+
+  // Load jobs from localStorage on mount and when page becomes visible
+  useEffect(() => {
+    loadJobs()
+
+    // Reload when page becomes visible (user navigates back)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadJobs()
+      }
     }
-  ]
-  
-  const dislikedJobs: Application[] = [
-    {
-      id: '6',
-      jobTitle: 'ER Night Shift - Remote Location',
-      facility: 'Rural Community Hospital',
-      facilityAvailable: true,
-      jobType: 'Emergency Room - Registered Nurse',
-      appliedDate: '11/8/2025',
-      location: 'Montana',
-      status: 'pending',
-      coverLetter: 'Too far from major cities, limited amenities in the area.',
-      salary: '$2,600/week',
-      duration: '13 weeks'
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    // Also listen for storage changes (when localStorage is updated from other tabs)
+    const handleStorageChange = () => {
+      loadJobs()
     }
-  ]
+    window.addEventListener('storage', handleStorageChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('storage', handleStorageChange)
+    }
+  }, [])
 
   const tabs = [
     { key: 'applied' as const, label: 'Applied', count: appliedJobs.length, icon: Briefcase, color: 'from-primary-500 to-primary-600' },
@@ -137,10 +131,10 @@ export default function ApplicationsPage() {
         return {
           label: 'PENDING',
           icon: AlertCircle,
-          gradient: 'from-yellow-400 to-orange-500',
-          bg: 'bg-yellow-50',
-          text: 'text-yellow-700',
-          border: 'border-yellow-200'
+          gradient: 'from-primary-500 to-primary-600',
+          bg: 'bg-primary-50',
+          text: 'text-primary-700',
+          border: 'border-primary-200'
         }
       case 'approved':
         return {
@@ -164,10 +158,10 @@ export default function ApplicationsPage() {
         return {
           label: 'PENDING',
           icon: AlertCircle,
-          gradient: 'from-yellow-400 to-orange-500',
-          bg: 'bg-yellow-50',
-          text: 'text-yellow-700',
-          border: 'border-yellow-200'
+          gradient: 'from-primary-500 to-primary-600',
+          bg: 'bg-primary-50',
+          text: 'text-primary-700',
+          border: 'border-primary-200'
         }
     }
   }

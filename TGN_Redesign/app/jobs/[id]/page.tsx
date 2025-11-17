@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense, use } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   MapPin, 
@@ -22,7 +22,8 @@ import {
   Send,
   Award,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -30,6 +31,19 @@ import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { useAuth } from '@/contexts/AuthContext'
 import toast from 'react-hot-toast'
+import {
+  getLikedJobs,
+  getDislikedJobs,
+  getBookmarkedJobs,
+  isJobPending,
+  addPendingJob,
+  addLikedJob,
+  removeLikedJob,
+  addDislikedJob,
+  removeDislikedJob,
+  addBookmarkedJob,
+  removeBookmarkedJob
+} from '@/utils/jobStorage'
 
 interface JobDetails {
   id: string
@@ -580,12 +594,16 @@ const SAMPLE_JOB_DATA: Record<string, JobDetails> = {
 }
 
 // Job status lists - in production, these would come from API/user context
-const APPLIED_JOB_IDS = ['1', '2', '3']
+// These are now managed via localStorage, but keeping for initial state
 const LIKED_JOB_IDS = ['4', '5']
 const DISLIKED_JOB_IDS = ['6']
 const BOOKMARKED_JOB_IDS = ['4', '5', '7']
 
-function JobDetailsContent({ params }: { params: { id: string } }) {
+function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
+  // Unwrap params Promise FIRST - must be called before any other hooks
+  const unwrappedParams = use(params)
+  
+  // Other hooks must come after use()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { isAuthenticated } = useAuth()
@@ -594,18 +612,23 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
   const fromApplications = searchParams?.get('from') === 'applications'
   const fromBookmarks = searchParams?.get('from') === 'bookmarks'
   
-  const job = params?.id ? SAMPLE_JOB_DATA[params.id] : null
+  const job = unwrappedParams?.id ? SAMPLE_JOB_DATA[unwrappedParams.id] : null
   
-  // Check job status from lists
-  const isApplied = job ? APPLIED_JOB_IDS.includes(job.id) : false
-  const isLikedFromList = job ? LIKED_JOB_IDS.includes(job.id) : false
-  const isDislikedFromList = job ? DISLIKED_JOB_IDS.includes(job.id) : false
-  const isBookmarkedFromList = job ? BOOKMARKED_JOB_IDS.includes(job.id) : false
+  // Initialize state - will be updated from localStorage in useEffect
+  const [isPending, setIsPending] = useState(false)
+  const [isSaved, setIsSaved] = useState(false)
+  const [isLiked, setIsLiked] = useState(false)
+  const [isDisliked, setIsDisliked] = useState(false)
   
-  // Initialize state based on job status
-  const [isSaved, setIsSaved] = useState(isBookmarkedFromList)
-  const [isLiked, setIsLiked] = useState(isLikedFromList)
-  const [isDisliked, setIsDisliked] = useState(isDislikedFromList)
+  // Load job status from localStorage on mount (client-side only)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !job) return
+    
+    setIsPending(isJobPending(job.id))
+    setIsSaved(getBookmarkedJobs().includes(job.id) || BOOKMARKED_JOB_IDS.includes(job.id))
+    setIsLiked(getLikedJobs().includes(job.id) || LIKED_JOB_IDS.includes(job.id))
+    setIsDisliked(getDislikedJobs().includes(job.id) || DISLIKED_JOB_IDS.includes(job.id))
+  }, [job])
   const [activeTab, setActiveTab] = useState('overview')
   const [isTabBarFixed, setIsTabBarFixed] = useState(false)
   const [navHeight, setNavHeight] = useState(80)
@@ -641,16 +664,13 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
 
   // Update state when job ID changes (user navigates to different job)
   useEffect(() => {
-    if (!job) return
+    if (!job || typeof window === 'undefined') return
     
-    // Re-check job status from lists and update state
-    const newIsLiked = LIKED_JOB_IDS.includes(job.id)
-    const newIsDisliked = DISLIKED_JOB_IDS.includes(job.id)
-    const newIsBookmarked = BOOKMARKED_JOB_IDS.includes(job.id)
-    
-    setIsLiked(newIsLiked)
-    setIsDisliked(newIsDisliked)
-    setIsSaved(newIsBookmarked)
+    // Re-check job status from localStorage and update state
+    setIsPending(isJobPending(job.id))
+    setIsSaved(getBookmarkedJobs().includes(job.id) || BOOKMARKED_JOB_IDS.includes(job.id))
+    setIsLiked(getLikedJobs().includes(job.id) || LIKED_JOB_IDS.includes(job.id))
+    setIsDisliked(getDislikedJobs().includes(job.id) || DISLIKED_JOB_IDS.includes(job.id))
     setActiveTab('overview') // Reset to overview tab when job changes
     setIsTabBarFixed(false) // Reset tab bar fixed state
   }, [job?.id]) // Re-run when job ID changes
@@ -726,7 +746,7 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
   }, [isTabBarFixed, job, navHeight])
 
   // Smooth scroll to section
-  const scrollToSection = (sectionRef: React.RefObject<HTMLDivElement>) => {
+  const scrollToSection = (sectionRef: React.RefObject<HTMLDivElement | null>) => {
     if (sectionRef.current) {
       // Navigation + Tab Bar (64px) + buffer
       const offset = navHeight + 74
@@ -742,8 +762,13 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
 
   const handleSave = () => {
     setIsSaved(!isSaved)
-    toast.success(isSaved ? 'Job unsaved!' : 'Job saved successfully!', {
-      icon: isSaved ? '🗑️' : '✅',
+    if (isSaved) {
+      removeBookmarkedJob(job?.id || '')
+    } else {
+      addBookmarkedJob(job?.id || '')
+    }
+    toast.success(isSaved ? 'Job removed from bookmarks' : 'Job saved to bookmarks', {
+      duration: 3000,
     })
   }
 
@@ -758,7 +783,8 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
     } else {
       navigator.clipboard.writeText(window.location.href)
       toast.success('Job link copied to clipboard!', {
-        icon: '📋',
+        duration: 3000,
+        icon: null,
       })
     }
   }
@@ -767,34 +793,43 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
     if (!job) return
     if (!isAuthenticated) {
       toast.error('Please log in to apply for jobs.', {
-        icon: '🔒',
+        duration: 3000,
+        icon: null,
       })
       router.push('/login')
       return
     }
+    // Add job to pending list
+    setIsPending(true)
+    addPendingJob(job.id)
     toast.success(`Successfully applied for ${job.title}!`, {
-      icon: '🚀',
+      duration: 3000,
+      icon: null,
     })
   }
 
   const handleLike = () => {
     if (!isAuthenticated) {
       toast.error('Please log in to like jobs.', {
-        icon: '🔒',
+        duration: 3000,
+        icon: null,
       })
       router.push('/login')
       return
     }
     if (isLiked) {
       setIsLiked(false)
-      toast('You un-liked this job.', {
-        icon: '👍',
+      removeLikedJob(job?.id || '')
+      toast.success('Job removed from liked jobs', {
+        duration: 3000,
       })
     } else {
       setIsLiked(true)
       setIsDisliked(false)
-      toast.success('You liked this job!', {
-        icon: '❤️',
+      addLikedJob(job?.id || '')
+      removeDislikedJob(job?.id || '')
+      toast.success('Job added to liked jobs', {
+        duration: 3000,
       })
     }
   }
@@ -802,21 +837,25 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
   const handleDislike = () => {
     if (!isAuthenticated) {
       toast.error('Please log in to dislike jobs.', {
-        icon: '🔒',
+        duration: 3000,
+        icon: null,
       })
       router.push('/login')
       return
     }
     if (isDisliked) {
       setIsDisliked(false)
-      toast('You un-disliked this job.', {
-        icon: '👎',
+      removeDislikedJob(job?.id || '')
+      toast.error('Job removed from disliked jobs', {
+        duration: 3000,
       })
     } else {
       setIsDisliked(true)
       setIsLiked(false)
-      toast.error('You disliked this job.', {
-        icon: '🚫',
+      addDislikedJob(job?.id || '')
+      removeLikedJob(job?.id || '')
+      toast.error('Job added to disliked jobs', {
+        duration: 3000,
       })
     }
   }
@@ -911,61 +950,85 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
                   transition={{ delay: 0.2 }}
                   className="flex flex-wrap items-center gap-3"
                 >
-                  {/* Applied Badge - Show if job is applied */}
-                  {isApplied && (
+                  {/* PENDING Badge - Show if job is pending */}
+                  {isPending && (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="px-4 py-2 bg-green-500/90 backdrop-blur-md text-white rounded-xl font-semibold text-sm shadow-lg border border-green-400/50 flex items-center gap-2"
+                      className="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 backdrop-blur-md text-white rounded-xl font-semibold text-sm shadow-lg border border-primary-400/50 flex items-center gap-2"
                     >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>APPLIED</span>
+                      <AlertCircle className="w-4 h-4" />
+                      <span>PENDING</span>
                     </motion.div>
                   )}
 
-                  {/* Like/Dislike - Only show if NOT applied */}
-                  {isAuthenticated && !isApplied && (
+                  {/* Like/Dislike - Only show if NOT pending */}
+                  {isAuthenticated && !isPending && (
                     <>
                       <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={handleLike}
-                        className={`p-4 rounded-xl transition-all shadow-lg ${
+                        className={`relative p-4 rounded-xl transition-all ${
                           isLiked
-                            ? 'bg-green-500 text-white shadow-green-500/50'
+                            ? 'bg-green-50 text-green-600'
                             : 'bg-white/10 backdrop-blur-md text-white hover:bg-white/20 border border-white/20'
                         }`}
                       >
-                        <ThumbsUp className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+                        <motion.div
+                          animate={isLiked ? {
+                            scale: [1, 1.3, 1],
+                            rotate: [0, -15, 15, 0]
+                          } : {}}
+                          transition={{ duration: 0.4, ease: "easeOut" }}
+                        >
+                          <ThumbsUp className={`w-5 h-5 transition-all ${isLiked ? 'fill-current' : ''}`} />
+                        </motion.div>
                       </motion.button>
 
                       <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={handleDislike}
-                        className={`p-4 rounded-xl transition-all shadow-lg ${
+                        className={`relative p-4 rounded-xl transition-all ${
                           isDisliked
-                            ? 'bg-red-500 text-white shadow-red-500/50'
+                            ? 'bg-red-50 text-red-600'
                             : 'bg-white/10 backdrop-blur-md text-white hover:bg-white/20 border border-white/20'
                         }`}
                       >
-                        <ThumbsDown className={`w-5 h-5 ${isDisliked ? 'fill-current' : ''}`} />
+                        <motion.div
+                          animate={isDisliked ? {
+                            scale: [1, 1.3, 1],
+                            rotate: [0, 15, -15, 0]
+                          } : {}}
+                          transition={{ duration: 0.4, ease: "easeOut" }}
+                        >
+                          <ThumbsDown className={`w-5 h-5 transition-all ${isDisliked ? 'fill-current' : ''}`} />
+                        </motion.div>
                       </motion.button>
                     </>
                   )}
 
                   {/* Bookmark - Always show */}
                   <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                     onClick={handleSave}
-                    className={`p-4 rounded-xl transition-all shadow-lg ${
+                    className={`relative p-4 rounded-xl transition-all ${
                       isSaved
-                        ? 'bg-white text-primary-600 shadow-white/50'
+                        ? 'bg-primary-50 text-primary-600'
                         : 'bg-white/10 backdrop-blur-md text-white hover:bg-white/20 border border-white/20'
                     }`}
                   >
-                    <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+                    <motion.div
+                      animate={isSaved ? {
+                        scale: [1, 1.3, 1],
+                        rotate: [0, -10, 10, 0]
+                      } : {}}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                    >
+                      <Bookmark className={`w-5 h-5 transition-all ${isSaved ? 'fill-current' : ''}`} />
+                    </motion.div>
                   </motion.button>
 
                   {/* Share - Always show */}
@@ -1005,10 +1068,6 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
       <div ref={tabBarPlaceholderRef} className="relative">
         <motion.div 
           ref={tabBarRef}
-          animate={{
-            backdropFilter: isTabBarFixed ? 'blur(20px) saturate(180%)' : 'blur(0px)',
-            WebkitBackdropFilter: isTabBarFixed ? 'blur(20px) saturate(180%)' : 'blur(0px)',
-          }}
           transition={{ duration: 0.3, ease: 'easeInOut' }}
           className={`transition-all duration-300 border-b-2 ${
             isTabBarFixed 
@@ -1096,77 +1155,92 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
                     transition={{ duration: 0.3 }}
                     className="flex items-center gap-2.5 flex-shrink-0 -ml-8 mr-2"
                   >
-                    {/* Applied Badge - Show if job is applied */}
-                    {isApplied && (
+                    {/* PENDING Badge - Show if job is pending */}
+                    {isPending && (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="px-3 py-1.5 bg-green-500/90 backdrop-blur-md text-white rounded-lg font-semibold text-xs shadow-lg border border-green-400/50 flex items-center gap-1.5"
+                        className="px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-600 backdrop-blur-md text-white rounded-lg font-semibold text-xs shadow-lg border border-primary-400/50 flex items-center gap-1.5"
                         style={{
                           backdropFilter: 'blur(20px) saturate(180%)',
                           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                         }}
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>APPLIED</span>
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>PENDING</span>
                       </motion.div>
                     )}
 
-                    {/* Like/Dislike - Only show if NOT applied */}
-                    {isAuthenticated && !isApplied && (
+                    {/* Like/Dislike - Only show if NOT pending */}
+                    {isAuthenticated && !isPending && (
                       <>
                         <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
+                          type="button"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
                           onClick={handleLike}
-                          className={`p-2.5 rounded-xl transition-all shadow-lg ${
+                          className={`relative p-2.5 rounded-lg transition-all ${
                             isLiked
-                              ? 'bg-green-500 text-white shadow-green-500/50'
-                              : 'bg-white/80 backdrop-blur-xl text-gray-700 hover:bg-white/90 border border-white/60'
+                              ? 'bg-green-50 text-green-600'
+                              : 'bg-gray-50 text-gray-400 hover:bg-green-50 hover:text-green-600'
                           }`}
-                          style={{
-                            backdropFilter: 'blur(20px) saturate(180%)',
-                            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                          }}
                         >
-                          <ThumbsUp className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                          <motion.div
+                            animate={isLiked ? {
+                              scale: [1, 1.3, 1],
+                              rotate: [0, -15, 15, 0]
+                            } : {}}
+                            transition={{ duration: 0.4, ease: "easeOut" }}
+                          >
+                            <ThumbsUp className={`w-4 h-4 transition-all ${isLiked ? 'fill-current' : ''}`} />
+                          </motion.div>
                         </motion.button>
 
                         <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
+                          type="button"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
                           onClick={handleDislike}
-                          className={`p-2.5 rounded-xl transition-all shadow-lg ${
+                          className={`relative p-2.5 rounded-lg transition-all ${
                             isDisliked
-                              ? 'bg-red-500 text-white shadow-red-500/50'
-                              : 'bg-white/80 backdrop-blur-xl text-gray-700 hover:bg-white/90 border border-white/60'
+                              ? 'bg-red-50 text-red-600'
+                              : 'bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600'
                           }`}
-                          style={{
-                            backdropFilter: 'blur(20px) saturate(180%)',
-                            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                          }}
                         >
-                          <ThumbsDown className={`w-4 h-4 ${isDisliked ? 'fill-current' : ''}`} />
+                          <motion.div
+                            animate={isDisliked ? {
+                              scale: [1, 1.3, 1],
+                              rotate: [0, 15, -15, 0]
+                            } : {}}
+                            transition={{ duration: 0.4, ease: "easeOut" }}
+                          >
+                            <ThumbsDown className={`w-4 h-4 transition-all ${isDisliked ? 'fill-current' : ''}`} />
+                          </motion.div>
                         </motion.button>
                       </>
                     )}
 
                     {/* Bookmark - Always show */}
                     <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      type="button"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={handleSave}
-                      className={`p-2.5 rounded-xl transition-all shadow-lg ${
+                      className={`relative p-2.5 rounded-lg transition-all ${
                         isSaved
-                          ? 'bg-primary-600 text-white shadow-primary-500/50'
-                          : 'bg-white/80 backdrop-blur-xl text-gray-700 hover:bg-white/90 border border-white/60'
+                          ? 'bg-primary-50 text-primary-600'
+                          : 'bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600'
                       }`}
-                      style={{
-                        backdropFilter: 'blur(20px) saturate(180%)',
-                        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                      }}
                     >
-                      <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+                      <motion.div
+                        animate={isSaved ? {
+                          scale: [1, 1.3, 1],
+                          rotate: [0, -10, 10, 0]
+                        } : {}}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                      >
+                        <Bookmark className={`w-4 h-4 transition-all ${isSaved ? 'fill-current' : ''}`} />
+                      </motion.div>
                     </motion.button>
 
                     {/* Share - Always show */}
@@ -2108,7 +2182,7 @@ function JobDetailsContent({ params }: { params: { id: string } }) {
   )
 }
 
-export default function JobDetailsPage({ params }: { params: { id: string } }) {
+export default function JobDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-gray-50">

@@ -951,7 +951,7 @@ export default function Navigation() {
                       Log Out
                     </h3>
                     <p className="text-center text-gray-600 mb-6">
-                      Are you sure you want to sign out from your account?
+                      Are you sure you want to log out from your account?
                     </p>
 
                     {/* Decorative Divider */}

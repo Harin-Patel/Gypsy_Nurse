@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Search, 
@@ -20,13 +20,27 @@ import {
   Award,
   Sparkles,
   Filter,
-  ArrowRight
+  ArrowRight,
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-react'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import toast from 'react-hot-toast'
 import { useAuth } from '@/contexts/AuthContext'
+import {
+  getLikedJobs,
+  getDislikedJobs,
+  getBookmarkedJobs,
+  getPendingJobs,
+  addLikedJob,
+  removeLikedJob,
+  addDislikedJob,
+  removeDislikedJob,
+  addBookmarkedJob,
+  removeBookmarkedJob
+} from '@/utils/jobStorage'
 
 interface Job {
   id: string
@@ -42,7 +56,7 @@ interface Job {
   tags: string[]
 }
 
-const SAMPLE_JOBS: Job[] = [
+export const SAMPLE_JOBS: Job[] = [
   {
     id: '1',
     title: 'Travel ER (Emergency Room) RN (Registered Nurse)',
@@ -106,7 +120,18 @@ export default function JobsPage() {
   const [savedJobs, setSavedJobs] = useState<string[]>([])
   const [likedJobs, setLikedJobs] = useState<string[]>([])
   const [dislikedJobs, setDislikedJobs] = useState<string[]>([])
+  const [pendingJobs, setPendingJobs] = useState<string[]>([])
   const [showSortDropdown, setShowSortDropdown] = useState(false)
+
+  // Load job status from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSavedJobs(getBookmarkedJobs())
+      setLikedJobs(getLikedJobs())
+      setDislikedJobs(getDislikedJobs())
+      setPendingJobs(getPendingJobs())
+    }
+  }, [])
 
   // Advanced Filter States
   const [filterCity, setFilterCity] = useState('')
@@ -122,40 +147,84 @@ export default function JobsPage() {
   const [filterFeaturedOnly, setFilterFeaturedOnly] = useState(false)
 
   const toggleSaveJob = (jobId: string) => {
-    setSavedJobs(prev => 
-      prev.includes(jobId) 
-        ? prev.filter(id => id !== jobId)
-        : [...prev, jobId]
-    )
+    // Check current state first
+    const isCurrentlySaved = savedJobs.includes(jobId)
+    
+    // Update saved jobs
+    if (isCurrentlySaved) {
+      setSavedJobs(prev => prev.filter(id => id !== jobId))
+      removeBookmarkedJob(jobId)
+      toast.success('Job removed from bookmarks', {
+        duration: 3000,
+      })
+    } else {
+      setSavedJobs(prev => [...prev, jobId])
+      addBookmarkedJob(jobId)
+      toast.success('Job saved to bookmarks', {
+        duration: 3000,
+      })
+    }
   }
 
   const toggleLikeJob = (jobId: string) => {
-    setLikedJobs(prev => {
-      if (prev.includes(jobId)) {
-        return prev.filter(id => id !== jobId)
-      } else {
-        // Remove from disliked if it was disliked
-        setDislikedJobs(disliked => disliked.filter(id => id !== jobId))
-        return [...prev, jobId]
-      }
-    })
+    // Check current state first
+    const isCurrentlyLiked = likedJobs.includes(jobId)
+    const wasDisliked = dislikedJobs.includes(jobId)
+    
+    // Update liked jobs
+    if (isCurrentlyLiked) {
+      setLikedJobs(prev => prev.filter(id => id !== jobId))
+      removeLikedJob(jobId)
+      toast.success('Job removed from liked jobs', {
+        duration: 3000,
+      })
+    } else {
+      setLikedJobs(prev => [...prev, jobId])
+      addLikedJob(jobId)
+      toast.success('Job added to liked jobs', {
+        duration: 3000,
+      })
+    }
+    
+    // Remove from disliked if it was disliked (separate state update)
+    if (wasDisliked) {
+      setDislikedJobs(prev => prev.filter(id => id !== jobId))
+      removeDislikedJob(jobId)
+    }
   }
 
   const toggleDislikeJob = (jobId: string) => {
-    setDislikedJobs(prev => {
-      if (prev.includes(jobId)) {
-        return prev.filter(id => id !== jobId)
-      } else {
-        // Remove from liked if it was liked
-        setLikedJobs(liked => liked.filter(id => id !== jobId))
-        return [...prev, jobId]
-      }
-    })
+    // Check current state first
+    const isCurrentlyDisliked = dislikedJobs.includes(jobId)
+    const wasLiked = likedJobs.includes(jobId)
+    
+    // Update disliked jobs
+    if (isCurrentlyDisliked) {
+      setDislikedJobs(prev => prev.filter(id => id !== jobId))
+      removeDislikedJob(jobId)
+      toast.error('Job removed from disliked jobs', {
+        duration: 3000,
+      })
+    } else {
+      setDislikedJobs(prev => [...prev, jobId])
+      addDislikedJob(jobId)
+      toast.error('Job added to disliked jobs', {
+        duration: 3000,
+      })
+    }
+    
+    // Remove from liked if it was liked (separate state update)
+    if (wasLiked) {
+      setLikedJobs(prev => prev.filter(id => id !== jobId))
+      removeLikedJob(jobId)
+    }
   }
 
   const handleApplyFilters = () => {
     // Apply filters logic here
-    toast.success('Filters applied successfully')
+    toast.success('Filters applied successfully', {
+      duration: 3000,
+    })
     setShowFilters(false)
   }
 
@@ -192,30 +261,26 @@ export default function JobsPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
               onClick={() => setShowFilters(false)}
-            />
-
-            {/* Modal Container */}
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            >
+              {/* Modal */}
               <motion.div
-                initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 50, scale: 0.9 }}
-                transition={{ duration: 0.5, type: "spring" }}
-                className="w-full max-w-4xl pointer-events-auto"
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+                className="relative w-full max-w-4xl mx-4 sm:mx-0"
                 style={{ maxHeight: '90vh' }}
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Main Card */}
-                <div className="relative bg-white backdrop-blur-2xl rounded-3xl shadow-2xl border border-white overflow-hidden" style={{ maxHeight: '90vh' }}>
-                  {/* Gradient Border Effect */}
-                  <div className="absolute inset-0 rounded-3xl p-[2px] bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600 opacity-30" />
-                  
-                  {/* Card Content */}
-                  <div className="relative bg-white rounded-3xl flex flex-col" style={{ maxHeight: '90vh' }}>
-                    {/* Header */}
-                    <div className="px-8 pt-8 pb-6">
+                {/* Glow effect behind modal */}
+                <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
+                
+                {/* Main modal container */}
+                <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
+                  {/* Header Section */}
+                  <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           {/* Animated Icon */}
@@ -249,12 +314,15 @@ export default function JobsPage() {
                         </motion.button>
                       </div>
                       
-                      {/* Decorative Divider */}
-                      <div className="mt-6 h-px bg-gradient-to-r from-transparent via-primary-300 to-transparent" />
                     </div>
 
-                    {/* Content */}
-                    <div className="relative flex-1 overflow-y-auto px-8 pb-6">
+                    {/* Divider */}
+                    <div className="px-4 sm:px-6 md:px-8">
+                      <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                    </div>
+
+                    {/* Content Area - Scrollable */}
+                    <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                       <div className="space-y-8">
                     {/* Location Section */}
                     <motion.div
@@ -534,40 +602,54 @@ export default function JobsPage() {
                   </div>
                 </div>
 
-                    {/* Footer Actions */}
-                    <div className="relative px-8 pb-8 pt-6">
-                      {/* Decorative Divider */}
-                      <div className="mb-6 h-px bg-gradient-to-r from-transparent via-primary-300 to-transparent" />
+                    {/* Footer Section */}
+                    <div className="relative px-4 sm:px-6 md:px-8 py-4 sm:py-6 flex-shrink-0">
+                      {/* Divider */}
+                      <div className="mb-4 sm:mb-6">
+                        <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                      </div>
                       
-                      <div className="flex items-center justify-between gap-4 flex-wrap">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
                         <motion.button
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.3, delay: 0.9 }}
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={handleResetFilters}
-                          className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all"
+                          className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all text-sm sm:text-base"
                         >
                           Reset Form
                         </motion.button>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 w-full sm:w-auto">
                           <motion.button
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.3, delay: 1 }}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={handleClearFilters}
-                            className="px-6 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-medium transition-all"
+                            className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-medium transition-all text-sm sm:text-base"
                           >
                             Clear Filter
                           </motion.button>
                           <motion.button
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.3, delay: 1.1 }}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={handleApplyFilters}
-                            className="relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg overflow-hidden group"
+                            className="group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden text-sm sm:text-base"
                           >
+                            <span className="relative z-10 flex items-center gap-2 justify-center">
+                              Save & Apply Filter
+                              <ArrowRight className="w-4 h-4" />
+                            </span>
+                            {/* Shine effect */}
                             <motion.div
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                              animate={{
-                                x: ['-200%', '200%']
-                              }}
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
+                              animate={{ x: ['-200%', '200%'] }}
                               transition={{
                                 duration: 2,
                                 repeat: Infinity,
@@ -575,21 +657,16 @@ export default function JobsPage() {
                                 ease: "easeInOut"
                               }}
                             />
-                            <span className="relative z-10 flex items-center gap-2">
-                              Save & Apply Filter
-                              <ArrowRight className="w-4 h-4" />
-                            </span>
                           </motion.button>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
+            </>
+          )}
+        </AnimatePresence>
 
       {/* Header Section */}
       <div className="bg-white border-b border-gray-200">
@@ -893,14 +970,28 @@ export default function JobsPage() {
                   </motion.div>
                   
                   <div className="flex items-center gap-2">
-                    {/* Like/Dislike Buttons - Only show when logged in */}
-                    {isAuthenticated && (
+                    {/* PENDING Badge - Show if job is pending */}
+                    {pendingJobs.includes(job.id) && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg font-semibold text-xs shadow-lg border border-primary-400/50 flex items-center gap-1.5"
+                      >
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>PENDING</span>
+                      </motion.div>
+                    )}
+
+                    {/* Like/Dislike Buttons - Only show when logged in and NOT pending */}
+                    {isAuthenticated && !pendingJobs.includes(job.id) && (
                       <>
                         {/* Like Button */}
                         <motion.button
+                          type="button"
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                           onClick={(e) => {
+                            e.preventDefault()
                             e.stopPropagation()
                             toggleLikeJob(job.id)
                           }}
@@ -919,22 +1010,15 @@ export default function JobsPage() {
                           >
                             <ThumbsUp className={`w-4 h-4 transition-all ${likedJobs.includes(job.id) ? 'fill-current' : ''}`} />
                           </motion.div>
-                          {likedJobs.includes(job.id) && (
-                            <motion.div
-                              initial={{ scale: 0, opacity: 0 }}
-                              animate={{ scale: [0, 1.5, 0], opacity: [0, 1, 0] }}
-                              transition={{ duration: 0.6 }}
-                              className="absolute inset-0 rounded-lg bg-green-400"
-                              style={{ pointerEvents: 'none' }}
-                            />
-                          )}
                         </motion.button>
 
                         {/* Dislike Button */}
                         <motion.button
+                          type="button"
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                           onClick={(e) => {
+                            e.preventDefault()
                             e.stopPropagation()
                             toggleDislikeJob(job.id)
                           }}
@@ -953,24 +1037,17 @@ export default function JobsPage() {
                           >
                             <ThumbsDown className={`w-4 h-4 transition-all ${dislikedJobs.includes(job.id) ? 'fill-current' : ''}`} />
                           </motion.div>
-                          {dislikedJobs.includes(job.id) && (
-                            <motion.div
-                              initial={{ scale: 0, opacity: 0 }}
-                              animate={{ scale: [0, 1.5, 0], opacity: [0, 1, 0] }}
-                              transition={{ duration: 0.6 }}
-                              className="absolute inset-0 rounded-lg bg-red-400"
-                              style={{ pointerEvents: 'none' }}
-                            />
-                          )}
                         </motion.button>
                       </>
                     )}
 
                     {/* Bookmark Button */}
                     <motion.button
+                      type="button"
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={(e) => {
+                        e.preventDefault()
                         e.stopPropagation()
                         toggleSaveJob(job.id)
                       }}
@@ -989,15 +1066,6 @@ export default function JobsPage() {
                       >
                         <Bookmark className={`w-4 h-4 transition-all ${savedJobs.includes(job.id) ? 'fill-current' : ''}`} />
                       </motion.div>
-                      {savedJobs.includes(job.id) && (
-                        <motion.div
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: [0, 1.5, 0], opacity: [0, 1, 0] }}
-                          transition={{ duration: 0.6 }}
-                          className="absolute inset-0 rounded-lg bg-primary-400"
-                          style={{ pointerEvents: 'none' }}
-                        />
-                      )}
                     </motion.button>
                   </div>
                 </div>

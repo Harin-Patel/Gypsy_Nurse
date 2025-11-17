@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Mail, Lock, Eye, EyeOff, Briefcase, Phone, Globe, MapPin, Sparkles } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Briefcase, Phone, Globe, MapPin, Sparkles, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
@@ -21,20 +21,82 @@ export default function AgencyRegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({})
+
+  const validateField = (name: string, value: string): string => {
+    switch (name) {
+      case 'agencyName':
+        if (!value.trim()) return 'Agency name is required'
+        if (value.trim().length < 2) return 'Agency name must be at least 2 characters'
+        return ''
+      case 'email':
+        if (!value.trim()) return 'Email address is required'
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address'
+        return ''
+      case 'password':
+        if (!value) return 'Password is required'
+        if (value.length < 6) return 'Password must be at least 6 characters'
+        return ''
+      case 'confirmPassword':
+        if (!value) return 'Please confirm your password'
+        if (value !== formData.password) return 'Passwords do not match'
+        return ''
+      default:
+        return ''
+    }
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     })
+    
+    // Clear error when user starts typing
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[name]
+        return newErrors
+      })
+    }
+  }
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setTouchedFields(prev => ({ ...prev, [name]: true }))
+    const error = validateField(name, value)
+    if (error) {
+      setFieldErrors(prev => ({ ...prev, [name]: error }))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     
+    // Validate all required fields
+    const errors: Record<string, string> = {}
+    const requiredFields = ['agencyName', 'email', 'password', 'confirmPassword']
+    requiredFields.forEach(key => {
+      const error = validateField(key, formData[key as keyof typeof formData])
+      if (error) {
+        errors[key] = error
+        setTouchedFields(prev => ({ ...prev, [key]: true }))
+      }
+    })
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      setIsLoading(false)
+      return
+    }
+    
     if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords don't match")
+      const errorMsg = "Passwords don't match"
+      setFieldErrors(prev => ({ ...prev, confirmPassword: errorMsg }))
       setIsLoading(false)
       return
     }
@@ -189,7 +251,7 @@ export default function AgencyRegisterPage() {
                   <p className="text-base text-gray-600">Register your agency to start posting jobs</p>
                 </motion.div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                   {/* Agency Name */}
                   <motion.div
                     initial={{ opacity: 0, x: -50 }}
@@ -203,18 +265,29 @@ export default function AgencyRegisterPage() {
                         type="text"
                         value={formData.agencyName}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder=" "
                         required
-                        className="peer w-full px-5 py-4 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent"
+                        className={`peer w-full px-5 py-4 bg-gradient-to-br from-gray-50 to-white border-2 rounded-xl outline-none transition-all duration-300 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent ${
+                          fieldErrors.agencyName && touchedFields.agencyName
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-gray-200 focus:border-primary-500'
+                        }`}
                       />
                       <label
                         htmlFor="agencyName"
                         className="absolute left-5 -top-3 px-2 bg-white text-sm font-semibold text-gray-700 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:font-normal peer-focus:-top-3 peer-focus:text-sm peer-focus:text-primary-600 peer-focus:font-semibold"
                       >
-                        Agency Name *
+                        Agency Name <span className="text-red-500">*</span>
                       </label>
                       <Briefcase className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
                     </div>
+                    {fieldErrors.agencyName && touchedFields.agencyName && (
+                      <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {fieldErrors.agencyName}
+                      </p>
+                    )}
                   </motion.div>
 
                   {/* Email Address */}
@@ -230,18 +303,29 @@ export default function AgencyRegisterPage() {
                         type="email"
                         value={formData.email}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder=" "
                         required
-                        className="peer w-full px-5 py-4 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent"
+                        className={`peer w-full px-5 py-4 bg-gradient-to-br from-gray-50 to-white border-2 rounded-xl outline-none transition-all duration-300 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent ${
+                          fieldErrors.email && touchedFields.email
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-gray-200 focus:border-primary-500'
+                        }`}
                       />
                       <label
                         htmlFor="email"
                         className="absolute left-5 -top-3 px-2 bg-white text-sm font-semibold text-gray-700 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:font-normal peer-focus:-top-3 peer-focus:text-sm peer-focus:text-primary-600 peer-focus:font-semibold"
                       >
-                        Email Address *
+                        Email Address <span className="text-red-500">*</span>
                       </label>
                       <Mail className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
                     </div>
+                    {fieldErrors.email && touchedFields.email && (
+                      <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {fieldErrors.email}
+                      </p>
+                    )}
                   </motion.div>
 
                   {/* Password */}
@@ -257,15 +341,20 @@ export default function AgencyRegisterPage() {
                         type={showPassword ? 'text' : 'password'}
                         value={formData.password}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder=" "
                         required
-                        className="peer w-full px-5 py-4 pr-12 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent"
+                        className={`peer w-full px-5 py-4 pr-12 bg-gradient-to-br from-gray-50 to-white border-2 rounded-xl outline-none transition-all duration-300 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent ${
+                          fieldErrors.password && touchedFields.password
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-gray-200 focus:border-primary-500'
+                        }`}
                       />
                       <label
                         htmlFor="password"
                         className="absolute left-5 -top-3 px-2 bg-white text-sm font-semibold text-gray-700 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:font-normal peer-focus:-top-3 peer-focus:text-sm peer-focus:text-primary-600 peer-focus:font-semibold"
                       >
-                        Password *
+                        Password <span className="text-red-500">*</span>
                       </label>
                       <button
                         type="button"
@@ -281,6 +370,12 @@ export default function AgencyRegisterPage() {
                         </motion.div>
                       </button>
                     </div>
+                    {fieldErrors.password && touchedFields.password && (
+                      <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {fieldErrors.password}
+                      </p>
+                    )}
                   </motion.div>
 
                   {/* Confirm Password */}
@@ -296,15 +391,20 @@ export default function AgencyRegisterPage() {
                         type={showConfirmPassword ? 'text' : 'password'}
                         value={formData.confirmPassword}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder=" "
                         required
-                        className="peer w-full px-5 py-4 pr-12 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent"
+                        className={`peer w-full px-5 py-4 pr-12 bg-gradient-to-br from-gray-50 to-white border-2 rounded-xl outline-none transition-all duration-300 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent ${
+                          fieldErrors.confirmPassword && touchedFields.confirmPassword
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-gray-200 focus:border-primary-500'
+                        }`}
                       />
                       <label
                         htmlFor="confirmPassword"
                         className="absolute left-5 -top-3 px-2 bg-white text-sm font-semibold text-gray-700 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:font-normal peer-focus:-top-3 peer-focus:text-sm peer-focus:text-primary-600 peer-focus:font-semibold"
                       >
-                        Confirm Password *
+                        Confirm Password <span className="text-red-500">*</span>
                       </label>
                       <button
                         type="button"
@@ -320,6 +420,12 @@ export default function AgencyRegisterPage() {
                         </motion.div>
                       </button>
                     </div>
+                    {fieldErrors.confirmPassword && touchedFields.confirmPassword && (
+                      <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {fieldErrors.confirmPassword}
+                      </p>
+                    )}
                   </motion.div>
 
                   {/* Website */}

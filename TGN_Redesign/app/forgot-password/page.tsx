@@ -154,7 +154,7 @@ export default function ForgotPasswordPage() {
                       </p>
                     </motion.div>
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
+                    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                       {/* Email Field with Floating Label */}
                       <motion.div
                         initial={{ opacity: 0, x: -30 }}
@@ -180,7 +180,7 @@ export default function ForgotPasswordPage() {
                             htmlFor="email"
                             className="absolute left-5 -top-3 px-2 bg-white text-sm font-semibold text-gray-700 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:font-normal peer-focus:-top-3 peer-focus:text-sm peer-focus:text-primary-600 peer-focus:font-semibold"
                           >
-                            Email Address
+                            Email Address <span className="text-red-500">*</span>
                           </label>
                           <Mail className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
                         </motion.div>

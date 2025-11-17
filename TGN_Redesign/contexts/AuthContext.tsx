@@ -31,24 +31,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Load user from localStorage on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('auth_user')
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser))
-      } catch (error) {
-        console.error('Error parsing stored user:', error)
-        localStorage.removeItem('auth_user')
-      }
+    if (typeof window === 'undefined') {
+      setIsLoading(false)
+      return
     }
-    setIsLoading(false)
+
+    try {
+      const storedUser = localStorage.getItem('auth_user')
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser))
+        } catch (error) {
+          console.error('Error parsing stored user:', error)
+          localStorage.removeItem('auth_user')
+        }
+      }
+    } catch (error) {
+      console.error('Error accessing localStorage:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   // Save user to localStorage whenever it changes
   useEffect(() => {
-    if (user) {
-      localStorage.setItem('auth_user', JSON.stringify(user))
-    } else {
-      localStorage.removeItem('auth_user')
+    if (typeof window === 'undefined') return
+
+    try {
+      if (user) {
+        localStorage.setItem('auth_user', JSON.stringify(user))
+      } else {
+        localStorage.removeItem('auth_user')
+      }
+    } catch (error) {
+      console.error('Error saving to localStorage:', error)
     }
   }, [user])
 
@@ -56,22 +72,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000))
 
+    // Check if this is a mobile/OTP login (identifier looks like a phone number)
+    const isMobileLogin = /^\+?1?\d{10}$/.test(email.replace(/\D/g, ''))
+
     // Basic validation
-    if (!email || !password) {
-      return { success: false, error: 'Email and password are required' }
+    if (!email) {
+      return { success: false, error: 'Email or mobile number is required' }
     }
 
-    if (password.length < 6) {
-      return { success: false, error: 'Password must be at least 6 characters' }
+    // For mobile/OTP login, password is not required
+    if (!isMobileLogin) {
+      if (!password) {
+        return { success: false, error: 'Password is required' }
+      }
+
+      if (password.length < 6) {
+        return { success: false, error: 'Password must be at least 6 characters' }
+      }
     }
 
     // For demo purposes, accept any valid email/password
     // In production, this would call your actual API
+    const userName = isMobileLogin 
+      ? `User ${email.slice(-4)}` // Use last 4 digits for mobile
+      : email.split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim() || 'User'
+    
+    const avatarName = isMobileLogin 
+      ? `User ${email.slice(-4)}`
+      : email.split('@')[0]
+    
     const mockUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: email.split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim() || 'User',
-      email: email,
-      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(email.split('@')[0])}&background=7f2860&color=fff&size=128`,
+      id: Math.random().toString(36).substring(2, 11),
+      name: userName,
+      email: isMobileLogin ? `${email}@mobile.user` : email, // Store mobile as email format for compatibility
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(avatarName)}&background=7f2860&color=fff&size=128`,
       role: role as User['role']
     }
 
@@ -99,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // For demo purposes, create user immediately
     // In production, this would call your actual API
     const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: Math.random().toString(36).substring(2, 11),
       name: name,
       email: email,
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=7f2860&color=fff&size=128`,
@@ -131,18 +165,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Store redirect path before clearing state
     const finalRedirectPath = redirectPath
     
-    // Clear user state and localStorage
-    setUser(null)
-    localStorage.removeItem('auth_user')
+    // Clear localStorage first
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('auth_user')
+      } catch (error) {
+        console.error('Error removing from localStorage:', error)
+      }
+    }
     
+    // Clear user state
+    setUser(null)
+    
+    // Show toast notification
     toast.success('Logged out successfully. See you soon!', {
       icon: '👋',
-      duration: 3000,
+      duration: 2000,
     })
     
-    // Use window.location.href for immediate hard redirect (bypasses React router)
-    // This ensures the redirect happens before ProtectedRoute can interfere
-    window.location.href = finalRedirectPath
+    // Use window.location.replace() for immediate hard redirect
+    // This bypasses React router and ensures redirect happens immediately
+    if (typeof window !== 'undefined') {
+      // Use replace to avoid adding to browser history
+      window.location.replace(finalRedirectPath)
+    } else {
+      // Fallback for SSR - use router
+      router.replace(finalRedirectPath)
+    }
   }
 
   const updateUser = (userData: Partial<User>) => {

@@ -136,7 +136,7 @@ export default function ChangePasswordPage() {
                   <p className="text-base text-gray-600">Update your account password</p>
                 </motion.div>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                   {/* Current Password Field */}
                   <motion.div
                     initial={{ opacity: 0, x: -30 }}
@@ -162,7 +162,7 @@ export default function ChangePasswordPage() {
                         htmlFor="currentPassword"
                         className="absolute left-5 -top-3 px-2 bg-white text-sm font-semibold text-gray-700 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:font-normal peer-focus:-top-3 peer-focus:text-sm peer-focus:text-primary-600 peer-focus:font-semibold"
                       >
-                        Current Password
+                        Current Password <span className="text-red-500">*</span>
                       </label>
                       <button
                         type="button"
@@ -199,7 +199,7 @@ export default function ChangePasswordPage() {
                         htmlFor="newPassword"
                         className="absolute left-5 -top-3 px-2 bg-white text-sm font-semibold text-gray-700 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:font-normal peer-focus:-top-3 peer-focus:text-sm peer-focus:text-primary-600 peer-focus:font-semibold"
                       >
-                        New Password
+                        New Password <span className="text-red-500">*</span>
                       </label>
                       <button
                         type="button"
@@ -262,7 +262,7 @@ export default function ChangePasswordPage() {
                         htmlFor="confirmPassword"
                         className="absolute left-5 -top-3 px-2 bg-white text-sm font-semibold text-gray-700 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:font-normal peer-focus:-top-3 peer-focus:text-sm peer-focus:text-primary-600 peer-focus:font-semibold"
                       >
-                        Confirm New Password
+                        Confirm New Password <span className="text-red-500">*</span>
                       </label>
                       <button
                         type="button"

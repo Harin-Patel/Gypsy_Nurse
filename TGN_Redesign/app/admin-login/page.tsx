@@ -18,11 +18,46 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({})
+
+  const validateField = (name: string, value: string): string => {
+    switch (name) {
+      case 'email':
+        if (!value.trim()) return 'Email address is required'
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address'
+        return ''
+      case 'password':
+        if (!value) return 'Password is required'
+        return ''
+      default:
+        return ''
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError('')
+
+    // Validate fields
+    const errors: Record<string, string> = {}
+    const emailError = validateField('email', email)
+    if (emailError) {
+      errors.email = emailError
+      setTouchedFields(prev => ({ ...prev, email: true }))
+    }
+    const passwordError = validateField('password', password)
+    if (passwordError) {
+      errors.password = passwordError
+      setTouchedFields(prev => ({ ...prev, password: true }))
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      setIsLoading(false)
+      return
+    }
 
     const result = await login(email, password, 'admin')
 
@@ -182,7 +217,7 @@ export default function AdminLoginPage() {
                   <p className="text-base text-gray-600">Log in to your admin account</p>
                 </motion.div>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                   {/* Email Field with Floating Label */}
                   <motion.div
                     initial={{ opacity: 0, x: -30 }}
@@ -199,19 +234,45 @@ export default function AdminLoginPage() {
                         id="email"
                         type="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                          setEmail(e.target.value)
+                          if (fieldErrors.email) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev }
+                              delete newErrors.email
+                              return newErrors
+                            })
+                          }
+                        }}
+                        onBlur={(e) => {
+                          setTouchedFields(prev => ({ ...prev, email: true }))
+                          const error = validateField('email', e.target.value)
+                          if (error) {
+                            setFieldErrors(prev => ({ ...prev, email: error }))
+                          }
+                        }}
                         placeholder=" "
                         required
-                        className="peer w-full px-5 py-4 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent"
+                        className={`peer w-full px-5 py-4 bg-gradient-to-br from-gray-50 to-white border-2 rounded-xl outline-none transition-all duration-300 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent ${
+                          fieldErrors.email && touchedFields.email
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-gray-200 focus:border-primary-500'
+                        }`}
                       />
                       <label
                         htmlFor="email"
                         className="absolute left-5 -top-3 px-2 bg-white text-sm font-semibold text-gray-700 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:font-normal peer-focus:-top-3 peer-focus:text-sm peer-focus:text-primary-600 peer-focus:font-semibold"
                       >
-                        Email Address
+                        Email Address <span className="text-red-500">*</span>
                       </label>
                       <Mail className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
                     </motion.div>
+                    {fieldErrors.email && touchedFields.email && (
+                      <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {fieldErrors.email}
+                      </p>
+                    )}
                   </motion.div>
 
                   {/* Password Field */}
@@ -230,16 +291,36 @@ export default function AdminLoginPage() {
                         id="password"
                         type={showPassword ? 'text' : 'password'}
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                          setPassword(e.target.value)
+                          if (fieldErrors.password) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev }
+                              delete newErrors.password
+                              return newErrors
+                            })
+                          }
+                        }}
+                        onBlur={(e) => {
+                          setTouchedFields(prev => ({ ...prev, password: true }))
+                          const error = validateField('password', e.target.value)
+                          if (error) {
+                            setFieldErrors(prev => ({ ...prev, password: error }))
+                          }
+                        }}
                         placeholder=" "
                         required
-                        className="peer w-full px-5 py-4 pr-24 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent"
+                        className={`peer w-full px-5 py-4 pr-24 bg-gradient-to-br from-gray-50 to-white border-2 rounded-xl outline-none transition-all duration-300 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent ${
+                          fieldErrors.password && touchedFields.password
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-gray-200 focus:border-primary-500'
+                        }`}
                       />
                       <label
                         htmlFor="password"
                         className="absolute left-5 -top-3 px-2 bg-white text-sm font-semibold text-gray-700 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:font-normal peer-focus:-top-3 peer-focus:text-sm peer-focus:text-primary-600 peer-focus:font-semibold"
                       >
-                        Password
+                        Password <span className="text-red-500">*</span>
                       </label>
                       <Lock className="absolute right-14 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
                       <button
@@ -254,6 +335,12 @@ export default function AdminLoginPage() {
                         )}
                       </button>
                     </motion.div>
+                    {fieldErrors.password && touchedFields.password && (
+                      <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {fieldErrors.password}
+                      </p>
+                    )}
                   </motion.div>
 
                   {/* Forgot Password */}

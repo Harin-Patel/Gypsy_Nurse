@@ -1562,7 +1562,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
             onClick={() => setShowEditModal(false)}
           >
             {/* Modal */}
@@ -1571,7 +1571,7 @@ export default function ProfilePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl"
+              className="relative w-full max-w-2xl mx-4 sm:mx-0"
               style={{ maxHeight: '90vh' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -1579,10 +1579,10 @@ export default function ProfilePage() {
               <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
               
               {/* Main modal container */}
-              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
                 
                 {/* Header Section */}
-                <div className="relative px-8 pt-8 pb-6">
+                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
                   {/* Icon and Title */}
                   <div className="flex items-start gap-5">
                     {/* Animated Icon */}
@@ -1597,8 +1597,8 @@ export default function ProfilePage() {
                       }}
                       className="relative"
                     >
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <Edit className="w-8 h-8 text-white" />
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
+                        <Edit className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
                       </div>
                       {/* Pulsing ring */}
                       <motion.div
@@ -1621,7 +1621,7 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-2xl font-bold text-gray-900 mb-1"
+                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
                       >
                         Edit Profile Information
                       </motion.h2>
@@ -1638,12 +1638,12 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Divider */}
-                <div className="px-8">
+                <div className="px-4 sm:px-6 md:px-8">
                   <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
                 </div>
 
               {/* Content Area - Scrollable */}
-              <div className="px-8 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 300px)' }}>
+              <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* First Name */}
                   <motion.div
@@ -1869,23 +1869,24 @@ export default function ProfilePage() {
                   </div>
 
               {/* Footer */}
-              <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
-                <div className="flex items-center justify-between gap-4">
+              <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
                   {/* Info text */}
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.4, delay: 0.9 }}
-                    className="text-xs text-gray-500 flex items-center gap-1.5"
+                    className="text-xs text-gray-500 flex items-center gap-1.5 text-center sm:text-left"
                   >
-                    <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-4 h-4 text-primary-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    Your information is secure and encrypted
+                    <span className="hidden sm:inline">Your information is secure and encrypted</span>
+                    <span className="sm:hidden">Secure & encrypted</span>
                   </motion.p>
                   
                   {/* Action buttons */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
                     <motion.button
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -1893,7 +1894,7 @@ export default function ProfilePage() {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setShowEditModal(false)}
-                      className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow"
+                      className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
                     >
                       Cancel
                     </motion.button>
@@ -1908,7 +1909,7 @@ export default function ProfilePage() {
                         toast.success('Profile updated successfully')
                         setShowEditModal(false)
                       }}
-                      className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
+                      className="group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden text-sm sm:text-base"
                     >
                       <span className="relative z-10 flex items-center gap-2">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1945,7 +1946,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
             onClick={() => setShowAddModal(false)}
           >
             {/* Modal */}
@@ -1954,7 +1955,7 @@ export default function ProfilePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl"
+              className="relative w-full max-w-2xl mx-4 sm:mx-0"
               style={{ maxHeight: '90vh' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -1962,10 +1963,10 @@ export default function ProfilePage() {
               <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
               
               {/* Main modal container */}
-              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
                 
                 {/* Header Section */}
-                <div className="relative px-8 pt-8 pb-6">
+                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
                   {/* Icon and Title */}
                   <div className="flex items-start gap-5">
                     {/* Animated Icon */}
@@ -2004,7 +2005,7 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-2xl font-bold text-gray-900 mb-1"
+                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
                       >
                         Add Professional License
                       </motion.h2>
@@ -2026,7 +2027,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Content Area - Scrollable */}
-                <div className="px-8 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 300px)' }}>
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     {/* License Type - Full Width */}
@@ -2125,7 +2126,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
                   <div className="flex items-center justify-between gap-4">
                     {/* Info text */}
                     <motion.p
@@ -2149,7 +2150,7 @@ export default function ProfilePage() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => setShowAddModal(false)}
-                        className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow"
+                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
                       >
                         Cancel
                       </motion.button>
@@ -2164,7 +2165,7 @@ export default function ProfilePage() {
                           toast.success('License added successfully')
                           setShowAddModal(false)
                         }}
-                        className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
+                        className="group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden text-sm sm:text-base"
                       >
                         <span className="relative z-10 flex items-center gap-2">
                           <Plus className="w-5 h-5" />
@@ -2199,7 +2200,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
             onClick={() => setShowAddCertificateModal(false)}
           >
             {/* Modal */}
@@ -2208,7 +2209,7 @@ export default function ProfilePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl"
+              className="relative w-full max-w-2xl mx-4 sm:mx-0"
               style={{ maxHeight: '90vh' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -2216,10 +2217,10 @@ export default function ProfilePage() {
               <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
               
               {/* Main modal container */}
-              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
                 
                 {/* Header Section */}
-                <div className="relative px-8 pt-8 pb-6">
+                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
                   {/* Icon and Title */}
                   <div className="flex items-start gap-5">
                     {/* Animated Icon */}
@@ -2258,7 +2259,7 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-2xl font-bold text-gray-900 mb-1"
+                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
                       >
                         Add Professional Certificate
                       </motion.h2>
@@ -2280,7 +2281,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Content Area - Scrollable */}
-                <div className="px-8 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 300px)' }}>
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     {/* Certificate Type - Full Width */}
@@ -2358,7 +2359,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
                   <div className="flex items-center justify-between gap-4">
                     {/* Info text */}
                     <motion.p
@@ -2382,7 +2383,7 @@ export default function ProfilePage() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => setShowAddCertificateModal(false)}
-                        className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow"
+                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
                       >
                         Cancel
                       </motion.button>
@@ -2397,7 +2398,7 @@ export default function ProfilePage() {
                           toast.success('Certificate added successfully')
                           setShowAddCertificateModal(false)
                         }}
-                        className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
+                        className="group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden text-sm sm:text-base"
                       >
                         <span className="relative z-10 flex items-center gap-2">
                           <Plus className="w-5 h-5" />
@@ -2432,7 +2433,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
             onClick={() => setShowAddSpecialtyModal(false)}
           >
             {/* Modal */}
@@ -2441,7 +2442,7 @@ export default function ProfilePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl"
+              className="relative w-full max-w-2xl mx-4 sm:mx-0"
               style={{ maxHeight: '90vh' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -2449,10 +2450,10 @@ export default function ProfilePage() {
               <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
               
               {/* Main modal container */}
-              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
                 
                 {/* Header Section */}
-                <div className="relative px-8 pt-8 pb-6">
+                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
                   {/* Icon and Title */}
                   <div className="flex items-start gap-5">
                     {/* Animated Icon */}
@@ -2491,7 +2492,7 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-2xl font-bold text-gray-900 mb-1"
+                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
                       >
                         Add Certification Specialty
                       </motion.h2>
@@ -2513,7 +2514,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Content Area - Scrollable */}
-                <div className="px-8 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 300px)' }}>
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                   <div className="grid grid-cols-1 gap-6">
                     
                     {/* Certification */}
@@ -2590,7 +2591,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
                   <div className="flex items-center justify-between gap-4">
                     {/* Info text */}
                     <motion.p
@@ -2614,7 +2615,7 @@ export default function ProfilePage() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => setShowAddSpecialtyModal(false)}
-                        className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow"
+                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
                       >
                         Cancel
                       </motion.button>
@@ -2629,7 +2630,7 @@ export default function ProfilePage() {
                           toast.success('Specialty added successfully')
                           setShowAddSpecialtyModal(false)
                         }}
-                        className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
+                        className="group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden text-sm sm:text-base"
                       >
                         <span className="relative z-10 flex items-center gap-2">
                           <Plus className="w-5 h-5" />
@@ -2664,7 +2665,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
             onClick={() => {
               setShowAddWorkHistoryModal(false)
               setCurrentlyWorking(false)
@@ -2687,10 +2688,10 @@ export default function ProfilePage() {
               <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
               
               {/* Main modal container */}
-              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
                 
                 {/* Header Section */}
-                <div className="relative px-8 pt-8 pb-6">
+                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
                   {/* Icon and Title */}
                   <div className="flex items-start gap-5">
                     {/* Animated Icon */}
@@ -2729,7 +2730,7 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-2xl font-bold text-gray-900 mb-1"
+                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
                       >
                         Add Work History
                       </motion.h2>
@@ -2751,7 +2752,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Content Area - Scrollable */}
-                <div className="px-8 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 300px)' }}>
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     {/* Employer Full Name */}
@@ -2974,7 +2975,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
                   <div className="flex items-center justify-between gap-4">
                     {/* Info text */}
                     <motion.p
@@ -3004,7 +3005,7 @@ export default function ProfilePage() {
                           setPerDiem(false)
                           setChargeExperience(false)
                         }}
-                        className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow"
+                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
                       >
                         Cancel
                       </motion.button>
@@ -3023,7 +3024,7 @@ export default function ProfilePage() {
                           setPerDiem(false)
                           setChargeExperience(false)
                         }}
-                        className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
+                        className="group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden text-sm sm:text-base"
                       >
                         <span className="relative z-10 flex items-center gap-2">
                           <Plus className="w-5 h-5" />
@@ -3058,7 +3059,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
             onClick={() => {
               setShowAddEducationModal(false)
               setDidGraduate(false)
@@ -3070,7 +3071,7 @@ export default function ProfilePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl"
+              className="relative w-full max-w-2xl mx-4 sm:mx-0"
               style={{ maxHeight: '90vh' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -3078,10 +3079,10 @@ export default function ProfilePage() {
               <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
               
               {/* Main modal container */}
-              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
                 
                 {/* Header Section */}
-                <div className="relative px-8 pt-8 pb-6">
+                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
                   {/* Icon and Title */}
                   <div className="flex items-start gap-5">
                     {/* Animated Icon */}
@@ -3120,7 +3121,7 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-2xl font-bold text-gray-900 mb-1"
+                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
                       >
                         Add Education History
                       </motion.h2>
@@ -3142,7 +3143,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Content Area - Scrollable */}
-                <div className="px-8 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 300px)' }}>
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     {/* School Name */}
@@ -3271,7 +3272,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
                   <div className="flex items-center justify-between gap-4">
                     {/* Info text */}
                     <motion.p
@@ -3298,7 +3299,7 @@ export default function ProfilePage() {
                           setShowAddEducationModal(false)
                           setDidGraduate(false)
                         }}
-                        className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow"
+                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
                       >
                         Cancel
                       </motion.button>
@@ -3314,7 +3315,7 @@ export default function ProfilePage() {
                           setShowAddEducationModal(false)
                           setDidGraduate(false)
                         }}
-                        className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
+                        className="group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden text-sm sm:text-base"
                       >
                         <span className="relative z-10 flex items-center gap-2">
                           <Plus className="w-5 h-5" />
@@ -3349,7 +3350,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
             onClick={() => setShowAddReferenceModal(false)}
           >
             {/* Modal */}
@@ -3358,7 +3359,7 @@ export default function ProfilePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl"
+              className="relative w-full max-w-2xl mx-4 sm:mx-0"
               style={{ maxHeight: '90vh' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -3366,10 +3367,10 @@ export default function ProfilePage() {
               <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
               
               {/* Main modal container */}
-              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
                 
                 {/* Header Section */}
-                <div className="relative px-8 pt-8 pb-6">
+                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
                   {/* Icon and Title */}
                   <div className="flex items-start gap-5">
                     {/* Animated Icon */}
@@ -3408,7 +3409,7 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-2xl font-bold text-gray-900 mb-1"
+                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
                       >
                         Add Professional Reference
                       </motion.h2>
@@ -3430,7 +3431,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Content Area - Scrollable */}
-                <div className="px-8 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 300px)' }}>
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                   <div className="grid grid-cols-1 gap-6">
                     
                     {/* Full Name */}
@@ -3561,7 +3562,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
                   <div className="flex items-center justify-between gap-4">
                     {/* Info text */}
                     <motion.p
@@ -3585,7 +3586,7 @@ export default function ProfilePage() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => setShowAddReferenceModal(false)}
-                        className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow"
+                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
                       >
                         Cancel
                       </motion.button>
@@ -3600,7 +3601,7 @@ export default function ProfilePage() {
                           toast.success('Reference added successfully')
                           setShowAddReferenceModal(false)
                         }}
-                        className="group relative px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
+                        className="group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden text-sm sm:text-base"
                       >
                         <span className="relative z-10 flex items-center gap-2">
                           <Plus className="w-5 h-5" />
@@ -3635,7 +3636,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
             onClick={() => {
               setShowEditLicenseModal(false)
               setSelectedItem(null)
@@ -3647,7 +3648,7 @@ export default function ProfilePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl"
+              className="relative w-full max-w-2xl mx-4 sm:mx-0"
               style={{ maxHeight: '90vh' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -3655,10 +3656,10 @@ export default function ProfilePage() {
               <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
               
               {/* Main modal container */}
-              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
                 
                 {/* Header Section */}
-                <div className="relative px-8 pt-8 pb-6">
+                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
                   {/* Icon and Title */}
                   <div className="flex items-start gap-5">
                     {/* Animated Icon */}
@@ -3697,7 +3698,7 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-2xl font-bold text-gray-900 mb-1"
+                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
                       >
                         Edit Professional License
                       </motion.h2>
@@ -3719,7 +3720,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Content Area - Scrollable */}
-                <div className="px-8 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 300px)' }}>
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     {/* License Type - Full Width */}
@@ -3828,7 +3829,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
                   <div className="flex items-center justify-between gap-4">
                     {/* Info text */}
                     <motion.p
@@ -3855,7 +3856,7 @@ export default function ProfilePage() {
                           setShowEditLicenseModal(false)
                           setSelectedItem(null)
                         }}
-                        className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow"
+                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
                       >
                         Cancel
                       </motion.button>
@@ -3904,7 +3905,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
             onClick={() => {
               setShowEditCertificateModal(false)
               setSelectedItem(null)
@@ -3916,7 +3917,7 @@ export default function ProfilePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl"
+              className="relative w-full max-w-2xl mx-4 sm:mx-0"
               style={{ maxHeight: '90vh' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -3924,10 +3925,10 @@ export default function ProfilePage() {
               <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
               
               {/* Main modal container */}
-              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
                 
                 {/* Header Section */}
-                <div className="relative px-8 pt-8 pb-6">
+                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
                   {/* Icon and Title */}
                   <div className="flex items-start gap-5">
                     {/* Animated Icon */}
@@ -3966,7 +3967,7 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-2xl font-bold text-gray-900 mb-1"
+                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
                       >
                         Edit Professional Certificate
                       </motion.h2>
@@ -3988,7 +3989,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Content Area - Scrollable */}
-                <div className="px-8 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 300px)' }}>
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     {/* Certificate Type - Full Width */}
@@ -4080,7 +4081,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
                   <div className="flex items-center justify-between gap-4">
                     {/* Info text */}
                     <motion.p
@@ -4107,7 +4108,7 @@ export default function ProfilePage() {
                           setShowEditCertificateModal(false)
                           setSelectedItem(null)
                         }}
-                        className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow"
+                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
                       >
                         Cancel
                       </motion.button>
@@ -4155,7 +4156,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
             onClick={() => {
               setShowEditSpecialtyModal(false)
               setSelectedItem(null)
@@ -4166,7 +4167,7 @@ export default function ProfilePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl"
+              className="relative w-full max-w-2xl mx-4 sm:mx-0"
               style={{ maxHeight: '90vh' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -4194,7 +4195,7 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-2xl font-bold text-gray-900 mb-1"
+                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
                       >
                         Edit Certification Specialty
                       </motion.h2>
@@ -4212,7 +4213,7 @@ export default function ProfilePage() {
                 <div className="px-8">
                   <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
                 </div>
-                <div className="px-8 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 300px)' }}>
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
@@ -4260,7 +4261,7 @@ export default function ProfilePage() {
                     </motion.div>
                   </div>
                 </div>
-                <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
                   <div className="flex items-center justify-between gap-4">
                     <motion.p
                       initial={{ opacity: 0 }}
@@ -4284,7 +4285,7 @@ export default function ProfilePage() {
                           setShowEditSpecialtyModal(false)
                           setSelectedItem(null)
                         }}
-                        className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow"
+                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
                       >
                         Cancel
                       </motion.button>
@@ -4325,7 +4326,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
             onClick={() => {
               setShowEditWorkHistoryModal(false)
               setSelectedItem(null)
@@ -4340,7 +4341,7 @@ export default function ProfilePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl"
+              className="relative w-full max-w-2xl mx-4 sm:mx-0"
               style={{ maxHeight: '90vh' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -4368,7 +4369,7 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-2xl font-bold text-gray-900 mb-1"
+                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
                       >
                         Edit Work History
                       </motion.h2>
@@ -4386,7 +4387,7 @@ export default function ProfilePage() {
                 <div className="px-8">
                   <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
                 </div>
-                <div className="px-8 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 300px)' }}>
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.4 }} className="md:col-span-2">
                       <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
@@ -4516,7 +4517,7 @@ export default function ProfilePage() {
                     )}
                   </div>
                 </div>
-                <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
                   <div className="flex items-center justify-between gap-4">
                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.9 }} className="text-xs text-gray-500 flex items-center gap-1.5">
                       <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
@@ -4547,7 +4548,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
             onClick={() => {
               setShowEditEducationModal(false)
               setSelectedItem(null)
@@ -4559,7 +4560,7 @@ export default function ProfilePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl"
+              className="relative w-full max-w-2xl mx-4 sm:mx-0"
               style={{ maxHeight: '90vh' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -4587,7 +4588,7 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-2xl font-bold text-gray-900 mb-1"
+                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
                       >
                         Edit Education History
                       </motion.h2>
@@ -4605,7 +4606,7 @@ export default function ProfilePage() {
                 <div className="px-8">
                   <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
                 </div>
-                <div className="px-8 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 300px)' }}>
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.4 }} className="md:col-span-2">
                       <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
@@ -4665,7 +4666,7 @@ export default function ProfilePage() {
                     )}
                   </div>
                 </div>
-                <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
                   <div className="flex items-center justify-between gap-4">
                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.8 }} className="text-xs text-gray-500 flex items-center gap-1.5">
                       <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
@@ -4696,7 +4697,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
             onClick={() => {
               setShowEditReferenceModal(false)
               setSelectedItem(null)
@@ -4707,7 +4708,7 @@ export default function ProfilePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl"
+              className="relative w-full max-w-2xl mx-4 sm:mx-0"
               style={{ maxHeight: '90vh' }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -4735,7 +4736,7 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-2xl font-bold text-gray-900 mb-1"
+                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
                       >
                         Edit Professional Reference
                       </motion.h2>
@@ -4753,7 +4754,7 @@ export default function ProfilePage() {
                 <div className="px-8">
                   <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
                 </div>
-                <div className="px-8 py-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 300px)' }}>
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.4 }} className="md:col-span-2">
                       <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
@@ -4792,7 +4793,7 @@ export default function ProfilePage() {
                     </motion.div>
                   </div>
                 </div>
-                <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
                   <div className="flex items-center justify-between gap-4">
                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.9 }} className="text-xs text-gray-500 flex items-center gap-1.5">
                       <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
@@ -4824,7 +4825,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
             onClick={handleDeleteCancel}
           >
             {/* Modal */}
@@ -4833,17 +4834,17 @@ export default function ProfilePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-lg"
+              className="relative w-full max-w-lg mx-4 sm:mx-0"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Glow effect behind modal */}
               <div className="absolute -inset-4 bg-gradient-to-r from-red-500/10 via-red-400/10 to-red-500/10 rounded-3xl blur-3xl" />
               
               {/* Main modal container */}
-              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
                 
                 {/* Header Section */}
-                <div className="relative px-8 pt-8 pb-6">
+                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
                   {/* Icon and Title */}
                   <div className="flex items-start gap-5">
                     {/* Animated Icon */}
@@ -4858,8 +4859,8 @@ export default function ProfilePage() {
                       }}
                       className="relative"
                     >
-                      <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/30">
-                        <Trash2 className="w-8 h-8 text-white" />
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/30">
+                        <Trash2 className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
                       </div>
                       {/* Pulsing ring */}
                       <motion.div
@@ -4882,7 +4883,7 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-2xl font-bold text-gray-900 mb-1"
+                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
                       >
                         Delete {deleteSection}
                       </motion.h2>
@@ -4904,7 +4905,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
                   <div className="flex items-center justify-center gap-3">
                     <motion.button
                       initial={{ opacity: 0, scale: 0.9 }}
@@ -4913,7 +4914,7 @@ export default function ProfilePage() {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={handleDeleteCancel}
-                      className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow"
+                      className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
                     >
                       Cancel
                     </motion.button>

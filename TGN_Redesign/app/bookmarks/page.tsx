@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
@@ -10,6 +10,14 @@ import {
   MapPin, Calendar, Briefcase, Heart,
   Building2, FileText, Clock, TrendingUp, Sparkles, ArrowUpRight, Trash2
 } from 'lucide-react'
+import {
+  getBookmarkedJobs,
+  removeBookmarkedJob
+} from '@/utils/jobStorage'
+import {
+  getJobById,
+  jobToBookmarkedJob
+} from '@/utils/jobData'
 
 interface BookmarkedJob {
   id: string
@@ -25,44 +33,48 @@ interface BookmarkedJob {
 }
 
 export default function BookmarksPage() {
-  const [bookmarkedJobs, setBookmarkedJobs] = useState<BookmarkedJob[]>([
-    {
-      id: '4',
-      jobTitle: 'ICU Travel Nurse - Phoenix, AZ',
-      facility: 'Banner Health System',
-      facilityAvailable: true,
-      jobType: 'ICU - Registered Nurse',
-      location: 'Arizona',
-      salary: '$3,500/week',
-      duration: '13 weeks',
-      savedDate: '11/10/2025',
-      staffingCompany: 'AB Staffing Solutions'
-    },
-    {
-      id: '5',
-      jobTitle: 'Med-Surg RN - Seattle, WA',
-      facility: 'Seattle Medical Center',
-      facilityAvailable: true,
-      jobType: 'Medical-Surgical - Registered Nurse',
-      location: 'Washington',
-      salary: '$3,000/week',
-      duration: '13 weeks',
-      savedDate: '11/9/2025',
-      staffingCompany: 'AB Staffing Solutions'
-    },
-    {
-      id: '7',
-      jobTitle: 'ER Nurse - Boston, MA',
-      facility: 'Massachusetts General Hospital',
-      facilityAvailable: true,
-      jobType: 'Emergency Room - Registered Nurse',
-      location: 'Massachusetts',
-      salary: '$3,200/week',
-      duration: '13 weeks',
-      savedDate: '11/8/2025',
-      staffingCompany: 'Travel Nurse Solutions'
+  const [bookmarkedJobs, setBookmarkedJobs] = useState<BookmarkedJob[]>([])
+
+  // Function to load bookmarked jobs from localStorage
+  const loadBookmarkedJobs = () => {
+    if (typeof window === 'undefined') return
+
+    const bookmarkedJobIds = getBookmarkedJobs()
+    const bookmarked = bookmarkedJobIds
+      .map(jobId => {
+        const job = getJobById(jobId)
+        if (job) {
+          return jobToBookmarkedJob(job)
+        }
+        return null
+      })
+      .filter((job): job is BookmarkedJob => job !== null)
+    setBookmarkedJobs(bookmarked)
+  }
+
+  // Load bookmarked jobs from localStorage on mount and when page becomes visible
+  useEffect(() => {
+    loadBookmarkedJobs()
+
+    // Reload when page becomes visible (user navigates back)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadBookmarkedJobs()
+      }
     }
-  ])
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    // Also listen for storage changes (when localStorage is updated from other tabs)
+    const handleStorageChange = () => {
+      loadBookmarkedJobs()
+    }
+    window.addEventListener('storage', handleStorageChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('storage', handleStorageChange)
+    }
+  }, [])
 
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<string | null>(null)
@@ -75,6 +87,7 @@ export default function BookmarksPage() {
   const handleConfirmDelete = () => {
     if (jobToDelete) {
       setBookmarkedJobs(prevJobs => prevJobs.filter(job => job.id !== jobToDelete))
+      removeBookmarkedJob(jobToDelete)
     }
     setShowDeleteModal(false)
     setJobToDelete(null)

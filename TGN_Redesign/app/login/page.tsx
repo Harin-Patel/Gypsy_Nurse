@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, Heart, Star, Briefcase, AlertCircle } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, Heart, Star, Briefcase, AlertCircle, Shield } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Navigation from '@/components/Navigation'
@@ -20,22 +20,122 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({})
+  const [otp, setOtp] = useState('')
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpTimer, setOtpTimer] = useState(0)
+
+  const validateField = (name: string, value: string): string => {
+    switch (name) {
+      case 'email':
+        if (!value.trim()) return 'Email address is required'
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address'
+        return ''
+      case 'mobile':
+        if (!value.trim()) return 'Mobile number is required'
+        if (!/^\d{10}$/.test(value.replace(/\D/g, ''))) return 'Please enter a valid 10-digit mobile number'
+        return ''
+      case 'password':
+        if (!value) return 'Password is required'
+        return ''
+      case 'otp':
+        if (!value.trim()) return 'OTP is required'
+        if (!/^\d{6}$/.test(value)) return 'Please enter a valid 6-digit OTP'
+        return ''
+      default:
+        return ''
+    }
+  }
+
+  // Timer effect for OTP resend
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null
+    if (otpTimer > 0) {
+      interval = setInterval(() => {
+        setOtpTimer(prev => prev - 1)
+      }, 1000)
+    }
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [otpTimer])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError('')
 
-    const loginEmail = loginType === 'email' ? email : mobile
-    
-    // Handle mobile OTP
-    if (loginType === 'mobile') {
-      toast.success('OTP sent successfully! Check your phone.')
-      setIsLoading(false)
-      return
+    // Validate fields
+    const errors: Record<string, string> = {}
+    if (loginType === 'email') {
+      const emailError = validateField('email', email)
+      if (emailError) {
+        errors.email = emailError
+        setTouchedFields(prev => ({ ...prev, email: true }))
+      }
+      const passwordError = validateField('password', password)
+      if (passwordError) {
+        errors.password = passwordError
+        setTouchedFields(prev => ({ ...prev, password: true }))
+      }
+    } else {
+      // Mobile login flow
+      if (!otpSent) {
+        // Send OTP
+        const mobileError = validateField('mobile', mobile)
+        if (mobileError) {
+          errors.mobile = mobileError
+          setTouchedFields(prev => ({ ...prev, mobile: true }))
+        }
+
+        if (Object.keys(errors).length > 0) {
+          setFieldErrors(errors)
+          setIsLoading(false)
+          return
+        }
+
+        // Simulate sending OTP
+        setTimeout(() => {
+          toast.success('OTP sent successfully! Check your phone.')
+          setOtpSent(true)
+          setOtpTimer(30) // 30 seconds timer
+          setIsLoading(false)
+        }, 1000)
+        return
+      } else {
+        // Verify OTP
+        const otpError = validateField('otp', otp)
+        if (otpError) {
+          errors.otp = otpError
+          setTouchedFields(prev => ({ ...prev, otp: true }))
+        }
+
+        if (Object.keys(errors).length > 0) {
+          setFieldErrors(errors)
+          setIsLoading(false)
+          return
+        }
+
+        // Simulate OTP verification
+        setTimeout(async () => {
+          // After successful OTP verification, proceed with login
+          const result = await login(mobile, '', 'jobseeker')
+          if (result.success) {
+            toast.success('Login successful! Welcome back!')
+            router.push('/')
+          } else {
+            const errorMsg = result.error || 'OTP verification failed'
+            setError(errorMsg)
+            toast.error(errorMsg)
+          }
+          setIsLoading(false)
+        }, 1000)
+        return
+      }
     }
 
-    const result = await login(loginEmail, password, 'jobseeker')
+    const result = await login(email, password, 'jobseeker')
 
     if (result.success) {
       toast.success('Login successful! Welcome back!')
@@ -47,6 +147,19 @@ export default function LoginPage() {
     }
     
     setIsLoading(false)
+  }
+
+  const handleResendOtp = () => {
+    if (otpTimer > 0) return // Don't allow resend if timer is active
+    
+    setIsLoading(true)
+    // Simulate resending OTP
+    setTimeout(() => {
+      toast.success('OTP resent successfully! Check your phone.')
+      setOtpTimer(30) // Reset timer to 30 seconds
+      setOtp('') // Clear OTP field
+      setIsLoading(false)
+    }, 1000)
   }
 
   return (
@@ -203,7 +316,12 @@ export default function LoginPage() {
                   <div className="inline-flex rounded-xl bg-gradient-to-r from-gray-50 to-gray-100 p-1.5 shadow-inner">
                     <motion.button
                       type="button"
-                      onClick={() => setLoginType('email')}
+                      onClick={() => {
+                        setLoginType('email')
+                        setOtpSent(false)
+                        setOtp('')
+                        setOtpTimer(0)
+                      }}
                       className={`relative px-8 py-3 rounded-lg font-semibold transition-all ${
                         loginType === 'email'
                           ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg'
@@ -230,7 +348,12 @@ export default function LoginPage() {
                     </motion.button>
                     <motion.button
                       type="button"
-                      onClick={() => setLoginType('mobile')}
+                      onClick={() => {
+                        setLoginType('mobile')
+                        setOtpSent(false)
+                        setOtp('')
+                        setOtpTimer(0)
+                      }}
                       className={`relative px-8 py-3 rounded-lg font-semibold transition-all ${
                         loginType === 'mobile'
                           ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg'
@@ -258,7 +381,7 @@ export default function LoginPage() {
                   </div>
                 </motion.div>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                   {/* Email or Mobile Field */}
                   {loginType === 'email' ? (
                     <motion.div
@@ -278,19 +401,45 @@ export default function LoginPage() {
                           id="email"
                           type="email"
                           value={email}
-                          onChange={(e) => setEmail(e.target.value)}
+                          onChange={(e) => {
+                            setEmail(e.target.value)
+                            if (fieldErrors.email) {
+                              setFieldErrors(prev => {
+                                const newErrors = { ...prev }
+                                delete newErrors.email
+                                return newErrors
+                              })
+                            }
+                          }}
+                          onBlur={(e) => {
+                            setTouchedFields(prev => ({ ...prev, email: true }))
+                            const error = validateField('email', e.target.value)
+                            if (error) {
+                              setFieldErrors(prev => ({ ...prev, email: error }))
+                            }
+                          }}
                           placeholder=" "
                           required
-                          className="peer w-full px-5 py-4 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent"
+                          className={`peer w-full px-5 py-4 bg-gradient-to-br from-gray-50 to-white border-2 rounded-xl outline-none transition-all duration-300 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent ${
+                            fieldErrors.email && touchedFields.email
+                              ? 'border-red-500 focus:border-red-500'
+                              : 'border-gray-200 focus:border-primary-500'
+                          }`}
                         />
                         <label
                           htmlFor="email"
                           className="absolute left-5 -top-3 px-2 bg-white text-sm font-semibold text-gray-700 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:font-normal peer-focus:-top-3 peer-focus:text-sm peer-focus:text-primary-600 peer-focus:font-semibold"
                         >
-                          Email Address
+                          Email Address <span className="text-red-500">*</span>
                         </label>
                         <Mail className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
                       </motion.div>
+                      {fieldErrors.email && touchedFields.email && (
+                        <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {fieldErrors.email}
+                        </p>
+                      )}
                     </motion.div>
                   ) : (
                     <motion.div
@@ -310,21 +459,128 @@ export default function LoginPage() {
                           id="mobile"
                           type="tel"
                           value={mobile}
-                          onChange={(e) => setMobile(e.target.value)}
+                          onChange={(e) => {
+                            setMobile(e.target.value)
+                            if (fieldErrors.mobile) {
+                              setFieldErrors(prev => {
+                                const newErrors = { ...prev }
+                                delete newErrors.mobile
+                                return newErrors
+                              })
+                            }
+                          }}
+                          onBlur={(e) => {
+                            setTouchedFields(prev => ({ ...prev, mobile: true }))
+                            const error = validateField('mobile', e.target.value)
+                            if (error) {
+                              setFieldErrors(prev => ({ ...prev, mobile: error }))
+                            }
+                          }}
                           placeholder=" "
                           required
-                          className="peer w-full pl-12 pr-5 py-4 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent"
+                          disabled={otpSent}
+                          className={`peer w-full pl-12 pr-5 py-4 bg-gradient-to-br from-gray-50 to-white border-2 rounded-xl outline-none transition-all duration-300 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent ${
+                            fieldErrors.mobile && touchedFields.mobile
+                              ? 'border-red-500 focus:border-red-500'
+                              : 'border-gray-200 focus:border-primary-500'
+                          } ${otpSent ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
                         />
                         <label
                           htmlFor="mobile"
                           className="absolute left-5 -top-3 px-2 bg-white text-sm font-semibold text-gray-700 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:left-12 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:font-normal peer-focus:-top-3 peer-focus:left-5 peer-focus:text-sm peer-focus:text-primary-600 peer-focus:font-semibold"
                         >
-                          Mobile Number
+                          Mobile Number <span className="text-red-500">*</span>
                         </label>
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none peer-focus:text-primary-600 transition-colors">
                           +1
                         </div>
                       </motion.div>
+                      {fieldErrors.mobile && touchedFields.mobile && (
+                        <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {fieldErrors.mobile}
+                        </p>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {/* OTP Field (Only for Mobile after OTP is sent) */}
+                  {loginType === 'mobile' && otpSent && (
+                    <motion.div
+                      key="otp-field"
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 20 }}
+                      transition={{ delay: 0.1, type: "spring" }}
+                      className="relative group"
+                    >
+                      <motion.div 
+                        className="relative"
+                        whileHover={{ scale: 1.01 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
+                        <input
+                          id="otp"
+                          type="text"
+                          value={otp}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '').slice(0, 6)
+                            setOtp(value)
+                            if (fieldErrors.otp) {
+                              setFieldErrors(prev => {
+                                const newErrors = { ...prev }
+                                delete newErrors.otp
+                                return newErrors
+                              })
+                            }
+                          }}
+                          onBlur={(e) => {
+                            setTouchedFields(prev => ({ ...prev, otp: true }))
+                            const error = validateField('otp', e.target.value)
+                            if (error) {
+                              setFieldErrors(prev => ({ ...prev, otp: error }))
+                            }
+                          }}
+                          placeholder=" "
+                          required
+                          maxLength={6}
+                          className={`peer w-full px-5 py-4 bg-gradient-to-br from-gray-50 to-white border-2 rounded-xl outline-none transition-all duration-300 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent ${
+                            fieldErrors.otp && touchedFields.otp
+                              ? 'border-red-500 focus:border-red-500'
+                              : 'border-gray-200 focus:border-primary-500'
+                          }`}
+                        />
+                        <label
+                          htmlFor="otp"
+                          className="absolute left-5 -top-3 px-2 bg-white text-sm font-semibold text-gray-700 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:font-normal peer-focus:-top-3 peer-focus:text-sm peer-focus:text-primary-600 peer-focus:font-semibold"
+                        >
+                          Enter OTP <span className="text-red-500">*</span>
+                        </label>
+                        <Shield className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
+                      </motion.div>
+                      {fieldErrors.otp && touchedFields.otp && (
+                        <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {fieldErrors.otp}
+                        </p>
+                      )}
+                      {/* Resend OTP */}
+                      <div className="mt-2 text-right">
+                        {otpTimer > 0 ? (
+                          <p className="text-sm text-gray-600">
+                            Resend OTP in <span className="font-semibold text-primary-600">{otpTimer}s</span>
+                          </p>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleResendOtp}
+                            disabled={isLoading}
+                            className="text-sm text-primary-600 hover:text-primary-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Resend OTP
+                          </button>
+                        )}
+                      </div>
                     </motion.div>
                   )}
 
@@ -347,16 +603,36 @@ export default function LoginPage() {
                           id="password"
                           type={showPassword ? 'text' : 'password'}
                           value={password}
-                          onChange={(e) => setPassword(e.target.value)}
+                          onChange={(e) => {
+                            setPassword(e.target.value)
+                            if (fieldErrors.password) {
+                              setFieldErrors(prev => {
+                                const newErrors = { ...prev }
+                                delete newErrors.password
+                                return newErrors
+                              })
+                            }
+                          }}
+                          onBlur={(e) => {
+                            setTouchedFields(prev => ({ ...prev, password: true }))
+                            const error = validateField('password', e.target.value)
+                            if (error) {
+                              setFieldErrors(prev => ({ ...prev, password: error }))
+                            }
+                          }}
                           placeholder=" "
                           required
-                          className="peer w-full px-5 py-4 pr-24 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent"
+                          className={`peer w-full px-5 py-4 pr-24 bg-gradient-to-br from-gray-50 to-white border-2 rounded-xl outline-none transition-all duration-300 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent ${
+                            fieldErrors.password && touchedFields.password
+                              ? 'border-red-500 focus:border-red-500'
+                              : 'border-gray-200 focus:border-primary-500'
+                          }`}
                         />
                         <label
                           htmlFor="password"
                           className="absolute left-5 -top-3 px-2 bg-white text-sm font-semibold text-gray-700 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:font-normal peer-focus:-top-3 peer-focus:text-sm peer-focus:text-primary-600 peer-focus:font-semibold"
                         >
-                          Password
+                          Password <span className="text-red-500">*</span>
                         </label>
                         <Lock className="absolute right-14 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
                         <button
@@ -371,6 +647,12 @@ export default function LoginPage() {
                           )}
                         </button>
                       </motion.div>
+                      {fieldErrors.password && touchedFields.password && (
+                        <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {fieldErrors.password}
+                        </p>
+                      )}
                     </motion.div>
                   )}
 
@@ -445,10 +727,22 @@ export default function LoginPage() {
                               animate={{ rotate: 360 }}
                               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                             />
-                            <span>{loginType === 'email' ? 'Logging in...' : 'Sending OTP...'}</span>
+                            <span>
+                              {loginType === 'email' 
+                                ? 'Logging in...' 
+                                : otpSent 
+                                  ? 'Verifying OTP...' 
+                                  : 'Sending OTP...'}
+                            </span>
                           </>
                         ) : (
-                          <span>{loginType === 'email' ? 'Log In' : 'Send OTP'}</span>
+                          <span>
+                            {loginType === 'email' 
+                              ? 'Log In' 
+                              : otpSent 
+                                ? 'Verify OTP' 
+                                : 'Send OTP'}
+                          </span>
                         )}
                       </span>
                     </motion.button>

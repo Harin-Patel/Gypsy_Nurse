@@ -27,12 +27,60 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [currentStep, setCurrentStep] = useState(1)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({})
+
+  const validateField = (name: string, value: string): string => {
+    switch (name) {
+      case 'firstName':
+        if (!value.trim()) return 'First name is required'
+        if (value.trim().length < 2) return 'First name must be at least 2 characters'
+        return ''
+      case 'lastName':
+        if (!value.trim()) return 'Last name is required'
+        if (value.trim().length < 2) return 'Last name must be at least 2 characters'
+        return ''
+      case 'email':
+        if (!value.trim()) return 'Email address is required'
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address'
+        return ''
+      case 'password':
+        if (!value) return 'Password is required'
+        if (value.length < 6) return 'Password must be at least 6 characters'
+        return ''
+      case 'confirmPassword':
+        if (!value) return 'Please confirm your password'
+        if (value !== formData.password) return 'Passwords do not match'
+        return ''
+      default:
+        return ''
+    }
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     })
+    
+    // Clear error when user starts typing
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[name]
+        return newErrors
+      })
+    }
+  }
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setTouchedFields(prev => ({ ...prev, [name]: true }))
+    const error = validateField(name, value)
+    if (error) {
+      setFieldErrors(prev => ({ ...prev, [name]: error }))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,17 +88,26 @@ export default function RegisterPage() {
     setIsLoading(true)
     setError('')
 
-    if (formData.password !== formData.confirmPassword) {
-      const errorMsg = "Passwords don't match"
-      setError(errorMsg)
-      toast.error(errorMsg)
+    // Validate all fields
+    const errors: Record<string, string> = {}
+    Object.keys(formData).forEach(key => {
+      const error = validateField(key, formData[key as keyof typeof formData])
+      if (error) {
+        errors[key] = error
+        setTouchedFields(prev => ({ ...prev, [key]: true }))
+      }
+    })
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
       setIsLoading(false)
       return
     }
 
-    if (!agreeToTerms) {
-      const errorMsg = "Please agree to the terms and conditions"
+    if (formData.password !== formData.confirmPassword) {
+      const errorMsg = "Passwords don't match"
       setError(errorMsg)
+      setFieldErrors(prev => ({ ...prev, confirmPassword: errorMsg }))
       toast.error(errorMsg)
       setIsLoading(false)
       return
@@ -224,59 +281,91 @@ export default function RegisterPage() {
                   <p className="text-base text-gray-600">Start your travel nursing adventure today</p>
                 </motion.div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                   {/* Name Fields */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <motion.div
                       initial={{ opacity: 0, x: -50 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.5 }}
+                      className="relative group"
                     >
-                      <div className="relative">
+                      <motion.div 
+                        className="relative"
+                        whileHover={{ scale: 1.01 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
                         <input
                           id="firstName"
                           name="firstName"
                           type="text"
                           value={formData.firstName}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder=" "
                           required
-                          className="peer w-full px-4 py-4 bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100 placeholder-transparent"
+                          className={`peer w-full px-4 py-4 bg-white/50 backdrop-blur-sm border-2 rounded-2xl outline-none transition-all duration-300 focus:bg-white focus:shadow-lg focus:shadow-primary-100 placeholder-transparent ${
+                            fieldErrors.firstName && touchedFields.firstName
+                              ? 'border-red-500 focus:border-red-500'
+                              : 'border-gray-200 focus:border-primary-500'
+                          }`}
                         />
                         <label
                           htmlFor="firstName"
                           className="absolute left-4 -top-2.5 px-2 bg-white text-sm font-medium text-gray-600 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-primary-600"
                         >
-                          First Name
+                          First Name <span className="text-red-500">*</span>
                         </label>
                         <User className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
-                      </div>
+                      </motion.div>
+                      {fieldErrors.firstName && touchedFields.firstName && (
+                        <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {fieldErrors.firstName}
+                        </p>
+                      )}
                     </motion.div>
 
                     <motion.div
                       initial={{ opacity: 0, x: 50 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.5 }}
+                      className="relative group"
                     >
-                      <div className="relative">
+                      <motion.div 
+                        className="relative"
+                        whileHover={{ scale: 1.01 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
                         <input
                           id="lastName"
                           name="lastName"
                           type="text"
                           value={formData.lastName}
                           onChange={handleChange}
+                          onBlur={handleBlur}
                           placeholder=" "
                           required
-                          className="peer w-full px-4 py-4 bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100 placeholder-transparent"
+                          className={`peer w-full px-4 py-4 bg-white/50 backdrop-blur-sm border-2 rounded-2xl outline-none transition-all duration-300 focus:bg-white focus:shadow-lg focus:shadow-primary-100 placeholder-transparent ${
+                            fieldErrors.lastName && touchedFields.lastName
+                              ? 'border-red-500 focus:border-red-500'
+                              : 'border-gray-200 focus:border-primary-500'
+                          }`}
                         />
                         <label
                           htmlFor="lastName"
                           className="absolute left-4 -top-2.5 px-2 bg-white text-sm font-medium text-gray-600 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-primary-600"
                         >
-                          Last Name
+                          Last Name <span className="text-red-500">*</span>
                         </label>
                         <User className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
-                      </div>
+                      </motion.div>
+                      {fieldErrors.lastName && touchedFields.lastName && (
+                        <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {fieldErrors.lastName}
+                        </p>
+                      )}
                     </motion.div>
                   </div>
 
@@ -285,8 +374,13 @@ export default function RegisterPage() {
                     initial={{ opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.6 }}
+                    className="relative group"
                   >
-                    <div className="relative">
+                    <motion.div 
+                      className="relative"
+                      whileHover={{ scale: 1.01 }}
+                      transition={{ type: "spring", stiffness: 400 }}
+                    >
                       <input
                         id="mobileNumber"
                         name="mobileNumber"
@@ -305,7 +399,7 @@ export default function RegisterPage() {
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none peer-focus:text-primary-600 transition-colors">
                         +1
                       </div>
-                    </div>
+                    </motion.div>
                   </motion.div>
 
                   {/* Email */}
@@ -313,26 +407,42 @@ export default function RegisterPage() {
                     initial={{ opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.7 }}
+                    className="relative group"
                   >
-                    <div className="relative">
+                    <motion.div 
+                      className="relative"
+                      whileHover={{ scale: 1.01 }}
+                      transition={{ type: "spring", stiffness: 400 }}
+                    >
                       <input
                         id="email"
                         name="email"
                         type="email"
                         value={formData.email}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder=" "
                         required
-                        className="peer w-full px-4 py-4 bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100 placeholder-transparent"
+                        className={`peer w-full px-4 py-4 bg-white/50 backdrop-blur-sm border-2 rounded-2xl outline-none transition-all duration-300 focus:bg-white focus:shadow-lg focus:shadow-primary-100 placeholder-transparent ${
+                          fieldErrors.email && touchedFields.email
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-gray-200 focus:border-primary-500'
+                        }`}
                       />
                       <label
                         htmlFor="email"
                         className="absolute left-4 -top-2.5 px-2 bg-white text-sm font-medium text-gray-600 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-primary-600"
                       >
-                        Email
+                        Email <span className="text-red-500">*</span>
                       </label>
                       <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
-                    </div>
+                    </motion.div>
+                    {fieldErrors.email && touchedFields.email && (
+                      <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {fieldErrors.email}
+                      </p>
+                    )}
                   </motion.div>
 
                   {/* Password */}
@@ -340,23 +450,33 @@ export default function RegisterPage() {
                     initial={{ opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.8 }}
+                    className="relative group"
                   >
-                    <div className="relative">
+                    <motion.div 
+                      className="relative"
+                      whileHover={{ scale: 1.01 }}
+                      transition={{ type: "spring", stiffness: 400 }}
+                    >
                       <input
                         id="password"
                         name="password"
                         type={showPassword ? 'text' : 'password'}
                         value={formData.password}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder=" "
                         required
-                        className="peer w-full px-4 py-4 bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100 placeholder-transparent"
+                        className={`peer w-full px-4 py-4 bg-white/50 backdrop-blur-sm border-2 rounded-2xl outline-none transition-all duration-300 focus:bg-white focus:shadow-lg focus:shadow-primary-100 placeholder-transparent ${
+                          fieldErrors.password && touchedFields.password
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-gray-200 focus:border-primary-500'
+                        }`}
                       />
                       <label
                         htmlFor="password"
                         className="absolute left-4 -top-2.5 px-2 bg-white text-sm font-medium text-gray-600 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-primary-600"
                       >
-                        Password
+                        Password <span className="text-red-500">*</span>
                       </label>
                       <Lock className="absolute right-12 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
                       <button
@@ -372,7 +492,13 @@ export default function RegisterPage() {
                           {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </motion.div>
                       </button>
-                    </div>
+                    </motion.div>
+                    {fieldErrors.password && touchedFields.password && (
+                      <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {fieldErrors.password}
+                      </p>
+                    )}
                   </motion.div>
 
                   {/* Confirm Password */}
@@ -380,23 +506,33 @@ export default function RegisterPage() {
                     initial={{ opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.9 }}
+                    className="relative group"
                   >
-                    <div className="relative">
+                    <motion.div 
+                      className="relative"
+                      whileHover={{ scale: 1.01 }}
+                      transition={{ type: "spring", stiffness: 400 }}
+                    >
                       <input
                         id="confirmPassword"
                         name="confirmPassword"
                         type={showConfirmPassword ? 'text' : 'password'}
                         value={formData.confirmPassword}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder=" "
                         required
-                        className="peer w-full px-4 py-4 bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100 placeholder-transparent"
+                        className={`peer w-full px-4 py-4 bg-white/50 backdrop-blur-sm border-2 rounded-2xl outline-none transition-all duration-300 focus:bg-white focus:shadow-lg focus:shadow-primary-100 placeholder-transparent ${
+                          fieldErrors.confirmPassword && touchedFields.confirmPassword
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-gray-200 focus:border-primary-500'
+                        }`}
                       />
                       <label
                         htmlFor="confirmPassword"
                         className="absolute left-4 -top-2.5 px-2 bg-white text-sm font-medium text-gray-600 transition-all duration-300 peer-placeholder-shown:text-base peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-primary-600"
                       >
-                        Confirm Password
+                        Confirm Password <span className="text-red-500">*</span>
                       </label>
                       <Lock className="absolute right-12 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
                       <button
@@ -412,82 +548,15 @@ export default function RegisterPage() {
                           {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </motion.div>
                       </button>
-                    </div>
+                    </motion.div>
+                    {fieldErrors.confirmPassword && touchedFields.confirmPassword && (
+                      <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {fieldErrors.confirmPassword}
+                      </p>
+                    )}
                   </motion.div>
 
-                  {/* Terms Agreement */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 1 }}
-                    className="flex items-start space-x-3"
-                  >
-                    <label className="flex items-start space-x-3 cursor-pointer group">
-                      <div className="relative mt-0.5">
-                        <input
-                          type="checkbox"
-                          checked={agreeToTerms}
-                          onChange={(e) => setAgreeToTerms(e.target.checked)}
-                          className="sr-only"
-                        />
-                        <motion.div
-                          className={`w-5 h-5 rounded-md border-2 transition-all duration-300 ${
-                            agreeToTerms
-                              ? 'bg-gradient-to-br from-primary-500 to-primary-600 border-primary-500'
-                              : 'bg-white border-gray-300 group-hover:border-primary-400'
-                          }`}
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <AnimatePresence>
-                            {agreeToTerms && (
-                              <motion.svg
-                                initial={{ pathLength: 0, opacity: 0 }}
-                                animate={{ pathLength: 1, opacity: 1 }}
-                                exit={{ pathLength: 0, opacity: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className="w-full h-full text-white"
-                                viewBox="0 0 20 20"
-                                fill="none"
-                              >
-                                <motion.path
-                                  d="M5 10l3 3 7-7"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </motion.svg>
-                            )}
-                          </AnimatePresence>
-                        </motion.div>
-                      </div>
-                      <span className="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">
-                        I agree to The Gypsy Nurse's{' '}
-                        <Link href="/terms">
-                          <motion.span
-                            className="text-primary-600 hover:text-primary-700 font-semibold underline cursor-pointer inline-block"
-                            whileHover={{ scale: 1.05, x: 2 }}
-                            whileTap={{ scale: 0.95 }}
-                            transition={{ type: "spring", stiffness: 400 }}
-                          >
-                            Terms of Service
-                          </motion.span>
-                        </Link>{' '}
-                        and{' '}
-                        <Link href="/privacy">
-                          <motion.span
-                            className="text-primary-600 hover:text-primary-700 font-semibold underline cursor-pointer inline-block"
-                            whileHover={{ scale: 1.05, x: 2 }}
-                            whileTap={{ scale: 0.95 }}
-                            transition={{ type: "spring", stiffness: 400 }}
-                          >
-                            Privacy Policy
-                          </motion.span>
-                        </Link>
-                      </span>
-                    </label>
-                  </motion.div>
 
                   {/* Error Message */}
                   <AnimatePresence>
@@ -512,10 +581,10 @@ export default function RegisterPage() {
                   >
                     <motion.button
                       type="submit"
-                      disabled={isLoading || !agreeToTerms}
+                      disabled={isLoading}
                       className="relative w-full py-4 bg-gradient-to-r from-primary-600 to-primary-500 text-white font-bold rounded-2xl shadow-lg overflow-hidden group disabled:opacity-50"
-                      whileHover={{ scale: isLoading || !agreeToTerms ? 1 : 1.02, boxShadow: "0 20px 40px rgba(127, 40, 96, 0.3)" }}
-                      whileTap={{ scale: isLoading || !agreeToTerms ? 1 : 0.98 }}
+                      whileHover={{ scale: isLoading ? 1 : 1.02, boxShadow: "0 20px 40px rgba(127, 40, 96, 0.3)" }}
+                      whileTap={{ scale: isLoading ? 1 : 0.98 }}
                     >
                       {/* Animated Wave Effect */}
                       <motion.div

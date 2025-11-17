@@ -106,7 +106,7 @@ export default function Hero() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, once: true }}
+              transition={{ delay: 0.2 }}
               className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-white/30"
             >
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
@@ -118,7 +118,7 @@ export default function Hero() {
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, once: true }}
+              transition={{ delay: 0.3 }}
               className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white"
             >
               Manage your{' '}
@@ -128,7 +128,7 @@ export default function Hero() {
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, once: true }}
+              transition={{ delay: 0.4 }}
               className="text-xl text-gray-200 leading-relaxed"
             >
               Join the #1 travel nursing community. Discover opportunities, connect with peers, and access unlimited resources.
@@ -138,7 +138,7 @@ export default function Hero() {
             <motion.form
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, once: true }}
+              transition={{ delay: 0.5 }}
               onSubmit={handleSearch}
               className="bg-white/95 backdrop-blur-lg rounded-2xl p-2 flex flex-col sm:flex-row gap-2 shadow-xl border border-white/20"
             >
@@ -179,7 +179,7 @@ export default function Hero() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, once: true }}
+              transition={{ delay: 0.6 }}
               className="grid grid-cols-3 gap-6 pt-6"
             >
               {[

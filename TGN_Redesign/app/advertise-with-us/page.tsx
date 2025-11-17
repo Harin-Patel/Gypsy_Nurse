@@ -1022,10 +1022,10 @@ export default function AdvertiseWithUsPage() {
                   />
                 </div>
                 
-                <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
+                <form onSubmit={handleSubmit} className="relative z-10 space-y-6" noValidate>
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Contact Name *</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Contact Name <span className="text-red-500">*</span></label>
                       <input
                         type="text"
                         required
@@ -1036,7 +1036,7 @@ export default function AdvertiseWithUsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address *</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address <span className="text-red-500">*</span></label>
                       <input
                         type="email"
                         required
@@ -1050,7 +1050,7 @@ export default function AdvertiseWithUsPage() {
                   
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Company/Facility Name *</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Company/Facility Name <span className="text-red-500">*</span></label>
                       <input
                         type="text"
                         required
@@ -1061,7 +1061,7 @@ export default function AdvertiseWithUsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number *</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number <span className="text-red-500">*</span></label>
                       <input
                         type="tel"
                         required
@@ -1074,7 +1074,7 @@ export default function AdvertiseWithUsPage() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Facility Type *</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Facility Type <span className="text-red-500">*</span></label>
                     <select
                       required
                       value={formData.facilityType}

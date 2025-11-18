@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MessageCircle, X, Send, Bot, User, Sparkles, Minimize2, Zap, Heart, Star } from 'lucide-react'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface Message {
   id: string
@@ -12,6 +13,7 @@ interface Message {
 }
 
 export default function Chatbot() {
+  const isMobile = useIsMobile()
   const [isOpen, setIsOpen] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
@@ -34,6 +36,11 @@ export default function Chatbot() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Hide chatbot on mobile devices - return after all hooks are called
+  if (isMobile) {
+    return null
+  }
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return
@@ -87,6 +94,11 @@ export default function Chatbot() {
       e.preventDefault()
       handleSendMessage()
     }
+  }
+
+  // Hide chatbot on mobile devices
+  if (isMobile) {
+    return null
   }
 
   return (

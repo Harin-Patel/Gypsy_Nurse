@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Instagram, Heart, MessageCircle, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const instagramPosts = [
   {
@@ -50,6 +51,7 @@ const instagramPosts = [
 ]
 
 export default function InstagramFeed() {
+  const isMobile = useIsMobile()
   const [hoveredPost, setHoveredPost] = useState<number | null>(null)
 
   return (
@@ -57,16 +59,17 @@ export default function InstagramFeed() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={isMobile ? { duration: 0 } : { duration: 0.6 }}
           className="text-center mb-16"
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
+            transition={isMobile ? { duration: 0 } : {}}
             className="inline-flex items-center space-x-2 mb-4"
           >
             <Instagram className="text-primary-500" size={28} />
@@ -88,12 +91,12 @@ export default function InstagramFeed() {
           {instagramPosts.map((post, index) => (
             <motion.div
               key={post.id}
-              initial={{ opacity: 0, scale: 0.8 }}
+              initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: index * 0.05 }}
-              onHoverStart={() => setHoveredPost(post.id)}
-              onHoverEnd={() => setHoveredPost(null)}
+              transition={isMobile ? { duration: 0 } : { duration: 0.4, delay: index * 0.05 }}
+              onHoverStart={isMobile ? undefined : () => setHoveredPost(post.id)}
+              onHoverEnd={isMobile ? undefined : () => setHoveredPost(null)}
               className="relative aspect-square group cursor-pointer"
             >
               {/* Image */}
@@ -101,17 +104,17 @@ export default function InstagramFeed() {
                 <motion.img
                   src={post.image}
                   alt={post.caption}
-                  animate={{
+                  animate={isMobile ? { scale: 1 } : {
                     scale: hoveredPost === post.id ? 1.1 : 1,
                   }}
-                  transition={{ duration: 0.3 }}
+                  transition={isMobile ? { duration: 0 } : { duration: 0.3 }}
                   className="w-full h-full object-cover"
                 />
               </div>
 
               {/* Overlay */}
               <motion.div
-                initial={{ opacity: 0 }}
+                initial={isMobile ? { opacity: 0 } : { opacity: 0 }}
                 animate={{ opacity: hoveredPost === post.id ? 1 : 0 }}
                 className="absolute inset-0 bg-black/60 rounded-2xl flex flex-col items-center justify-center p-4 backdrop-blur-sm"
               >
@@ -129,8 +132,8 @@ export default function InstagramFeed() {
                   {post.caption}
                 </p>
                 <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  whileHover={isMobile ? undefined : { scale: 1.1 }}
+                  whileTap={isMobile ? { scale: 0.98 } : { scale: 0.9 }}
                   className="mt-3 p-2 bg-white/20 rounded-full backdrop-blur-sm"
                 >
                   <ExternalLink className="text-white" size={16} />
@@ -138,26 +141,29 @@ export default function InstagramFeed() {
               </motion.div>
 
               {/* Border Animation */}
-              <motion.div
-                animate={{
-                  opacity: hoveredPost === post.id ? 1 : 0,
-                }}
-                className="absolute inset-0 rounded-2xl border-2 border-white"
-              />
+              {!isMobile && (
+                <motion.div
+                  animate={{
+                    opacity: hoveredPost === post.id ? 1 : 0,
+                  }}
+                  className="absolute inset-0 rounded-2xl border-2 border-white"
+                />
+              )}
             </motion.div>
           ))}
         </div>
 
         {/* Follow Button */}
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={isMobile ? { opacity: 1 } : { opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
+          transition={isMobile ? { duration: 0 } : {}}
           className="text-center"
         >
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={isMobile ? undefined : { scale: 1.05 }}
+            whileTap={isMobile ? { scale: 0.98 } : { scale: 0.95 }}
             className="bg-gradient-to-r from-primary-500 to-primary-400 text-white px-8 py-4 rounded-full font-semibold inline-flex items-center space-x-2 shadow-xl hover:shadow-2xl transition-shadow"
           >
             <Instagram size={24} />

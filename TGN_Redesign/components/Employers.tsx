@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Building2, Users, TrendingUp, Award } from 'lucide-react'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const employers = [
   { name: 'AMN Healthcare', logo: 'AMN' },
@@ -11,15 +12,16 @@ const employers = [
 ]
 
 export default function Employers() {
+  const isMobile = useIsMobile()
   return (
     <section id="employers" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={isMobile ? { duration: 0 } : { duration: 0.6 }}
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -32,19 +34,20 @@ export default function Employers() {
 
         {/* Employers Logos */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={isMobile ? { duration: 0 } : {}}
           className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16"
         >
           {employers.map((employer, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, scale: 0.8 }}
+              initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ scale: 1.05, y: -5 }}
+              transition={isMobile ? { duration: 0 } : { delay: index * 0.1 }}
+              whileHover={isMobile ? undefined : { scale: 1.05, y: -5 }}
               className="glass-effect rounded-2xl p-8 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
             >
               <div className="text-center">
@@ -69,11 +72,11 @@ export default function Employers() {
             return (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
+                initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
+                transition={isMobile ? { duration: 0 } : { delay: index * 0.1 }}
+                whileHover={isMobile ? undefined : { y: -5 }}
                 className="glass-effect rounded-2xl p-6 text-center"
               >
                 <div className="w-12 h-12 mx-auto mb-4 bg-primary-100 rounded-xl flex items-center justify-center">

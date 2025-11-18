@@ -4,8 +4,10 @@ import { motion } from 'framer-motion'
 import { Search, MapPin, Briefcase, ArrowRight } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 export default function Hero() {
+  const isMobile = useIsMobile()
   const [searchQuery, setSearchQuery] = useState('')
   const [location, setLocation] = useState('')
   const router = useRouter()
@@ -21,12 +23,12 @@ export default function Hero() {
       <div className="absolute inset-0">
         {/* Background Image with Parallax Effect */}
         <motion.div 
-          initial={{ scale: 1.1 }}
+          initial={isMobile ? { scale: 1 } : { scale: 1.1 }}
           animate={{ scale: 1 }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
+          transition={isMobile ? { duration: 0 } : { duration: 1.5, ease: "easeOut" }}
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=1920&h=1080&fit=crop&q=80')`,
+            backgroundImage: `url('/travel-nurse-mobile.png')`,
           }}
         >
           {/* Dark Gradient Overlay for White Text Readability */}
@@ -36,67 +38,75 @@ export default function Hero() {
           <div className="absolute inset-0 bg-primary-900/20"></div>
         </motion.div>
         
-        {/* Animated Accents */}
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            rotate: [0, 90, 0],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-          className="absolute top-20 left-10 w-72 h-72 bg-primary-300/20 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{
-            scale: [1.2, 1, 1.2],
-            rotate: [90, 0, 90],
-          }}
-          transition={{
-            duration: 15,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-          className="absolute bottom-20 right-10 w-96 h-96 bg-primary-200/20 rounded-full blur-3xl"
-        />
+        {/* Animated Accents - Hidden on Mobile */}
+        {!isMobile && (
+          <>
+            <motion.div
+              animate={{
+                scale: [1, 1.2, 1],
+                rotate: [0, 90, 0],
+              }}
+              transition={{
+                duration: 20,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+              className="absolute top-20 left-10 w-72 h-72 bg-primary-300/20 rounded-full blur-3xl"
+            />
+            <motion.div
+              animate={{
+                scale: [1.2, 1, 1.2],
+                rotate: [90, 0, 90],
+              }}
+              transition={{
+                duration: 15,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+              className="absolute bottom-20 right-10 w-96 h-96 bg-primary-200/20 rounded-full blur-3xl"
+            />
+          </>
+        )}
         
         {/* Decorative Shapes */}
         <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-gradient-to-br from-primary-400/10 to-accent-400/10 rounded-full blur-2xl"></div>
         <div className="absolute bottom-1/3 left-1/3 w-48 h-48 bg-gradient-to-tr from-accent-300/10 to-primary-300/10 rounded-full blur-2xl"></div>
         
-        {/* Floating Healthcare Icons */}
-        <motion.div
-          animate={{ y: [0, -20, 0], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/3 right-1/3 w-16 h-16 bg-white/40 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary-600">
-            <path d="M12 2v20M2 12h20"></path>
-          </svg>
-        </motion.div>
-        
-        <motion.div
-          animate={{ y: [0, 15, 0], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute bottom-1/4 right-1/5 w-12 h-12 bg-white/30 backdrop-blur-sm rounded-lg flex items-center justify-center shadow-lg"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary-500">
-            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
-          </svg>
-        </motion.div>
-        
-        <motion.div
-          animate={{ y: [0, -15, 0], x: [0, 10, 0], opacity: [0.25, 0.45, 0.25] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          className="absolute top-1/2 right-1/6 w-14 h-14 bg-white/35 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-600">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="m9 12 2 2 4-4"></path>
-          </svg>
-        </motion.div>
+        {/* Floating Healthcare Icons - Hidden on Mobile */}
+        {!isMobile && (
+          <>
+            <motion.div
+              animate={{ y: [0, -20, 0], opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-1/3 right-1/3 w-16 h-16 bg-white/40 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary-600">
+                <path d="M12 2v20M2 12h20"></path>
+              </svg>
+            </motion.div>
+            
+            <motion.div
+              animate={{ y: [0, 15, 0], opacity: [0.2, 0.4, 0.2] }}
+              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              className="absolute bottom-1/4 right-1/5 w-12 h-12 bg-white/30 backdrop-blur-sm rounded-lg flex items-center justify-center shadow-lg"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary-500">
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+              </svg>
+            </motion.div>
+            
+            <motion.div
+              animate={{ y: [0, -15, 0], x: [0, 10, 0], opacity: [0.25, 0.45, 0.25] }}
+              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+              className="absolute top-1/2 right-1/6 w-14 h-14 bg-white/35 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-600">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="m9 12 2 2 4-4"></path>
+              </svg>
+            </motion.div>
+          </>
+        )}
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 min-h-[calc(100vh-6rem)]">
@@ -104,9 +114,9 @@ export default function Hero() {
           {/* Left Content */}
           <div className="space-y-8">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={isMobile ? { duration: 0 } : { delay: 0.2 }}
               className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-white/30"
             >
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
@@ -116,9 +126,9 @@ export default function Hero() {
             </motion.div>
 
             <motion.h1
-              initial={{ opacity: 0, y: 20 }}
+              initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={isMobile ? { duration: 0 } : { delay: 0.3 }}
               className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white"
             >
               Manage your{' '}
@@ -126,9 +136,9 @@ export default function Hero() {
             </motion.h1>
 
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
+              initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
+              transition={isMobile ? { duration: 0 } : { delay: 0.4 }}
               className="text-xl text-gray-200 leading-relaxed"
             >
               Join the #1 travel nursing community. Discover opportunities, connect with peers, and access unlimited resources.
@@ -136,9 +146,9 @@ export default function Hero() {
 
             {/* Search Bar */}
             <motion.form
-              initial={{ opacity: 0, y: 20 }}
+              initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
+              transition={isMobile ? { duration: 0 } : { delay: 0.5 }}
               onSubmit={handleSearch}
               className="bg-white/95 backdrop-blur-lg rounded-2xl p-2 flex flex-col sm:flex-row gap-2 shadow-xl border border-white/20"
             >
@@ -165,8 +175,8 @@ export default function Hero() {
               </div>
 
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={isMobile ? undefined : { scale: 1.05 }}
+                whileTap={isMobile ? { scale: 0.98 } : { scale: 0.95 }}
                 type="submit"
                 className="btn-primary flex items-center justify-center space-x-2"
               >
@@ -177,9 +187,9 @@ export default function Hero() {
 
             {/* Stats */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
+              transition={isMobile ? { duration: 0 } : { delay: 0.6 }}
               className="grid grid-cols-3 gap-6 pt-6"
             >
               {[
@@ -189,7 +199,7 @@ export default function Hero() {
               ].map((stat, index) => (
                 <motion.div
                   key={index}
-                  whileHover={{ scale: 1.05 }}
+                  whileHover={isMobile ? undefined : { scale: 1.05 }}
                   className="text-center"
                 >
                   <div className="text-3xl font-bold text-primary-400">{stat.value}</div>
@@ -204,8 +214,8 @@ export default function Hero() {
             <div className="relative w-full h-[600px]">
               {/* Floating Card 1 */}
               <motion.div
-                animate={{ y: [0, -20, 0] }}
-                transition={{ duration: 4, repeat: Infinity }}
+                animate={isMobile ? { y: 0 } : { y: [0, -20, 0] }}
+                transition={isMobile ? { duration: 0 } : { duration: 4, repeat: Infinity }}
                 className="absolute top-0 left-0 glass-effect rounded-2xl p-6 w-64 shadow-2xl"
               >
                 <div className="flex items-center space-x-3 mb-4">
@@ -231,8 +241,8 @@ export default function Hero() {
 
               {/* Floating Card 2 */}
               <motion.div
-                animate={{ y: [0, 20, 0] }}
-                transition={{ duration: 5, repeat: Infinity, delay: 0.5 }}
+                animate={isMobile ? { y: 0 } : { y: [0, 20, 0] }}
+                transition={isMobile ? { duration: 0 } : { duration: 5, repeat: Infinity, delay: 0.5 }}
                 className="absolute top-40 right-0 glass-effect rounded-2xl p-6 w-64 shadow-2xl"
               >
                 <div className="flex items-center space-x-3 mb-4">
@@ -258,8 +268,8 @@ export default function Hero() {
 
               {/* Floating Card 3 */}
               <motion.div
-                animate={{ y: [0, -15, 0] }}
-                transition={{ duration: 4.5, repeat: Infinity, delay: 1 }}
+                animate={isMobile ? { y: 0 } : { y: [0, -15, 0] }}
+                transition={isMobile ? { duration: 0 } : { duration: 4.5, repeat: Infinity, delay: 1 }}
                 className="absolute bottom-0 left-1/2 -translate-x-1/2 glass-effect rounded-2xl p-6 w-64 shadow-2xl"
               >
                 <div className="flex items-center space-x-3 mb-4">
@@ -287,20 +297,22 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Scroll Indicator */}
-      <motion.div
-        animate={{ y: [0, 10, 0] }}
-        transition={{ duration: 2, repeat: Infinity }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2"
-      >
-        <div className="w-6 h-10 border-2 border-white/60 rounded-full flex justify-center pt-2 backdrop-blur-sm">
-          <motion.div
-            animate={{ y: [0, 12, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="w-1 h-3 bg-white rounded-full"
-          />
-        </div>
-      </motion.div>
+      {/* Scroll Indicator - Hidden on Mobile */}
+      {!isMobile && (
+        <motion.div
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2"
+        >
+          <div className="w-6 h-10 border-2 border-white/60 rounded-full flex justify-center pt-2 backdrop-blur-sm">
+            <motion.div
+              animate={{ y: [0, 12, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="w-1 h-3 bg-white rounded-full"
+            />
+          </div>
+        </motion.div>
+      )}
     </section>
   )
 }

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { BookOpen, GraduationCap, Home, HelpCircle, FileText, Award, ArrowRight } from 'lucide-react'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const resources = [
   {
@@ -43,6 +44,7 @@ const resources = [
 ]
 
 export default function Resources() {
+  const isMobile = useIsMobile()
   return (
     <section id="resources" className="py-20 bg-white relative overflow-hidden">
       {/* Decorative Elements */}
@@ -52,16 +54,17 @@ export default function Resources() {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={isMobile ? { duration: 0 } : { duration: 0.6 }}
           className="text-center mb-16"
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
+            transition={isMobile ? { duration: 0 } : {}}
             className="inline-block mb-4"
           >
             <span className="px-4 py-2 bg-primary-100 text-primary-600 rounded-full text-sm font-semibold">
@@ -84,17 +87,17 @@ export default function Resources() {
             return (
               <motion.div
                 key={resource.id}
-                initial={{ opacity: 0, y: 30 }}
+                initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                whileHover={{ y: -8 }}
+                transition={isMobile ? { duration: 0 } : { duration: 0.5, delay: index * 0.1 }}
+                whileHover={isMobile ? undefined : { y: -8 }}
                 className="group relative"
               >
                 <div className="glass-effect rounded-2xl p-6 h-full flex flex-col transition-shadow hover:shadow-2xl">
                   {/* Icon */}
                   <motion.div
-                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    whileHover={isMobile ? undefined : { scale: 1.1, rotate: 5 }}
                     className={`w-16 h-16 ${resource.bgColor} rounded-2xl flex items-center justify-center mb-4 group-hover:shadow-lg transition-shadow`}
                   >
                     <Icon className={resource.iconColor} size={32} />
@@ -111,7 +114,7 @@ export default function Resources() {
 
                   {/* Learn More Link */}
                   <motion.button
-                    whileHover={{ x: 5 }}
+                    whileHover={isMobile ? undefined : { x: 5 }}
                     className={`inline-flex items-center space-x-2 font-semibold ${resource.iconColor} group-hover:underline`}
                   >
                     <span>Learn More</span>
@@ -130,9 +133,10 @@ export default function Resources() {
 
         {/* CTA Section */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
+          transition={isMobile ? { duration: 0 } : {}}
           className="rounded-3xl relative overflow-hidden shadow-2xl"
         >
           {/* Background Image with Overlay - No Theme Color */}
@@ -150,10 +154,10 @@ export default function Resources() {
           
           <div className="relative z-10 p-8 md:p-16 text-center">
             <motion.div
-              initial={{ scale: 0 }}
+              initial={isMobile ? { scale: 1 } : { scale: 0 }}
               whileInView={{ scale: 1 }}
               viewport={{ once: true }}
-              transition={{ type: 'spring', delay: 0.2 }}
+              transition={isMobile ? { duration: 0 } : { type: 'spring', delay: 0.2 }}
               className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl border-2 border-white/40"
             >
               <Award className="text-white" size={40} />
@@ -168,15 +172,15 @@ export default function Resources() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={isMobile ? undefined : { scale: 1.05 }}
+                whileTap={isMobile ? { scale: 0.98 } : { scale: 0.95 }}
                 className="bg-white text-primary-600 px-8 py-4 rounded-full font-bold shadow-xl hover:shadow-2xl transition-all"
               >
                 Join Now - It's Free
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={isMobile ? undefined : { scale: 1.05 }}
+                whileTap={isMobile ? { scale: 0.98 } : { scale: 0.95 }}
                 className="bg-white/10 backdrop-blur-sm text-white px-8 py-4 rounded-full font-bold border-2 border-white/40 hover:bg-white/20 transition-all"
               >
                 Learn More
@@ -185,10 +189,10 @@ export default function Resources() {
 
             {/* Testimonial */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
+              transition={isMobile ? { duration: 0 } : { delay: 0.4 }}
               className="mt-8 max-w-3xl mx-auto"
             >
               <p className="text-white/90 italic mb-2 text-lg">

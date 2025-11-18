@@ -1155,6 +1155,24 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                     transition={{ duration: 0.3 }}
                     className="flex items-center gap-2.5 flex-shrink-0 -ml-8 mr-2"
                   >
+                    {/* Apply Now Button - Only show if NOT pending */}
+                    {!isPending && (
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleApply}
+                        className="px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm"
+                        style={{
+                          backdropFilter: 'blur(20px) saturate(180%)',
+                          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                        }}
+                      >
+                        <Send className="w-4 h-4" />
+                        Apply Now
+                      </motion.button>
+                    )}
+
                     {/* PENDING Badge - Show if job is pending */}
                     {isPending && (
                       <motion.div

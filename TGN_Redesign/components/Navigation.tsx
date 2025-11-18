@@ -2,12 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, ChevronDown, User, LogOut, Bookmark, Lock, FileText } from 'lucide-react'
+import { Menu, X, ChevronDown, User, LogOut, Bookmark, Lock, FileText, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import toast from 'react-hot-toast'
 
 export default function Navigation() {
+  const pathname = usePathname()
+  const router = useRouter()
+  const isMobile = useIsMobile()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
@@ -19,6 +24,26 @@ export default function Navigation() {
   
   // Use real authentication
   const { user, isAuthenticated, isLoading, logout } = useAuth()
+
+  // Get page title for mobile
+  const getPageTitle = () => {
+    if (pathname === '/') return 'Home'
+    if (pathname?.startsWith('/jobs')) return 'Jobs'
+    if (pathname?.startsWith('/resources')) return 'Resources'
+    if (pathname?.startsWith('/events')) return 'Events'
+    if (pathname?.startsWith('/more')) return 'More'
+    if (pathname?.startsWith('/login')) return isMobile ? 'Job Seeker Login' : 'Login'
+    if (pathname?.startsWith('/register')) return 'Register'
+    if (pathname?.startsWith('/agency-register')) return 'Create Agency Account'
+    if (pathname?.startsWith('/agency-login')) return 'Agency Login'
+    if (pathname?.startsWith('/recruiter-login')) return 'Recruiter Login'
+    if (pathname?.startsWith('/admin-login')) return 'Admin Login'
+    if (pathname?.startsWith('/profile')) return 'Profile'
+    if (pathname?.startsWith('/applications')) return 'Applications'
+    if (pathname?.startsWith('/bookmarks')) return 'Bookmarks'
+    if (pathname?.startsWith('/change-password')) return 'Change Password'
+    return 'The Gypsy Nurse'
+  }
 
   const handleLogout = () => {
     setShowLogoutConfirm(false)
@@ -97,27 +122,197 @@ export default function Navigation() {
   return (
     <>
       {/* Backdrop for Profile Dropdown - Rendered at root level */}
-      {showProfileDropdown && (
+      {showProfileDropdown && !isMobile && (
         <div 
           className="fixed inset-0 bg-transparent z-[40]" 
           onClick={() => setShowProfileDropdown(false)}
         />
       )}
 
+      {/* Mobile Profile Dropdown */}
+      <AnimatePresence>
+        {showProfileDropdown && isMobile && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-[40]"
+              onClick={() => setShowProfileDropdown(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="fixed top-16 right-4 w-64 bg-white rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden z-[50]"
+            >
+              {/* User Info Header */}
+              <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-br from-primary-50/50 to-purple-50/50">
+                <div className="flex items-center gap-3">
+                  {user?.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt={user.name || 'User'}
+                      className="w-12 h-12 rounded-full object-cover ring-2 ring-primary-200"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center ring-2 ring-primary-200">
+                      <User className="w-6 h-6 text-white" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-bold text-gray-900">{user?.name || 'User'}</p>
+                    <p className="text-xs text-gray-600">{user?.email || ''}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Menu Items */}
+              <div className="p-2">
+                <Link href="/profile" onClick={() => setShowProfileDropdown(false)}>
+                  <button className="w-full px-4 py-3 text-gray-700 hover:bg-primary-50 hover:text-primary-700 rounded-xl transition-all text-sm font-medium text-left flex items-center gap-3">
+                    <User className="w-4 h-4 text-gray-500" />
+                    My Profile
+                  </button>
+                </Link>
+                <Link href="/applications" onClick={() => setShowProfileDropdown(false)}>
+                  <button className="w-full px-4 py-3 text-gray-700 hover:bg-primary-50 hover:text-primary-700 rounded-xl transition-all text-sm font-medium text-left flex items-center gap-3">
+                    <FileText className="w-4 h-4 text-gray-500" />
+                    My Applications
+                  </button>
+                </Link>
+                <Link href="/bookmarks" onClick={() => setShowProfileDropdown(false)}>
+                  <button className="w-full px-4 py-3 text-gray-700 hover:bg-primary-50 hover:text-primary-700 rounded-xl transition-all text-sm font-medium text-left flex items-center gap-3">
+                    <Bookmark className="w-4 h-4 text-gray-500" />
+                    My Bookmarks
+                  </button>
+                </Link>
+                <Link href="/change-password" onClick={() => setShowProfileDropdown(false)}>
+                  <button className="w-full px-4 py-3 text-gray-700 hover:bg-primary-50 hover:text-primary-700 rounded-xl transition-all text-sm font-medium text-left flex items-center gap-3">
+                    <Lock className="w-4 h-4 text-gray-500" />
+                    Change Password
+                  </button>
+                </Link>
+                <div className="my-2 h-px bg-gray-200"></div>
+                <button 
+                  onClick={() => {
+                    setShowLogoutConfirm(true)
+                    setShowProfileDropdown(false)
+                  }}
+                  className="w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all text-sm font-medium text-left flex items-center gap-3"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Log Out
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Full Width Navigation Bar with Glass Effect */}
       <nav
         className={`fixed top-0 left-0 right-0 w-full z-[100] transition-all duration-300 ${
-          isScrolled 
-            ? 'bg-white/80 backdrop-blur-2xl shadow-2xl py-3' 
-            : 'bg-white/90 backdrop-blur-xl shadow-lg py-4'
-        } border-b border-white/20`}
-        style={{
+          isMobile
+            ? 'bg-white border-b border-gray-200 shadow-sm py-3'
+            : isScrolled 
+              ? 'bg-white/80 backdrop-blur-2xl shadow-2xl py-3' 
+              : 'bg-white/90 backdrop-blur-xl shadow-lg py-4'
+        }`}
+        style={!isMobile ? {
           backdropFilter: 'saturate(180%) blur(20px)',
           WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-        }}
+        } : {}}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+        <div className={`max-w-7xl mx-auto ${isMobile ? 'px-4' : 'px-4 sm:px-6 lg:px-8'}`}>
+          {isMobile ? (
+            /* Mobile App Standard Navigation */
+            <div className="flex items-center justify-between h-14">
+              {/* Left Side - Back Button or Logo */}
+              {pathname?.startsWith('/login') || pathname?.startsWith('/register') || pathname?.startsWith('/agency-register') || pathname?.startsWith('/agency-login') || pathname?.startsWith('/recruiter-login') || pathname?.startsWith('/admin-login') || pathname?.startsWith('/forgot-password') || pathname?.startsWith('/change-password') ? (
+                <button
+                  onClick={() => {
+                    // Always redirect to /more section for login/register pages
+                    if (pathname?.startsWith('/login') || pathname?.startsWith('/agency-register') || pathname?.startsWith('/agency-login') || pathname?.startsWith('/recruiter-login') || pathname?.startsWith('/admin-login')) {
+                      router.push('/more')
+                    } else {
+                      router.back()
+                    }
+                  }}
+                  className="p-2 -ml-2 rounded-lg active:bg-gray-100 transition-colors"
+                >
+                  <ChevronLeft className="w-6 h-6 text-gray-700" />
+                </button>
+              ) : (
+                <Link href="/">
+                  <img 
+                    src="/logo.svg" 
+                    alt="The Gypsy Nurse Logo" 
+                    className="h-10 w-auto"
+                  />
+                </Link>
+              )}
+
+              {/* Centered Page Title */}
+              <h1 className="text-lg font-semibold text-gray-900 absolute left-1/2 transform -translate-x-1/2">
+                {getPageTitle()}
+              </h1>
+
+              {/* Right Side - Profile or Login (Hidden on auth pages) */}
+              {!(pathname?.startsWith('/login') || pathname?.startsWith('/register') || pathname?.startsWith('/agency-register') || pathname?.startsWith('/agency-login') || pathname?.startsWith('/recruiter-login') || pathname?.startsWith('/admin-login') || pathname?.startsWith('/forgot-password') || pathname?.startsWith('/change-password')) && (
+                <div className="flex items-center">
+                  {isLoading ? (
+                    <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse" />
+                  ) : isAuthenticated ? (
+                    <button
+                      onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                      className="relative"
+                    >
+                      {user?.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={user.name || 'User'}
+                          className="w-10 h-10 rounded-full object-cover ring-2 ring-primary-200"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center ring-2 ring-primary-200">
+                          {isMobile && user?.name ? (() => {
+                            // Extract initials from name (first character of first name and first character of last name)
+                            const nameParts = user.name.trim().split(/\s+/)
+                            let initials = ''
+                            if (nameParts.length >= 2) {
+                              initials = (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+                            } else if (nameParts.length === 1 && nameParts[0].length >= 2) {
+                              initials = nameParts[0].substring(0, 2).toUpperCase()
+                            } else if (nameParts.length === 1 && nameParts[0].length > 0) {
+                              initials = nameParts[0][0].toUpperCase()
+                            }
+                            
+                            return initials ? (
+                              <span className="text-white font-semibold text-sm">{initials}</span>
+                            ) : (
+                              <User className="w-5 h-5 text-white" />
+                            )
+                          })() : (
+                            <User className="w-5 h-5 text-white" />
+                          )}
+                        </div>
+                      )}
+                    </button>
+                  ) : (
+                    <Link href="/login">
+                      <button className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center hover:from-primary-600 hover:to-primary-700 transition-colors shadow-sm">
+                        <User className="w-5 h-5 text-white" />
+                      </button>
+                    </Link>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Desktop Navigation */
+            <div className="flex items-center justify-between">
               {/* Logo with Subtle Tilt Effect */}
               <Link href="/">
               <motion.div
@@ -380,9 +575,9 @@ export default function Navigation() {
                     />
                   </motion.button>
 
-                  {/* Profile Dropdown Menu */}
+                  {/* Profile Dropdown Menu - Desktop Only */}
                   <AnimatePresence>
-                    {showProfileDropdown && (
+                    {showProfileDropdown && !isMobile && (
                       <motion.div
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -710,27 +905,14 @@ export default function Navigation() {
               )}
             </div>
 
-            {/* Fancy Mobile Menu Button */}
-            <motion.button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              className="lg:hidden p-3 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100/50 hover:from-primary-100 hover:to-primary-200/50 border border-primary-200 text-primary-600 transition-all shadow-md hover:shadow-lg"
-            >
-              <motion.div
-                animate={{ rotate: isMobileMenuOpen ? 90 : 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </motion.div>
-            </motion.button>
-          </div>
+            </div>
+          )}
         </div>
       </nav>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Slide from Left */}
       <AnimatePresence>
-        {isMobileMenuOpen && (
+        {isMobileMenuOpen && isMobile && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
@@ -740,20 +922,30 @@ export default function Navigation() {
               onClick={() => setIsMobileMenuOpen(false)}
             />
             <motion.div
-              initial={{ x: '100%' }}
+              initial={{ x: '-100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '100%' }}
+              exit={{ x: '-100%' }}
               transition={{ type: 'tween', duration: 0.3 }}
-              className="fixed top-0 right-0 h-full w-80 glass-effect z-50 lg:hidden overflow-y-auto"
+              className="fixed top-0 left-0 h-full w-80 bg-white z-50 lg:hidden overflow-y-auto shadow-2xl"
+              style={{
+                paddingTop: 'env(safe-area-inset-top)',
+              }}
             >
               <div className="p-6">
-                <div className="flex justify-between items-center mb-8">
-                  <span className="text-xl font-bold gradient-text">Menu</span>
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src="/logo.svg" 
+                      alt="The Gypsy Nurse Logo" 
+                      className="h-8 w-auto"
+                    />
+                    <span className="text-lg font-bold text-gray-900">Menu</span>
+                  </div>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="p-2 rounded-lg hover:bg-gray-100"
                   >
-                    <X size={24} />
+                    <X size={24} className="text-gray-700" />
                   </button>
                 </div>
                 

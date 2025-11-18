@@ -6,9 +6,11 @@ import { Mail, Lock, Eye, EyeOff, Briefcase, Phone, Globe, MapPin, Sparkles, Ale
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import toast from 'react-hot-toast'
 
 export default function AgencyRegisterPage() {
+  const isMobile = useIsMobile()
   const [formData, setFormData] = useState({
     agencyName: '',
     email: '',
@@ -108,12 +110,13 @@ export default function AgencyRegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden">
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-gray-50">
       {/* Navigation Bar */}
       <Navigation />
 
-      {/* Background Image with Overlay */}
-      <div className="fixed inset-0 z-0">
+      {/* Background - Simplified for Mobile */}
+      {!isMobile && (
+        <div className="fixed inset-0 z-0">
         {/* Background Image - Female Travel Nurse */}
         <motion.div 
           initial={{ scale: 1.1 }}
@@ -158,105 +161,125 @@ export default function AgencyRegisterPage() {
           }}
           className="absolute bottom-20 right-10 w-96 h-96 bg-primary-200/20 rounded-full blur-3xl"
         />
-      </div>
+        </div>
+      )}
 
       {/* Main Content */}
-      <main className="relative z-10 pt-32 pb-16 px-4">
-        <div className="max-w-3xl mx-auto">
+      <main className={`relative z-10 ${isMobile ? 'pt-20 pb-8 px-4' : 'pt-32 pb-16 px-4'}`}
+        style={isMobile ? {
+          paddingTop: `calc(6.5rem + env(safe-area-inset-top))`,
+          paddingBottom: `calc(2rem + env(safe-area-inset-bottom))`,
+        } : {}}
+      >
+        <div className={`${isMobile ? 'w-full' : 'max-w-3xl mx-auto'}`}>
           {/* Glassmorphic Register Card */}
           <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            initial={isMobile ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.8, type: "spring" }}
+            transition={isMobile ? { duration: 0 } : { duration: 0.8, type: "spring" }}
             className="relative"
           >
-            {/* Glow Effect Behind Card */}
-            <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/20 via-primary-400/20 to-primary-500/20 rounded-3xl blur-2xl" />
+            {/* Glow Effect Behind Card - Desktop Only */}
+            {!isMobile && (
+              <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/20 via-primary-400/20 to-primary-500/20 rounded-3xl blur-2xl" />
+            )}
             
             {/* Main Card */}
-            <div className="relative bg-white backdrop-blur-2xl rounded-3xl shadow-2xl border border-white overflow-hidden">
-              {/* Gradient Border Effect */}
-              <div className="absolute inset-0 rounded-3xl p-[2px] bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600 opacity-30" />
+            <div className={`relative bg-white ${isMobile ? 'rounded-2xl shadow-lg border border-gray-200' : 'backdrop-blur-2xl rounded-3xl shadow-2xl border border-white'} overflow-hidden`}>
+              {/* Gradient Border Effect - Desktop Only */}
+              {!isMobile && (
+                <div className="absolute inset-0 rounded-3xl p-[2px] bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600 opacity-30" />
+              )}
               
               {/* Card Content */}
-              <div className="relative bg-white rounded-3xl p-8">
-                {/* Header with Animated Logo */}
+              <div className={`relative bg-white ${isMobile ? 'rounded-2xl p-6' : 'rounded-3xl p-8'}`}>
+                {/* Header with Logo */}
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
+                  initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2, type: "spring", stiffness: 150 }}
+                  transition={isMobile ? { duration: 0 } : { delay: 0.2, type: "spring", stiffness: 150 }}
                   className="flex justify-center mb-6"
                 >
-                  <motion.div
-                    animate={{
-                      y: [0, -8, 0],
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                    className="relative"
-                  >
-                    {/* Rotating Ring Effect */}
-                    <motion.div
-                      className="absolute inset-0 -m-3"
-                      animate={{ rotate: 360 }}
-                      transition={{
-                        duration: 8,
-                        repeat: Infinity,
-                        ease: "linear"
-                      }}
-                    >
-                      <div className="absolute inset-0 rounded-full border-2 border-transparent bg-gradient-to-r from-primary-400/40 via-transparent to-primary-400/40 bg-clip-border" 
-                           style={{ 
-                             maskImage: 'linear-gradient(to right, transparent, white, transparent)',
-                             WebkitMaskImage: 'linear-gradient(to right, transparent, white, transparent)'
-                           }}
-                      />
-                    </motion.div>
-                    
-                    {/* Glass Reflection */}
-                    <motion.div
-                      className="absolute inset-0 -m-2 rounded-full bg-gradient-to-br from-white/20 via-transparent to-transparent"
-                      animate={{
-                        opacity: [0.3, 0.6, 0.3],
-                      }}
-                      transition={{
-                        duration: 2.5,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                    />
-                    
+                  {isMobile ? (
                     <div className="relative">
                       <img 
                         src="/logo.svg" 
                         alt="The Gypsy Nurse Logo" 
-                        className="h-16 w-auto"
+                        className="h-12 w-auto"
                       />
                     </div>
-                  </motion.div>
+                  ) : (
+                    <motion.div
+                      animate={{
+                        y: [0, -8, 0],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                      className="relative"
+                    >
+                      {/* Rotating Ring Effect */}
+                      <motion.div
+                        className="absolute inset-0 -m-3"
+                        animate={{ rotate: 360 }}
+                        transition={{
+                          duration: 8,
+                          repeat: Infinity,
+                          ease: "linear"
+                        }}
+                      >
+                        <div className="absolute inset-0 rounded-full border-2 border-transparent bg-gradient-to-r from-primary-400/40 via-transparent to-primary-400/40 bg-clip-border" 
+                             style={{ 
+                               maskImage: 'linear-gradient(to right, transparent, white, transparent)',
+                               WebkitMaskImage: 'linear-gradient(to right, transparent, white, transparent)'
+                             }}
+                        />
+                      </motion.div>
+                      
+                      {/* Glass Reflection */}
+                      <motion.div
+                        className="absolute inset-0 -m-2 rounded-full bg-gradient-to-br from-white/20 via-transparent to-transparent"
+                        animate={{
+                          opacity: [0.3, 0.6, 0.3],
+                        }}
+                        transition={{
+                          duration: 2.5,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      />
+                      
+                      <div className="relative">
+                        <img 
+                          src="/logo.svg" 
+                          alt="The Gypsy Nurse Logo" 
+                          className="h-16 w-auto"
+                        />
+                      </div>
+                    </motion.div>
+                  )}
                 </motion.div>
 
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
+                  transition={isMobile ? { duration: 0 } : { delay: 0.3 }}
                   className="text-center mb-6"
                 >
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-gray-900 mb-2`}>
                     Create Agency Account
                   </h1>
-                  <p className="text-base text-gray-600">Register your agency to start posting jobs</p>
+                  <p className={`${isMobile ? 'text-sm' : 'text-base'} text-gray-600`}>Register your agency to start posting jobs</p>
                 </motion.div>
 
-                <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                <form onSubmit={handleSubmit} className={`${isMobile ? 'space-y-4' : 'space-y-4'}`} noValidate>
                   {/* Agency Name */}
                   <motion.div
-                    initial={{ opacity: 0, x: -50 }}
+                    initial={isMobile ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 }}
+                    transition={isMobile ? { duration: 0 } : { delay: 0.4 }}
                   >
                     <div className="relative group">
                       <input
@@ -292,9 +315,9 @@ export default function AgencyRegisterPage() {
 
                   {/* Email Address */}
                   <motion.div
-                    initial={{ opacity: 0, x: -50 }}
+                    initial={isMobile ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 }}
+                    transition={isMobile ? { duration: 0 } : { delay: 0.5 }}
                   >
                     <div className="relative group">
                       <input
@@ -330,9 +353,9 @@ export default function AgencyRegisterPage() {
 
                   {/* Password */}
                   <motion.div
-                    initial={{ opacity: 0, x: -50 }}
+                    initial={isMobile ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.6 }}
+                    transition={isMobile ? { duration: 0 } : { delay: 0.6 }}
                   >
                     <div className="relative group">
                       <input
@@ -361,13 +384,19 @@ export default function AgencyRegisterPage() {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary-600 transition-colors"
                       >
-                        <motion.div
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          className="flex items-center justify-center"
-                        >
-                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                        </motion.div>
+                        {isMobile ? (
+                          <div className="flex items-center justify-center">
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </div>
+                        ) : (
+                          <motion.div
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="flex items-center justify-center"
+                          >
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </motion.div>
+                        )}
                       </button>
                     </div>
                     {fieldErrors.password && touchedFields.password && (
@@ -380,9 +409,9 @@ export default function AgencyRegisterPage() {
 
                   {/* Confirm Password */}
                   <motion.div
-                    initial={{ opacity: 0, x: -50 }}
+                    initial={isMobile ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.7 }}
+                    transition={isMobile ? { duration: 0 } : { delay: 0.7 }}
                   >
                     <div className="relative group">
                       <input
@@ -411,13 +440,19 @@ export default function AgencyRegisterPage() {
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary-600 transition-colors"
                       >
-                        <motion.div
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          className="flex items-center justify-center"
-                        >
-                          {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                        </motion.div>
+                        {isMobile ? (
+                          <div className="flex items-center justify-center">
+                            {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </div>
+                        ) : (
+                          <motion.div
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="flex items-center justify-center"
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </motion.div>
+                        )}
                       </button>
                     </div>
                     {fieldErrors.confirmPassword && touchedFields.confirmPassword && (
@@ -430,9 +465,9 @@ export default function AgencyRegisterPage() {
 
                   {/* Website */}
                   <motion.div
-                    initial={{ opacity: 0, x: -50 }}
+                    initial={isMobile ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.8 }}
+                    transition={isMobile ? { duration: 0 } : { delay: 0.8 }}
                   >
                     <div className="relative group">
                       <input
@@ -456,9 +491,9 @@ export default function AgencyRegisterPage() {
 
                   {/* Phone Number */}
                   <motion.div
-                    initial={{ opacity: 0, x: -50 }}
+                    initial={isMobile ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.9 }}
+                    transition={isMobile ? { duration: 0 } : { delay: 0.9 }}
                   >
                     <div className="relative group">
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium pointer-events-none peer-focus:text-primary-600 transition-colors">
@@ -484,9 +519,9 @@ export default function AgencyRegisterPage() {
 
                   {/* Address */}
                   <motion.div
-                    initial={{ opacity: 0, x: -50 }}
+                    initial={isMobile ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 1 }}
+                    transition={isMobile ? { duration: 0 } : { delay: 1 }}
                   >
                     <div className="relative group">
                       <textarea
@@ -510,52 +545,58 @@ export default function AgencyRegisterPage() {
 
                   {/* Create Agency Account Button */}
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.1 }}
+                    transition={isMobile ? { duration: 0 } : { delay: 1.1 }}
                     className="pt-2"
                   >
                     <motion.button
                       type="submit"
                       disabled={isLoading}
-                      className="relative w-full py-4 bg-gradient-to-r from-primary-600 to-primary-500 text-white font-bold rounded-2xl shadow-lg overflow-hidden group disabled:opacity-70"
-                      whileHover={{ scale: isLoading ? 1 : 1.02, boxShadow: "0 20px 40px rgba(127, 40, 96, 0.3)" }}
-                      whileTap={{ scale: isLoading ? 1 : 0.98 }}
+                      className={`relative w-full ${isMobile ? 'py-3.5' : 'py-4'} bg-gradient-to-r from-primary-600 to-primary-500 text-white font-bold ${isMobile ? 'rounded-xl' : 'rounded-2xl'} shadow-lg overflow-hidden group disabled:opacity-70`}
+                      whileHover={isMobile ? undefined : { scale: isLoading ? 1 : 1.02, boxShadow: "0 20px 40px rgba(127, 40, 96, 0.3)" }}
+                      whileTap={isMobile ? { scale: 0.98 } : { scale: isLoading ? 1 : 0.98 }}
                     >
-                      {/* Animated Wave Effect */}
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-primary-700 via-primary-600 to-primary-700 opacity-0 group-hover:opacity-100"
-                        initial={{ x: '-100%' }}
-                        whileHover={{ x: '100%' }}
-                        transition={{
-                          duration: 0.6,
-                          ease: "easeInOut"
-                        }}
-                      />
+                      {/* Animated Wave Effect - Desktop Only */}
+                      {!isMobile && (
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-primary-700 via-primary-600 to-primary-700 opacity-0 group-hover:opacity-100"
+                          initial={{ x: '-100%' }}
+                          whileHover={{ x: '100%' }}
+                          transition={{
+                            duration: 0.6,
+                            ease: "easeInOut"
+                          }}
+                        />
+                      )}
                       
-                      {/* Ripple Effect */}
-                      <motion.div
-                        className="absolute inset-0"
-                        initial={{ scale: 0, opacity: 0.5 }}
-                        whileTap={{ scale: 2, opacity: 0 }}
-                        transition={{ duration: 0.5 }}
-                      >
-                        <div className="w-full h-full bg-white/20 rounded-2xl" />
-                      </motion.div>
+                      {/* Ripple Effect - Desktop Only */}
+                      {!isMobile && (
+                        <motion.div
+                          className="absolute inset-0"
+                          initial={{ scale: 0, opacity: 0.5 }}
+                          whileTap={{ scale: 2, opacity: 0 }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          <div className={`w-full h-full bg-white/20 ${isMobile ? 'rounded-xl' : 'rounded-2xl'}`} />
+                        </motion.div>
+                      )}
 
-                      {/* Shimmer Effect */}
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                        animate={{
-                          x: ['-100%', '200%'],
-                        }}
-                        transition={{
-                          duration: 3,
-                          repeat: Infinity,
-                          repeatDelay: 2,
-                          ease: "easeInOut"
-                        }}
-                      />
+                      {/* Shimmer Effect - Desktop Only */}
+                      {!isMobile && (
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                          animate={{
+                            x: ['-100%', '200%'],
+                          }}
+                          transition={{
+                            duration: 3,
+                            repeat: Infinity,
+                            repeatDelay: 2,
+                            ease: "easeInOut"
+                          }}
+                        />
+                      )}
 
                       <span className="relative z-10 flex items-center justify-center space-x-2">
                         {isLoading ? (
@@ -576,30 +617,31 @@ export default function AgencyRegisterPage() {
 
                   {/* Already have an account? Log in to Agency Account */}
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.2 }}
+                    transition={isMobile ? { duration: 0 } : { delay: 1.2 }}
                     className="text-center pt-1"
                   >
-                    <span className="text-gray-600">Already have an account? </span>
+                    <span className={`${isMobile ? 'text-sm' : ''} text-gray-600`}>Already have an account? </span>
                     <Link href="/agency-login">
                       <motion.span
                         className="text-primary-600 hover:text-primary-700 font-bold cursor-pointer inline-block"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={isMobile ? undefined : { scale: 1.05 }}
+                        whileTap={isMobile ? { scale: 0.95 } : { scale: 0.95 }}
                       >
                         Log in to Agency Account
                       </motion.span>
                     </Link>
                   </motion.div>
 
-                  {/* Back to User Login - Glassmorphism Design */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.3 }}
-                    className="text-center pt-1"
-                  >
+                  {/* Back to User Login - Desktop Only */}
+                  {!isMobile && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 1.3 }}
+                      className="text-center pt-1"
+                    >
                     <Link href="/login">
                       <motion.div
                         className="inline-flex items-center space-x-3 px-6 py-3 rounded-xl bg-white/40 backdrop-blur-md border border-white/60 cursor-pointer group overflow-hidden relative shadow-lg"
@@ -657,6 +699,7 @@ export default function AgencyRegisterPage() {
                       </motion.div>
                     </Link>
                   </motion.div>
+                  )}
                 </form>
               </div>
             </div>

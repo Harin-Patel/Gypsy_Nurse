@@ -18,27 +18,55 @@ export default function ChangePasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({})
+
+  const validateField = (name: string, value: string): string => {
+    switch (name) {
+      case 'currentPassword':
+        if (!value) return 'Current password is required'
+        return ''
+      case 'newPassword':
+        if (!value) return 'New password is required'
+        if (value.length < 8) return 'New password must be at least 8 characters long'
+        return ''
+      case 'confirmPassword':
+        if (!value) return 'Please confirm your password'
+        if (value !== newPassword) return "New passwords don't match"
+        return ''
+      default:
+        return ''
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsLoading(true)
     setError('')
 
-    // Validation
-    if (newPassword !== confirmPassword) {
-      const errorMsg = "New passwords don't match"
-      setError(errorMsg)
-      toast.error(errorMsg)
-      return
+    // Validate fields
+    const errors: Record<string, string> = {}
+    const currentPasswordError = validateField('currentPassword', currentPassword)
+    if (currentPasswordError) {
+      errors.currentPassword = currentPasswordError
+      setTouchedFields(prev => ({ ...prev, currentPassword: true }))
+    }
+    const newPasswordError = validateField('newPassword', newPassword)
+    if (newPasswordError) {
+      errors.newPassword = newPasswordError
+      setTouchedFields(prev => ({ ...prev, newPassword: true }))
+    }
+    const confirmPasswordError = validateField('confirmPassword', confirmPassword)
+    if (confirmPasswordError) {
+      errors.confirmPassword = confirmPasswordError
+      setTouchedFields(prev => ({ ...prev, confirmPassword: true }))
     }
 
-    if (newPassword.length < 8) {
-      const errorMsg = "New password must be at least 8 characters long"
-      setError(errorMsg)
-      toast.error(errorMsg)
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      setIsLoading(false)
       return
     }
-
-    setIsLoading(true)
     
     // Simulate API call
     setTimeout(() => {
@@ -49,6 +77,8 @@ export default function ChangePasswordPage() {
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
+      setFieldErrors({})
+      setTouchedFields({})
     }, 2000)
   }
 
@@ -153,10 +183,30 @@ export default function ChangePasswordPage() {
                         id="currentPassword"
                         type={showCurrentPassword ? 'text' : 'password'}
                         value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        onChange={(e) => {
+                          setCurrentPassword(e.target.value)
+                          if (fieldErrors.currentPassword) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev }
+                              delete newErrors.currentPassword
+                              return newErrors
+                            })
+                          }
+                        }}
+                        onBlur={(e) => {
+                          setTouchedFields(prev => ({ ...prev, currentPassword: true }))
+                          const error = validateField('currentPassword', e.target.value)
+                          if (error) {
+                            setFieldErrors(prev => ({ ...prev, currentPassword: error }))
+                          }
+                        }}
                         placeholder=" "
                         required
-                        className="peer w-full px-5 py-4 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent"
+                        className={`peer w-full px-5 py-4 pr-24 bg-gradient-to-br from-gray-50 to-white border-2 rounded-xl outline-none transition-all duration-300 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent ${
+                          fieldErrors.currentPassword && touchedFields.currentPassword
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-gray-200 focus:border-primary-500'
+                        }`}
                       />
                       <label
                         htmlFor="currentPassword"
@@ -164,14 +214,21 @@ export default function ChangePasswordPage() {
                       >
                         Current Password <span className="text-red-500">*</span>
                       </label>
+                      <Lock className="absolute right-14 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
                       <button
                         type="button"
                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                        className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary-600 transition-colors"
                       >
                         {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </motion.div>
+                    {fieldErrors.currentPassword && touchedFields.currentPassword && (
+                      <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {fieldErrors.currentPassword}
+                      </p>
+                    )}
                   </motion.div>
 
                   {/* New Password Field */}
@@ -190,10 +247,51 @@ export default function ChangePasswordPage() {
                         id="newPassword"
                         type={showNewPassword ? 'text' : 'password'}
                         value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
+                        onChange={(e) => {
+                          setNewPassword(e.target.value)
+                          if (fieldErrors.newPassword) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev }
+                              delete newErrors.newPassword
+                              return newErrors
+                            })
+                          }
+                          // Also clear confirmPassword error if passwords now match
+                          if (fieldErrors.confirmPassword && e.target.value === confirmPassword) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev }
+                              delete newErrors.confirmPassword
+                              return newErrors
+                            })
+                          }
+                        }}
+                        onBlur={(e) => {
+                          setTouchedFields(prev => ({ ...prev, newPassword: true }))
+                          const error = validateField('newPassword', e.target.value)
+                          if (error) {
+                            setFieldErrors(prev => ({ ...prev, newPassword: error }))
+                          }
+                          // Re-validate confirmPassword if it's been touched
+                          if (touchedFields.confirmPassword) {
+                            const confirmError = validateField('confirmPassword', confirmPassword)
+                            if (confirmError) {
+                              setFieldErrors(prev => ({ ...prev, confirmPassword: confirmError }))
+                            } else {
+                              setFieldErrors(prev => {
+                                const newErrors = { ...prev }
+                                delete newErrors.confirmPassword
+                                return newErrors
+                              })
+                            }
+                          }
+                        }}
                         placeholder=" "
                         required
-                        className="peer w-full px-5 py-4 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent"
+                        className={`peer w-full px-5 py-4 pr-24 bg-gradient-to-br from-gray-50 to-white border-2 rounded-xl outline-none transition-all duration-300 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent ${
+                          fieldErrors.newPassword && touchedFields.newPassword
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-gray-200 focus:border-primary-500'
+                        }`}
                       />
                       <label
                         htmlFor="newPassword"
@@ -201,14 +299,21 @@ export default function ChangePasswordPage() {
                       >
                         New Password <span className="text-red-500">*</span>
                       </label>
+                      <Lock className="absolute right-14 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
                       <button
                         type="button"
                         onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary-600 transition-colors"
                       >
                         {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </motion.div>
+                    {fieldErrors.newPassword && touchedFields.newPassword && (
+                      <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {fieldErrors.newPassword}
+                      </p>
+                    )}
 
                     {/* Password Strength Indicator */}
                     {newPassword && (
@@ -253,10 +358,30 @@ export default function ChangePasswordPage() {
                         id="confirmPassword"
                         type={showConfirmPassword ? 'text' : 'password'}
                         value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onChange={(e) => {
+                          setConfirmPassword(e.target.value)
+                          if (fieldErrors.confirmPassword) {
+                            setFieldErrors(prev => {
+                              const newErrors = { ...prev }
+                              delete newErrors.confirmPassword
+                              return newErrors
+                            })
+                          }
+                        }}
+                        onBlur={(e) => {
+                          setTouchedFields(prev => ({ ...prev, confirmPassword: true }))
+                          const error = validateField('confirmPassword', e.target.value)
+                          if (error) {
+                            setFieldErrors(prev => ({ ...prev, confirmPassword: error }))
+                          }
+                        }}
                         placeholder=" "
                         required
-                        className="peer w-full px-5 py-4 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent"
+                        className={`peer w-full px-5 py-4 pr-24 bg-gradient-to-br from-gray-50 to-white border-2 rounded-xl outline-none transition-all duration-300 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 placeholder-transparent ${
+                          fieldErrors.confirmPassword && touchedFields.confirmPassword
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-gray-200 focus:border-primary-500'
+                        }`}
                       />
                       <label
                         htmlFor="confirmPassword"
@@ -264,33 +389,30 @@ export default function ChangePasswordPage() {
                       >
                         Confirm New Password <span className="text-red-500">*</span>
                       </label>
+                      <Lock className="absolute right-14 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 peer-focus:text-primary-500 transition-colors" />
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary-600 transition-colors"
                       >
                         {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </motion.div>
-
-                    {/* Match Indicator */}
-                    {confirmPassword && (
+                    {fieldErrors.confirmPassword && touchedFields.confirmPassword && (
+                      <p className="mt-1.5 text-sm text-red-500 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {fieldErrors.confirmPassword}
+                      </p>
+                    )}
+                    {/* Match Indicator - Only show when passwords match and no error */}
+                    {confirmPassword && newPassword === confirmPassword && !fieldErrors.confirmPassword && (
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         className="mt-2 flex items-center gap-2"
                       >
-                        {newPassword === confirmPassword ? (
-                          <>
                             <CheckCircle2 className="w-4 h-4 text-green-500" />
                             <span className="text-xs text-green-600">Passwords match</span>
-                          </>
-                        ) : (
-                          <>
-                            <AlertCircle className="w-4 h-4 text-red-500" />
-                            <span className="text-xs text-red-600">Passwords don't match</span>
-                          </>
-                        )}
                       </motion.div>
                     )}
                   </motion.div>

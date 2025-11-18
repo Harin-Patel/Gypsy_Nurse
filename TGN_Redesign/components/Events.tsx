@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Calendar, MapPin, Users, Clock, ArrowRight, Sparkles } from 'lucide-react'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const events = [
   {
@@ -46,6 +47,7 @@ const events = [
 ]
 
 export default function Events() {
+  const isMobile = useIsMobile()
   const featuredEvent = events.find(e => e.featured)
   const regularEvents = events.filter(e => !e.featured)
 
@@ -60,16 +62,17 @@ export default function Events() {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={isMobile ? { duration: 0 } : { duration: 0.6 }}
           className="text-center mb-16"
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
+            transition={isMobile ? { duration: 0 } : {}}
             className="inline-flex items-center space-x-2 mb-4 px-4 py-2 bg-primary-100 rounded-full"
           >
             <Sparkles className="text-primary-600" size={16} />
@@ -91,14 +94,14 @@ export default function Events() {
           {/* Featured Event - Large Card */}
           {featuredEvent && (
             <motion.div
-              initial={{ opacity: 0, x: -30 }}
+              initial={isMobile ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
+              transition={isMobile ? { duration: 0 } : { duration: 0.6 }}
               className="lg:row-span-2"
             >
               <motion.div
-                whileHover={{ y: -8 }}
+                whileHover={isMobile ? undefined : { y: -8 }}
                 className="group relative bg-white rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 h-full"
               >
                 {/* Featured Badge */}
@@ -109,10 +112,10 @@ export default function Events() {
 
                 {/* Countdown Badge */}
                 <motion.div
-                  initial={{ scale: 0 }}
+                  initial={isMobile ? { scale: 1 } : { scale: 0 }}
                   whileInView={{ scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ delay: 0.3, type: 'spring' }}
+                  transition={isMobile ? { duration: 0 } : { delay: 0.3, type: 'spring' }}
                   className="absolute top-6 right-6 z-20 bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-4 text-center shadow-xl"
                 >
                   <div className="text-primary-600 font-bold text-3xl leading-none">{featuredEvent.daysUntil}</div>
@@ -179,8 +182,8 @@ export default function Events() {
 
                   {/* CTA Button */}
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={isMobile ? undefined : { scale: 1.02 }}
+                    whileTap={isMobile ? { scale: 0.98 } : { scale: 0.98 }}
                     className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2 group"
                   >
                     <span>Register Now</span>
@@ -201,13 +204,13 @@ export default function Events() {
             {regularEvents.map((event, index) => (
               <motion.div
                 key={event.id}
-                initial={{ opacity: 0, x: 30 }}
+                initial={isMobile ? { opacity: 1, x: 0 } : { opacity: 0, x: 30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
+                transition={isMobile ? { duration: 0 } : { duration: 0.6, delay: index * 0.1 }}
               >
                 <motion.div
-                  whileHover={{ x: 8 }}
+                  whileHover={isMobile ? undefined : { x: 8 }}
                   className="group relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 h-full"
                 >
                   <div className="flex flex-col sm:flex-row h-full">
@@ -224,10 +227,10 @@ export default function Events() {
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="text-center">
                           <motion.div
-                            initial={{ scale: 0 }}
+                            initial={isMobile ? { scale: 1 } : { scale: 0 }}
                             whileInView={{ scale: 1 }}
                             viewport={{ once: true }}
-                            transition={{ delay: index * 0.1 + 0.3, type: 'spring' }}
+                            transition={isMobile ? { duration: 0 } : { delay: index * 0.1 + 0.3, type: 'spring' }}
                             className="text-white font-bold text-4xl"
                           >
                             {event.daysUntil}
@@ -272,8 +275,8 @@ export default function Events() {
 
                       {/* CTA */}
                       <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={isMobile ? undefined : { scale: 1.05 }}
+                        whileTap={isMobile ? { scale: 0.98 } : { scale: 0.95 }}
                         className="mt-4 self-start flex items-center space-x-1 text-primary-600 font-semibold text-sm group-hover:space-x-2 transition-all"
                       >
                         <span>Learn More</span>
@@ -294,15 +297,15 @@ export default function Events() {
 
         {/* View All Events CTA */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
+          transition={isMobile ? { duration: 0 } : { delay: 0.3 }}
           className="text-center"
         >
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={isMobile ? undefined : { scale: 1.05 }}
+            whileTap={isMobile ? { scale: 0.98 } : { scale: 0.95 }}
             className="inline-flex items-center space-x-2 bg-white text-primary-600 px-8 py-4 rounded-xl font-bold border-2 border-primary-600 hover:bg-primary-600 hover:text-white transition-all shadow-lg hover:shadow-xl"
           >
             <span>Explore All Events</span>

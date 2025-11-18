@@ -3,9 +3,14 @@
 import { motion } from 'framer-motion'
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin, ArrowRight } from 'lucide-react'
 import { useState } from 'react'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 export default function Footer() {
+  const isMobile = useIsMobile()
   const [email, setEmail] = useState('')
+
+  // Hide footer on mobile
+  if (isMobile) return null
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault()

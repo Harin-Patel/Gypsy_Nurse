@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Calendar, User, ArrowRight, Clock } from 'lucide-react'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const blogPosts = [
   {
@@ -37,21 +38,23 @@ const blogPosts = [
 ]
 
 export default function Blog() {
+  const isMobile = useIsMobile()
   return (
     <section id="blog" className="py-20 bg-gradient-to-br from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={isMobile ? { duration: 0 } : { duration: 0.6 }}
           className="text-center mb-16"
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
+            transition={isMobile ? { duration: 0 } : {}}
             className="inline-block mb-4"
           >
             <span className="px-4 py-2 bg-primary-100 text-primary-500 rounded-full text-sm font-semibold">
@@ -72,11 +75,11 @@ export default function Blog() {
           {blogPosts.map((post, index) => (
             <motion.article
               key={post.id}
-              initial={{ opacity: 0, y: 30 }}
+              initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              whileHover={{ y: -8 }}
+              transition={isMobile ? { duration: 0 } : { duration: 0.5, delay: index * 0.1 }}
+              whileHover={isMobile ? undefined : { y: -8 }}
               className="group cursor-pointer"
             >
               <div className="glass-effect rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow h-full flex flex-col">
@@ -85,8 +88,8 @@ export default function Blog() {
                   <motion.img
                     src={post.image}
                     alt={post.title}
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ duration: 0.3 }}
+                    whileHover={isMobile ? undefined : { scale: 1.1 }}
+                    transition={isMobile ? { duration: 0 } : { duration: 0.3 }}
                     className="w-full h-full object-cover"
                   />
                   
@@ -131,8 +134,8 @@ export default function Blog() {
                       <span>{post.date}</span>
                     </div>
                     <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={isMobile ? undefined : { scale: 1.05 }}
+                      whileTap={isMobile ? { scale: 0.98 } : { scale: 0.95 }}
                       className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-full font-semibold flex items-center space-x-2 transition-all shadow-md hover:shadow-lg group/btn"
                     >
                       <span>Read More</span>
@@ -151,9 +154,10 @@ export default function Blog() {
 
         {/* CTA Section with Background Image */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
+          transition={isMobile ? { duration: 0 } : {}}
           className="rounded-3xl relative overflow-hidden shadow-2xl mt-16"
         >
           {/* Background Image with Overlay - No Theme Color */}
@@ -179,16 +183,16 @@ export default function Blog() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={isMobile ? undefined : { scale: 1.05 }}
+                whileTap={isMobile ? { scale: 0.98 } : { scale: 0.95 }}
                 className="bg-white text-primary-600 px-8 py-4 rounded-full font-bold shadow-xl hover:shadow-2xl transition-all inline-flex items-center space-x-2"
               >
                 <span>View All Articles</span>
                 <ArrowRight size={20} />
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={isMobile ? undefined : { scale: 1.05 }}
+                whileTap={isMobile ? { scale: 0.98 } : { scale: 0.95 }}
                 className="bg-white/10 backdrop-blur-sm text-white px-8 py-4 rounded-full font-bold border-2 border-white/40 hover:bg-white/20 transition-all"
               >
                 Subscribe to Newsletter

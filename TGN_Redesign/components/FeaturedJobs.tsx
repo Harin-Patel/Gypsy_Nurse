@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { MapPin, DollarSign, Clock, Heart, ArrowRight } from 'lucide-react'
 import { useState } from 'react'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const jobs = [
   {
@@ -41,6 +42,7 @@ const jobs = [
 ]
 
 export default function FeaturedJobs() {
+  const isMobile = useIsMobile()
   const [savedJobs, setSavedJobs] = useState<number[]>([])
 
   const toggleSaveJob = (jobId: number) => {
@@ -56,16 +58,17 @@ export default function FeaturedJobs() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          whileInView={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={isMobile ? { duration: 0 } : { duration: 0.6 }}
           className="text-center mb-16"
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
+            transition={isMobile ? { duration: 0 } : {}}
             className="inline-block mb-4"
           >
             <span className="px-4 py-2 bg-primary-100 text-primary-500 rounded-full text-sm font-semibold">
@@ -86,11 +89,11 @@ export default function FeaturedJobs() {
           {jobs.map((job, index) => (
             <motion.div
               key={job.id}
-              initial={{ opacity: 0, y: 30 }}
+              initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              whileHover={{ y: -5 }}
+              transition={isMobile ? { duration: 0 } : { duration: 0.5, delay: index * 0.1 }}
+              whileHover={isMobile ? undefined : { y: -5 }}
               className="group relative bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all"
             >
               {/* Hospital Image */}
@@ -150,14 +153,15 @@ export default function FeaturedJobs() {
 
         {/* View All Button */}
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={isMobile ? { opacity: 1 } : { opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
+          transition={isMobile ? { duration: 0 } : {}}
           className="text-center"
         >
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={isMobile ? undefined : { scale: 1.05 }}
+            whileTap={isMobile ? { scale: 0.98 } : { scale: 0.95 }}
             className="btn-secondary inline-flex items-center space-x-2"
           >
             <span>View All Jobs</span>

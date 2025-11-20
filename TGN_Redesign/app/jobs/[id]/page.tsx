@@ -23,7 +23,13 @@ import {
   Award,
   ChevronDown,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Users,
+  Package,
+  Eye,
+  Shirt,
+  Infinity,
+  Star
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -44,6 +50,7 @@ import {
   addBookmarkedJob,
   removeBookmarkedJob
 } from '@/utils/jobStorage'
+import { Job, SAMPLE_JOBS } from '../page'
 
 interface JobDetails {
   id: string
@@ -60,8 +67,10 @@ interface JobDetails {
   taxFreeStipend: string
   postedDate: string
   facilityName?: string
+  facilityImage?: string
   facilityType: string
   facilityAvailable: boolean
+  featured?: boolean
   staffingCompany: string
   tags: string[]
   description: string
@@ -99,8 +108,103 @@ interface JobDetails {
   shiftDifferential?: string
 }
 
-// Sample job data - in production, this would come from an API
-const SAMPLE_JOB_DATA: Record<string, JobDetails> = {
+// Function to map Job from listing to JobDetails format
+function mapJobToJobDetails(job: Job): JobDetails {
+  // Extract city from location if it contains a comma
+  const city = job.location.split(',')[0].trim()
+  const zipCode = job.location.split(',').length > 1 ? job.location.split(',')[1].trim().split(' ')[1] || '' : ''
+  
+  // Calculate duration from tags
+  const durationTag = job.tags.find(tag => tag.includes('Week'))
+  const duration = durationTag ? durationTag.replace(' Weeks', ' weeks').replace(' Week', ' week') : '13 weeks'
+  
+  // Parse pay per week to extract numeric value for calculations
+  const payValue = parseFloat(job.payPerWeek.replace(/[^0-9.]/g, '')) || 0
+  const grossWeeklyPay = `$${(payValue * 1.15).toFixed(2)}` // Add 15% for gross
+  const taxFreeStipend = `$${(payValue * 0.3).toFixed(2)}/week` // 30% as tax-free stipend
+  
+  return {
+    id: job.id,
+    title: job.title,
+    location: `${job.location}, ${job.state}`,
+    state: job.state,
+    city: city,
+    zipCode: zipCode,
+    shift: job.shift,
+    shiftHours: job.shiftHours,
+    salary: job.salary,
+    weeklyPay: job.payPerWeek,
+    grossWeeklyPay: grossWeeklyPay,
+    taxFreeStipend: taxFreeStipend,
+    postedDate: job.postedDate,
+    facilityName: job.facilityName,
+    facilityImage: job.facilityImage,
+    facilityType: 'Hospital',
+    facilityAvailable: job.facilityAvailable,
+    featured: job.featured,
+    staffingCompany: job.staffingCompany,
+    tags: job.tags,
+    description: `${job.title} position in ${job.location}, ${job.state}. This is an excellent opportunity for experienced healthcare professionals to work in a dynamic healthcare setting. You will be responsible for providing high-quality patient care, working alongside a dedicated team of healthcare professionals.`,
+    requirements: [
+      `Valid license in ${job.state} (or compact state license)`,
+      `Minimum 1 year of ${job.licenseSpecialty} experience required`,
+      'BLS certification required',
+      'ACLS certification preferred',
+      'Strong clinical skills',
+      'Ability to work in fast-paced environment',
+      'EMR experience preferred'
+    ],
+    benefits: [
+      'Competitive compensation package with weekly pay',
+      'Comprehensive health, dental, and vision insurance',
+      'Housing assistance available',
+      'Travel reimbursement',
+      'Continuing education opportunities',
+      '401(k) retirement plan with company match',
+      'Referral bonus program',
+      'License reimbursement'
+    ],
+    contactEmail: 'jobs@abstaffing.com',
+    contactPhone: '(555) 123-4567',
+    website: 'www.abstaffing.com',
+    duration: duration,
+    startDate: job.startDate || 'TBD',
+    endDate: undefined,
+    specialtyRequired: job.licenseSpecialty,
+    profession: job.licenseSpecialty.split(' - ')[0] || 'Registered Nurse',
+    certifications: ['BLS', 'ACLS'],
+    jobType: 'Travel Contract',
+    experienceLevel: 'Experienced (1+ years)',
+    patientPopulation: 'All Ages',
+    patientRatio: '1:4-5 patients',
+    beds: 300,
+    scrubColor: 'Hospital Provided',
+    floatRequirements: 'No floating required',
+    callRequirements: 'No on-call required',
+    weekendRequirements: 'Every other weekend',
+    guaranteedHours: 36,
+    overtimeAvailable: true,
+    emrSystem: 'EPIC',
+    licensureRequired: [`${job.state} License or Compact License`],
+    vaccineRequirements: ['COVID-19', 'Flu (seasonal)', 'MMR', 'Hepatitis B'],
+    parkingInfo: 'Free employee parking',
+    orientationPeriod: '3-5 days paid orientation',
+    housingStipend: '$1,400/week tax-free',
+    travelReimbursement: true,
+    mealAllowance: 'Cafeteria available',
+    extensionOptions: 'Available',
+    shiftDifferential: 'Evening: $3/hr, Night: $5/hr, Weekend: $4/hr'
+  }
+}
+
+// Create job details data from SAMPLE_JOBS
+const SAMPLE_JOB_DATA: Record<string, JobDetails> = {}
+SAMPLE_JOBS.forEach(job => {
+  SAMPLE_JOB_DATA[job.id] = mapJobToJobDetails(job)
+})
+
+// Legacy sample job data - keeping for backward compatibility
+const LEGACY_SAMPLE_JOB_DATA: Record<string, JobDetails> = {
   '1': {
     id: '1',
     title: 'Travel ER (Emergency Room) RN (Registered Nurse)',
@@ -632,6 +736,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
   const [activeTab, setActiveTab] = useState('overview')
   const [isTabBarFixed, setIsTabBarFixed] = useState(false)
   const [navHeight, setNavHeight] = useState(80)
+  const [tabBarPosition, setTabBarPosition] = useState({ left: 0, width: 0 })
   
   // Refs for scroll tracking
   const overviewRef = useRef<HTMLDivElement>(null)
@@ -641,8 +746,9 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
   const costOfLivingRef = useRef<HTMLDivElement>(null)
   const tabBarRef = useRef<HTMLDivElement>(null)
   const tabBarPlaceholderRef = useRef<HTMLDivElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
 
-  // Calculate navigation height
+  // Calculate navigation height and tab bar position
   useEffect(() => {
     const updateNavHeight = () => {
       const nav = document.querySelector('nav')
@@ -652,8 +758,20 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
       }
     }
     
+    const updateTabBarPosition = () => {
+      if (cardRef.current) {
+        const rect = cardRef.current.getBoundingClientRect()
+        setTabBarPosition({ left: rect.left, width: rect.width })
+      }
+    }
+    
     updateNavHeight()
-    window.addEventListener('resize', updateNavHeight)
+    updateTabBarPosition()
+    
+    window.addEventListener('resize', () => {
+      updateNavHeight()
+      updateTabBarPosition()
+    })
     window.addEventListener('scroll', updateNavHeight)
     
     return () => {
@@ -694,6 +812,12 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
       // Recalculate if needed
       if (!isTabBarFixed && tabBarInitialTop === 0) {
         updateTabBarPosition()
+      }
+
+      // Update tab bar position when card is available
+      if (cardRef.current) {
+        const rect = cardRef.current.getBoundingClientRect()
+        setTabBarPosition({ left: rect.left, width: rect.width })
       }
 
       // Check if tab bar should be fixed
@@ -882,222 +1006,140 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
       <Navigation />
       
-      {/* Hero Section with Job Title */}
-      <div className="bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 text-white pt-32 pb-16">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
-          {/* Back Button */}
-          <Link href={fromApplications ? "/applications" : fromBookmarks ? "/bookmarks" : "/jobs"}>
-            <motion.button
-              whileHover={{ scale: 1.02, x: -3 }}
-              whileTap={{ scale: 0.98 }}
-              className="group flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white mb-8 transition-all duration-200 shadow-lg hover:shadow-xl"
-            >
-              <ArrowLeft className="w-5 h-5 transition-transform duration-200 group-hover:-translate-x-1" />
-              <span className="font-semibold text-sm">
-                {fromApplications ? "Back to My Applications" : fromBookmarks ? "Back to My Bookmarks" : "Back to Jobs"}
-              </span>
-            </motion.button>
-          </Link>
+      {/* Main Content Container */}
+      <div className="flex-1 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 pt-24 pb-8 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Column - Main Card with Image, Tabs, and Sections */}
+          <div className="lg:col-span-9">
+            <div ref={cardRef} className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mt-8">
+              {/* Facility Image */}
+              <div className="relative w-full h-80 overflow-hidden">
+                {job.facilityImage ? (
+                  <>
+                    <img 
+                      src={job.facilityImage} 
+                      alt={job.facilityName || job.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                  </>
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 flex items-center justify-center">
+                    <Building2 className="w-32 h-32 text-white/20" />
+                  </div>
+                )}
+                {!job.facilityImage && <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />}
 
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
-            <div className="flex-1">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-start gap-5 mb-6"
-              >
-                <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0 border border-white/20">
-                  <Briefcase className="w-10 h-10 text-white" />
+                {/* Back Button - Top Left with Glassmorphism */}
+                <div className="absolute top-4 left-4 z-20">
+                  <Link href={fromApplications ? "/applications" : fromBookmarks ? "/bookmarks" : "/jobs"}>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="group w-12 h-12 rounded-xl bg-white/30 backdrop-blur-md hover:bg-white/40 border border-white/50 text-white transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center"
+                    >
+                      <ArrowLeft className="w-5 h-5 transition-transform duration-200 group-hover:-translate-x-1" />
+                    </motion.button>
+                  </Link>
                 </div>
-                <div className="flex-1">
-                  <h1 className="text-3xl lg:text-4xl font-bold mb-3 leading-tight">{job.title}</h1>
-                  <p className="text-lg text-white/95 font-medium">{job.staffingCompany}</p>
-                </div>
-              </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="flex flex-wrap gap-5 text-white/90"
-              >
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  <span>{job.location}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
-                  <span>{job.shift} • {job.shiftHours}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  <span>{job.salary}/hour</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  <span>Posted {job.postedDate}</span>
-                </div>
-              </motion.div>
-            </div>
+                {/* Action Buttons - Top Right */}
+                {isAuthenticated && (
+                  <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                    {/* Like Button */}
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleLike()
+                      }}
+                      className={`w-12 h-12 rounded-xl backdrop-blur-md transition-all shadow-lg hover:shadow-xl flex items-center justify-center ${
+                        isLiked
+                          ? 'bg-primary-500 text-white'
+                          : 'bg-white/30 text-white hover:bg-primary-500 border border-white/50'
+                      }`}
+                    >
+                      <ThumbsUp className={`w-5 h-5 ${isLiked ? 'fill-white' : 'text-white'}`} />
+                    </motion.button>
 
-            {/* Action Buttons - Only show when tab bar is NOT fixed */}
-            <AnimatePresence>
-              {!isTabBarFixed && (
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ delay: 0.2 }}
-                  className="flex flex-wrap items-center gap-3"
+                    {/* Dislike Button */}
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleDislike()
+                      }}
+                      className={`w-12 h-12 rounded-xl backdrop-blur-md transition-all shadow-lg hover:shadow-xl flex items-center justify-center ${
+                        isDisliked
+                          ? 'bg-primary-500 text-white'
+                          : 'bg-white/30 text-white hover:bg-primary-500 border border-white/50'
+                      }`}
+                    >
+                      <ThumbsDown className={`w-5 h-5 ${isDisliked ? 'fill-white' : 'text-white'}`} />
+                    </motion.button>
+
+                    {/* Bookmark Button */}
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleSave()
+                      }}
+                      className={`w-12 h-12 rounded-xl backdrop-blur-md transition-all shadow-lg hover:shadow-xl flex items-center justify-center ${
+                        isSaved
+                          ? 'bg-primary-500 text-white'
+                          : 'bg-white/30 text-white hover:bg-primary-500 border border-white/50'
+                      }`}
+                    >
+                      <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-white' : 'text-white'}`} />
+                    </motion.button>
+                  </div>
+                )}
+              </div>
+
+              {/* Tab Bar Container */}
+              <div ref={tabBarPlaceholderRef} className="relative">
+                <motion.div 
+                  ref={tabBarRef}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className={`transition-all duration-300 border-b-2 ${
+                    isTabBarFixed 
+                      ? 'bg-white/80 backdrop-blur-xl border-gray-200/50 shadow-2xl'
+                      : 'bg-white border-gray-200'
+                  }`}
+                  style={
+                    isTabBarFixed
+                      ? { 
+                          position: 'fixed', 
+                          top: `${navHeight}px`, 
+                          left: `${tabBarPosition.left}px`,
+                          width: `${tabBarPosition.width}px`,
+                          zIndex: 40,
+                          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1), 0 1px 8px rgba(0, 0, 0, 0.08)',
+                        }
+                      : { position: 'relative' }
+                  }
                 >
-                  {/* PENDING Badge - Show if job is pending */}
-                  {isPending && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 backdrop-blur-md text-white rounded-xl font-semibold text-sm shadow-lg border border-primary-400/50 flex items-center gap-2"
-                    >
-                      <AlertCircle className="w-4 h-4" />
-                      <span>PENDING</span>
-                    </motion.div>
-                  )}
-
-                  {/* Like/Dislike - Only show if NOT pending */}
-                  {isAuthenticated && !isPending && (
-                    <>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={handleLike}
-                        className={`relative p-4 rounded-xl transition-all ${
-                          isLiked
-                            ? 'bg-green-50 text-green-600'
-                            : 'bg-white/10 backdrop-blur-md text-white hover:bg-white/20 border border-white/20'
-                        }`}
-                      >
-                        <motion.div
-                          animate={isLiked ? {
-                            scale: [1, 1.3, 1],
-                            rotate: [0, -15, 15, 0]
-                          } : {}}
-                          transition={{ duration: 0.4, ease: "easeOut" }}
-                        >
-                          <ThumbsUp className={`w-5 h-5 transition-all ${isLiked ? 'fill-current' : ''}`} />
-                        </motion.div>
-                      </motion.button>
-
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={handleDislike}
-                        className={`relative p-4 rounded-xl transition-all ${
-                          isDisliked
-                            ? 'bg-red-50 text-red-600'
-                            : 'bg-white/10 backdrop-blur-md text-white hover:bg-white/20 border border-white/20'
-                        }`}
-                      >
-                        <motion.div
-                          animate={isDisliked ? {
-                            scale: [1, 1.3, 1],
-                            rotate: [0, 15, -15, 0]
-                          } : {}}
-                          transition={{ duration: 0.4, ease: "easeOut" }}
-                        >
-                          <ThumbsDown className={`w-5 h-5 transition-all ${isDisliked ? 'fill-current' : ''}`} />
-                        </motion.div>
-                      </motion.button>
-                    </>
-                  )}
-
-                  {/* Bookmark - Always show */}
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleSave}
-                    className={`relative p-4 rounded-xl transition-all ${
-                      isSaved
-                        ? 'bg-primary-50 text-primary-600'
-                        : 'bg-white/10 backdrop-blur-md text-white hover:bg-white/20 border border-white/20'
-                    }`}
-                  >
-                    <motion.div
-                      animate={isSaved ? {
-                        scale: [1, 1.3, 1],
-                        rotate: [0, -10, 10, 0]
-                      } : {}}
-                      transition={{ duration: 0.4, ease: "easeOut" }}
-                    >
-                      <Bookmark className={`w-5 h-5 transition-all ${isSaved ? 'fill-current' : ''}`} />
-                    </motion.div>
-                  </motion.button>
-
-                  {/* Share - Always show */}
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleShare}
-                    className="p-4 bg-white/10 backdrop-blur-md rounded-xl text-white hover:bg-white/20 transition-all border border-white/20 shadow-lg"
-                  >
-                    <Share2 className="w-5 h-5" />
-                  </motion.button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Tags */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="flex flex-wrap gap-3 mt-8"
-          >
-            {job.tags.map((tag, index) => (
-              <span
-                key={index}
-                className="px-4 py-2 bg-white/15 backdrop-blur-md rounded-lg text-sm font-semibold text-white border border-white/20 shadow-lg"
-              >
-                {tag}
-              </span>
-            ))}
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Tab Bar Container - maintains position in document flow */}
-      <div ref={tabBarPlaceholderRef} className="relative">
-        <motion.div 
-          ref={tabBarRef}
-          transition={{ duration: 0.3, ease: 'easeInOut' }}
-          className={`transition-all duration-300 border-b-2 ${
-            isTabBarFixed 
-              ? 'bg-white/80 backdrop-blur-xl border-gray-200/50 shadow-2xl'
-              : 'bg-white border-gray-200 shadow-md'
-          }`}
-          style={
-            isTabBarFixed 
-              ? { 
-                  position: 'fixed', 
-                  top: `${navHeight}px`, 
-                  left: 0, 
-                  right: 0, 
-                  zIndex: 40,
-                  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1), 0 1px 8px rgba(0, 0, 0, 0.08)',
-                }
-              : { position: 'relative' }
-          }
-        >
-          <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
-            <div className="flex items-center justify-between gap-4">
-              {/* Tabs */}
-              <div className="flex gap-1 overflow-x-auto flex-1">
-                {[
-                  { id: 'overview', label: 'Overview', ref: overviewRef },
-                  { id: 'about', label: 'About', ref: aboutRef },
-                  { id: 'weather', label: 'Weather', ref: weatherRef },
-                  { id: 'transportation', label: 'Transportation and Crime', ref: transportationRef },
-                  { id: 'cost-of-living', label: 'Cost of Living', ref: costOfLivingRef }
-                ].map((tab) => (
+                  <div className="px-6">
+                    <div className="flex items-center gap-4">
+                      {/* Tabs */}
+                      <div className="flex gap-1 overflow-x-auto flex-1">
+                        {[
+                          { id: 'overview', label: 'Overview', ref: overviewRef },
+                          { id: 'about', label: 'About', ref: aboutRef },
+                          { id: 'weather', label: 'Weather', ref: weatherRef },
+                          { id: 'transportation', label: 'Transportation and Crime', ref: transportationRef },
+                          { id: 'cost-of-living', label: 'Cost of Living', ref: costOfLivingRef }
+                        ].map((tab) => (
                 <motion.button
                   key={tab.id}
                   onClick={() => scrollToSection(tab.ref)}
@@ -1144,155 +1186,153 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                 </motion.button>
               ))}
               </div>
-
-              {/* Action Buttons - Only show when tab bar IS fixed */}
-              <AnimatePresence>
-                {isTabBarFixed && (
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex items-center gap-2.5 flex-shrink-0 -ml-8 mr-2"
-                  >
-                    {/* Apply Now Button - Only show if NOT pending */}
-                    {!isPending && (
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={handleApply}
-                        className="px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-sm"
-                        style={{
-                          backdropFilter: 'blur(20px) saturate(180%)',
-                          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                        }}
-                      >
-                        <Send className="w-4 h-4" />
-                        Apply Now
-                      </motion.button>
-                    )}
-
-                    {/* PENDING Badge - Show if job is pending */}
-                    {isPending && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-600 backdrop-blur-md text-white rounded-lg font-semibold text-xs shadow-lg border border-primary-400/50 flex items-center gap-1.5"
-                        style={{
-                          backdropFilter: 'blur(20px) saturate(180%)',
-                          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                        }}
-                      >
-                        <AlertCircle className="w-3.5 h-3.5" />
-                        <span>PENDING</span>
-                      </motion.div>
-                    )}
-
-                    {/* Like/Dislike - Only show if NOT pending */}
-                    {isAuthenticated && !isPending && (
-                      <>
-                        <motion.button
-                          type="button"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={handleLike}
-                          className={`relative p-2.5 rounded-lg transition-all ${
-                            isLiked
-                              ? 'bg-green-50 text-green-600'
-                              : 'bg-gray-50 text-gray-400 hover:bg-green-50 hover:text-green-600'
-                          }`}
-                        >
-                          <motion.div
-                            animate={isLiked ? {
-                              scale: [1, 1.3, 1],
-                              rotate: [0, -15, 15, 0]
-                            } : {}}
-                            transition={{ duration: 0.4, ease: "easeOut" }}
-                          >
-                            <ThumbsUp className={`w-4 h-4 transition-all ${isLiked ? 'fill-current' : ''}`} />
-                          </motion.div>
-                        </motion.button>
-
-                        <motion.button
-                          type="button"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={handleDislike}
-                          className={`relative p-2.5 rounded-lg transition-all ${
-                            isDisliked
-                              ? 'bg-red-50 text-red-600'
-                              : 'bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600'
-                          }`}
-                        >
-                          <motion.div
-                            animate={isDisliked ? {
-                              scale: [1, 1.3, 1],
-                              rotate: [0, 15, -15, 0]
-                            } : {}}
-                            transition={{ duration: 0.4, ease: "easeOut" }}
-                          >
-                            <ThumbsDown className={`w-4 h-4 transition-all ${isDisliked ? 'fill-current' : ''}`} />
-                          </motion.div>
-                        </motion.button>
-                      </>
-                    )}
-
-                    {/* Bookmark - Always show */}
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={handleSave}
-                      className={`relative p-2.5 rounded-lg transition-all ${
-                        isSaved
-                          ? 'bg-primary-50 text-primary-600'
-                          : 'bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600'
-                      }`}
-                    >
-                      <motion.div
-                        animate={isSaved ? {
-                          scale: [1, 1.3, 1],
-                          rotate: [0, -10, 10, 0]
-                        } : {}}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                      >
-                        <Bookmark className={`w-4 h-4 transition-all ${isSaved ? 'fill-current' : ''}`} />
-                      </motion.div>
-                    </motion.button>
-
-                    {/* Share - Always show */}
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={handleShare}
-                      className="p-2.5 bg-white/80 backdrop-blur-xl rounded-xl text-gray-700 hover:bg-white/90 transition-all border border-white/60 shadow-lg"
-                      style={{
-                        backdropFilter: 'blur(20px) saturate(180%)',
-                        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                      }}
-                    >
-                      <Share2 className="w-4 h-4" />
-                    </motion.button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+                    </div>
+                  </div>
         </motion.div>
         
         {/* Invisible spacer to maintain layout when tab bar is fixed */}
         {isTabBarFixed && <div style={{ height: '64px' }} aria-hidden="true"></div>}
       </div>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 py-12 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* Left Column - Job Details */}
-          <div className="lg:col-span-2 space-y-12">
-            {/* Overview Section */}
-            <div ref={overviewRef} id="overview" className="scroll-mt-44 space-y-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Overview</h2>
+              {/* Tab Content Sections - Inside the card */}
+              <div className="p-6">
+                <div className="space-y-12">
+                {/* Overview Section */}
+                <div ref={overviewRef} id="overview" className="scroll-mt-44 space-y-8">
+                <div className="p-8">
+                  {/* License/Specialty - Main Title (matching listing page) */}
+                  <h1 className="text-3xl font-bold text-gray-900 mb-3">
+                    {job.specialtyRequired || job.title}
+                  </h1>
+                  
+                  {/* Location */}
+                  <p className="text-lg text-gray-600 mb-8">{job.city}, {job.state}</p>
+
+                  {/* Overview Details */}
+                  <div className="space-y-4 mb-8">
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">Overview</h2>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Number of Openings */}
+                      <div className="flex items-center gap-3">
+                        <Users className="w-5 h-5 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">Number of Openings</p>
+                          <p className="text-base font-semibold text-gray-900">1</p>
+                        </div>
+                      </div>
+
+                      {/* Estimated Start Date */}
+                      <div className="flex items-center gap-3">
+                        <Calendar className="w-5 h-5 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">Estimated Start Date</p>
+                          <p className="text-base font-semibold text-gray-900">{job.startDate}</p>
+                        </div>
+                      </div>
+
+                      {/* Facility Name (matching listing page structure) */}
+                      <div className="flex items-center gap-3">
+                        <Briefcase className="w-5 h-5 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">Facility</p>
+                          <p className="text-base font-semibold text-gray-900">{job.facilityName}</p>
+                        </div>
+                      </div>
+
+                      {/* Type of Shift */}
+                      <div className="flex items-center gap-3">
+                        <Clock className="w-5 h-5 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">Type of Shift</p>
+                          <p className="text-base font-semibold text-gray-900">{job.shift}</p>
+                        </div>
+                      </div>
+
+                      {/* Shift Length */}
+                      <div className="flex items-center gap-3">
+                        <Clock className="w-5 h-5 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">Shift Length</p>
+                          <p className="text-base font-semibold text-gray-900">{job.shiftHours}</p>
+                        </div>
+                      </div>
+
+                      {/* Location */}
+                      <div className="flex items-center gap-3">
+                        <MapPin className="w-5 h-5 text-primary-600" />
+                        <div>
+                          <p className="text-sm text-gray-500">Location</p>
+                          <p className="text-base font-semibold text-gray-900">{job.city}, {job.state}</p>
+                        </div>
+                      </div>
+
+                      {/* Profession - Specialty */}
+                      <div className="flex items-center gap-3">
+                        <Briefcase className="w-5 h-5 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">Profession - Specialty</p>
+                          <p className="text-base font-semibold text-gray-900">{job.specialtyRequired}</p>
+                        </div>
+                      </div>
+
+                      {/* Duration of Contract */}
+                      <div className="flex items-center gap-3">
+                        <Infinity className="w-5 h-5 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">Duration of Contract</p>
+                          <p className="text-base font-semibold text-gray-900">{job.duration}</p>
+                        </div>
+                      </div>
+
+                      {/* Expected Shift Time */}
+                      <div className="flex items-center gap-3">
+                        <Briefcase className="w-5 h-5 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">Expected Shift Time</p>
+                          <p className="text-base font-semibold text-gray-900">08:00 - 16:30</p>
+                        </div>
+                      </div>
+
+                      {/* Call-Off Policy */}
+                      {job.callRequirements && (
+                        <div className="flex items-center gap-3">
+                          <Eye className="w-5 h-5 text-gray-500" />
+                          <div>
+                            <p className="text-sm text-gray-500">Call-Off Policy</p>
+                            <p className="text-base font-semibold text-gray-900">{job.callRequirements}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Facility Details Section */}
+                  <div className="border-t border-gray-200 pt-8">
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">Facility Details</h2>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Facility Type */}
+                      <div className="flex items-center gap-3">
+                        <Building2 className="w-5 h-5 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">Facility Type</p>
+                          <p className="text-base font-semibold text-gray-900">{job.facilityType}</p>
+                        </div>
+                      </div>
+
+                      {/* Scrubs required */}
+                      <div className="flex items-center gap-3">
+                        <Shirt className="w-5 h-5 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">Scrubs required</p>
+                          <p className="text-base font-semibold text-gray-900">{job.scrubColor || 'No'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                </div>
               
               {/* Job Description */}
               <motion.div
@@ -1560,8 +1600,8 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                     <p className="text-gray-900">{job.profession}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-700 mb-1">Specialty</p>
-                    <p className="text-gray-900">{job.specialtyRequired}</p>
+                    <p className="text-sm font-semibold text-gray-700 mb-1">Facility Name</p>
+                    <p className="text-gray-900">{job.facilityName || 'Not specified'}</p>
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-700 mb-1">Duration</p>
@@ -1596,12 +1636,10 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                   Facility Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {job.facilityName && (
-                    <div>
-                      <p className="text-sm font-semibold text-gray-700 mb-1">Facility Name</p>
-                      <p className="text-gray-900">{job.facilityName}</p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700 mb-1">Specialty</p>
+                    <p className="text-gray-900">{job.specialtyRequired}</p>
+                  </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-700 mb-1">Facility Type</p>
                     <p className="text-gray-900">{job.facilityType}</p>
@@ -2048,151 +2086,114 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                   <span className="text-gray-700 font-medium">Lower housing costs mean more take-home pay for you!</span>
                 </div>
               </motion.div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Right Column - Apply Card */}
-          <div className="lg:col-span-1">
+          {/* Right Column - Travel Assignment Card */}
+          <div className="lg:col-span-3">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6 }}
-              className="sticky top-28 space-y-5"
+              className="sticky top-28 mt-8"
             >
-              {/* Main Apply Card */}
+              {/* Travel Assignment Summary Card */}
               <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Ready to Apply?</h3>
-                
-                {/* Apply Button */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleApply}
-                  className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all mb-5 flex items-center justify-center gap-2"
-                >
-                  <Send className="w-5 h-5" />
-                  Apply Now
-                </motion.button>
+                {/* Header with Featured Badge and Posted Date */}
+                <div className="flex items-start justify-between mb-6">
+                  {/* Featured Badge */}
+                  {job.featured && (
+                    <div className="px-3 py-1.5 bg-amber-50 rounded-md flex items-center gap-1.5 border border-amber-200">
+                      <Star className="w-3.5 h-3.5 text-amber-600 fill-amber-600" />
+                      <span className="text-xs font-semibold text-gray-900">Featured</span>
+                    </div>
+                  )}
+                  
+                  {/* Posted Date */}
+                  <span className={`text-xs text-gray-500 ${job.featured ? '' : 'ml-auto'}`}>
+                    Posted {job.postedDate}
+                  </span>
+                </div>
 
-                {/* Key Benefits */}
-                <div className="space-y-3 mb-5 pb-5 border-b border-gray-200">
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    <span className="text-sm">Quick application process</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <CheckCircle2 className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                    <span className="text-sm">Response within 24-48 hours</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <CheckCircle2 className="w-5 h-5 text-purple-600 flex-shrink-0" />
-                    <span className="text-sm">Dedicated recruiter support</span>
+                {/* Main Pay Display */}
+                <div className="mb-6 text-center">
+                  <div className="flex items-baseline justify-center gap-1">
+                    <span className="text-4xl font-bold text-gray-900">{job.weeklyPay}</span>
+                    <span className="text-base font-medium text-gray-600">/week</span>
                   </div>
                 </div>
 
-                {/* Compensation Highlight */}
-                <div className="bg-primary-50 rounded-lg p-4 mb-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Hourly Rate</span>
-                    <span className="text-xl font-bold text-primary-600">{job.salary}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">Weekly Pay</span>
-                    <span className="text-lg font-bold text-gray-900">{job.weeklyPay}</span>
-                  </div>
+                {/* Shift and Start Date */}
+                <div className="mb-6 pb-6 border-b border-gray-200">
+                  <p className="text-sm text-gray-700 text-center">
+                    {job.shift} • {job.shiftHours} {job.startDate && `• ${job.startDate}`}
+                  </p>
                 </div>
 
-                {/* Job Details */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <MapPin className="w-4 h-4 text-gray-400" />
-                    <span>{job.city}, {job.state}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Clock className="w-4 h-4 text-gray-400" />
-                    <span>{job.shift} • {job.shiftHours}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    <span>{job.duration} contract</span>
-                  </div>
+                {/* Assignment Type */}
+                <div className="mb-4">
+                  <p className="text-sm font-semibold text-gray-700">Travel Assignment</p>
                 </div>
-              </div>
 
-              {/* Contact Information */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-                <h4 className="font-semibold text-gray-900 mb-4">Contact Information</h4>
-                <div className="space-y-3">
-                  <a 
-                    href={`tel:${job.contactPhone}`} 
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                {/* Order Number */}
+                <div className="mb-6 pb-6 border-b border-gray-200">
+                  <p className="text-xs text-gray-500">Order number: {job.id}</p>
+                </div>
+
+                {/* Pay Breakdown */}
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between">
+                    <span className="text-xs text-gray-600">Weekly Net Pay (Single/2)</span>
+                    <span className="text-sm font-semibold text-gray-900">{job.weeklyPay}</span>
+                  </div>
+                  {job.travelReimbursement && (
+                    <div className="flex justify-between">
+                      <span className="text-xs text-gray-600">Travel Reimbursement</span>
+                      <span className="text-sm font-semibold text-gray-900">$500.00</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-xs text-gray-600">Regular Rate</span>
+                    <span className="text-sm font-semibold text-gray-900">{job.salary}</span>
+                  </div>
+                  <button className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 mt-2">
+                    <span>Show Details</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleDislike}
+                    className={`p-3 rounded-lg transition-all border ${
+                      isDisliked
+                        ? 'bg-red-50 text-red-600 border-red-200'
+                        : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200'
+                    }`}
                   >
-                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                      <Phone className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500">Phone</div>
-                      <div className="text-sm font-medium text-gray-900">{job.contactPhone}</div>
-                    </div>
-                  </a>
-                  <a 
-                    href={`mailto:${job.contactEmail}`} 
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                    <ThumbsDown className={`w-5 h-5 ${isDisliked ? 'fill-current' : ''}`} />
+                  </motion.button>
+                  
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleApply}
+                    className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
                   >
-                    <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                      <Mail className="w-5 h-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500">Email</div>
-                      <div className="text-sm font-medium text-gray-900 truncate">{job.contactEmail}</div>
-                    </div>
-                  </a>
-                  <a 
-                    href={`https://${job.website}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                      <Globe className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500">Website</div>
-                      <div className="text-sm font-medium text-gray-900 truncate">{job.website}</div>
-                    </div>
-                  </a>
+                    <Send className="w-4 h-4" />
+                    Submit
+                  </motion.button>
                 </div>
-              </div>
-
-              {/* Key Requirements */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-                <h4 className="font-semibold text-gray-900 mb-4">Key Requirements</h4>
-                <ul className="space-y-2">
-                  {job.requirements.slice(0, 4).map((req, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
-                      <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>{req}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Top Benefits */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-                <h4 className="font-semibold text-gray-900 mb-4">Top Benefits</h4>
-                <ul className="space-y-2">
-                  {job.benefits.slice(0, 4).map((benefit, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
-                      <Award className="w-4 h-4 text-primary-600 flex-shrink-0 mt-0.5" />
-                      <span>{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
             </motion.div>
           </div>
         </div>
-      </main>
+      </div>
 
       {/* Footer */}
       <Footer />

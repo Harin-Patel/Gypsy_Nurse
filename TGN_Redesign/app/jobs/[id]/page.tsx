@@ -34,7 +34,6 @@ import {
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Navigation from '@/components/Navigation'
-import Footer from '@/components/Footer'
 import { useAuth } from '@/contexts/AuthContext'
 import toast from 'react-hot-toast'
 import {
@@ -737,6 +736,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
   const [isTabBarFixed, setIsTabBarFixed] = useState(false)
   const [navHeight, setNavHeight] = useState(80)
   const [tabBarPosition, setTabBarPosition] = useState({ left: 0, width: 0 })
+  const isProgrammaticScrollRef = useRef(false)
   
   // Refs for scroll tracking
   const overviewRef = useRef<HTMLDivElement>(null)
@@ -808,48 +808,64 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
       }
     }
 
+    let rafId: number | null = null
+    let ticking = false
+
     const handleScroll = () => {
-      // Recalculate if needed
-      if (!isTabBarFixed && tabBarInitialTop === 0) {
-        updateTabBarPosition()
-      }
-
-      // Update tab bar position when card is available
-      if (cardRef.current) {
-        const rect = cardRef.current.getBoundingClientRect()
-        setTabBarPosition({ left: rect.left, width: rect.width })
-      }
-
-      // Check if tab bar should be fixed
-      const scrollPosition = window.scrollY
-      // Tab bar should become fixed when its natural position would be at navHeight from viewport top
-      const shouldBeFixed = scrollPosition >= tabBarInitialTop - navHeight
-      
-      if (shouldBeFixed !== isTabBarFixed) {
-        setIsTabBarFixed(shouldBeFixed)
-      }
-
-      // Update active tab based on scroll position
-      const sections = [
-        { ref: overviewRef, id: 'overview' },
-        { ref: aboutRef, id: 'about' },
-        { ref: weatherRef, id: 'weather' },
-        { ref: transportationRef, id: 'transportation' },
-        { ref: costOfLivingRef, id: 'cost-of-living' }
-      ]
-
-      // Account for navigation + tab bar + buffer
-      const scrollPos = window.scrollY + navHeight + 84
-
-      for (let i = sections.length - 1; i >= 0; i--) {
-        const section = sections[i]
-        if (section.ref.current) {
-          const sectionTop = section.ref.current.offsetTop
-          if (scrollPos >= sectionTop) {
-            setActiveTab(section.id)
-            break
+      if (!ticking) {
+        rafId = requestAnimationFrame(() => {
+          // Recalculate if needed
+          if (!isTabBarFixed && tabBarInitialTop === 0) {
+            updateTabBarPosition()
           }
-        }
+
+          // Update tab bar position when card is available
+          if (cardRef.current) {
+            const rect = cardRef.current.getBoundingClientRect()
+            setTabBarPosition({ left: rect.left, width: rect.width })
+          }
+
+          // Check if tab bar should be fixed
+          const scrollPosition = window.scrollY
+          // Tab bar should become fixed when its natural position would be at navHeight from viewport top
+          const shouldBeFixed = scrollPosition >= tabBarInitialTop - navHeight
+          
+          if (shouldBeFixed !== isTabBarFixed) {
+            setIsTabBarFixed(shouldBeFixed)
+          }
+
+          // Update active tab based on scroll position (only if not programmatic scroll)
+          if (!isProgrammaticScrollRef.current) {
+            const sections = [
+              { ref: overviewRef, id: 'overview' },
+              { ref: aboutRef, id: 'about' },
+              { ref: weatherRef, id: 'weather' },
+              { ref: transportationRef, id: 'transportation' },
+              { ref: costOfLivingRef, id: 'cost-of-living' }
+            ]
+
+            // Account for navigation + tab bar + buffer
+            // Use a threshold to determine when a section is "active"
+            const scrollPos = window.scrollY
+            const threshold = isTabBarFixed ? navHeight + 100 : navHeight + 84
+
+            for (let i = sections.length - 1; i >= 0; i--) {
+              const section = sections[i]
+              if (section.ref.current) {
+                const rect = section.ref.current.getBoundingClientRect()
+                const sectionTop = rect.top + scrollPos
+                // Check if section is in viewport with threshold
+                if (scrollPos + threshold >= sectionTop - 50) {
+                  setActiveTab(section.id)
+                  break
+                }
+              }
+            }
+          }
+
+          ticking = false
+        })
+        ticking = true
       }
     }
 
@@ -864,22 +880,55 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
 
     return () => {
       clearTimeout(timeoutId)
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
+      }
       window.removeEventListener('scroll', handleScroll)
       window.removeEventListener('resize', updateTabBarPosition)
     }
   }, [isTabBarFixed, job, navHeight])
 
   // Smooth scroll to section
-  const scrollToSection = (sectionRef: React.RefObject<HTMLDivElement | null>) => {
+  const scrollToSection = (sectionRef: React.RefObject<HTMLDivElement | null>, tabId?: string) => {
     if (sectionRef.current) {
-      // Navigation + Tab Bar (64px) + buffer
-      const offset = navHeight + 74
-      const elementPosition = sectionRef.current.getBoundingClientRect().top + window.pageYOffset
-      const offsetPosition = elementPosition - offset
+      // Set active tab immediately when clicked
+      if (tabId) {
+        setActiveTab(tabId)
+      }
+      
+      // Set flag to prevent scroll handler from updating active tab
+      isProgrammaticScrollRef.current = true
+      
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        if (!sectionRef.current) return
+        
+        // Calculate offset based on whether tab bar is fixed
+        // If tab bar is fixed, we need more offset (nav + tab bar height)
+        // If not fixed, just nav height
+        const tabBarHeight = 64 // Approximate tab bar height
+        const offset = isTabBarFixed 
+          ? navHeight + tabBarHeight + 20  // Nav + fixed tab bar + buffer
+          : navHeight + 74  // Nav + buffer when not fixed
+        
+        // Get element position relative to document
+        const elementRect = sectionRef.current.getBoundingClientRect()
+        const elementPosition = elementRect.top + window.pageYOffset
+        const offsetPosition = Math.max(0, elementPosition - offset)
 
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
+        // Scroll to position
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        })
+        
+        // Reset flag after scroll completes (estimate based on scroll distance)
+        const scrollDistance = Math.abs(window.scrollY - offsetPosition)
+        const estimatedDuration = Math.min(scrollDistance / 2, 1500) // Max 1.5 seconds
+        
+        setTimeout(() => {
+          isProgrammaticScrollRef.current = false
+        }, estimatedDuration + 200) // Add buffer
       })
     }
   }
@@ -1110,8 +1159,12 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
               <div ref={tabBarPlaceholderRef} className="relative">
                 <motion.div 
                   ref={tabBarRef}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className={`transition-all duration-300 border-b-2 ${
+                  transition={{ 
+                    duration: 0.15, 
+                    ease: [0.25, 0.1, 0.25, 1],
+                    layout: false
+                  }}
+                  className={`border-b-2 transition-colors duration-150 ${
                     isTabBarFixed 
                       ? 'bg-white/80 backdrop-blur-xl border-gray-200/50 shadow-2xl'
                       : 'bg-white border-gray-200'
@@ -1125,8 +1178,13 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                           width: `${tabBarPosition.width}px`,
                           zIndex: 40,
                           boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1), 0 1px 8px rgba(0, 0, 0, 0.08)',
+                          willChange: 'transform',
+                          transform: 'translateZ(0)',
                         }
-                      : { position: 'relative' }
+                      : { 
+                          position: 'relative',
+                          willChange: 'auto'
+                        }
                   }
                 >
                   <div className="px-6">
@@ -1142,7 +1200,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         ].map((tab) => (
                 <motion.button
                   key={tab.id}
-                  onClick={() => scrollToSection(tab.ref)}
+                  onClick={() => scrollToSection(tab.ref, tab.id)}
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
                   className={`relative px-6 py-4 text-sm font-semibold transition-all duration-300 whitespace-nowrap ${
@@ -1152,29 +1210,40 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                   }`}
                 >
                   {/* Background glow on active tab */}
-                  {activeTab === tab.id && (
-                    <motion.div
-                      layoutId="activeTabBackground"
-                      className="absolute inset-0 bg-primary-50/50 rounded-lg"
-                      initial={false}
-                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                    />
-                  )}
+                  <motion.div
+                    className="absolute inset-0 bg-primary-50/50 rounded-lg"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ 
+                      opacity: activeTab === tab.id ? 1 : 0,
+                      scale: activeTab === tab.id ? 1 : 0.95
+                    }}
+                    transition={{ 
+                      duration: 0.2,
+                      ease: 'easeOut'
+                    }}
+                    style={{ pointerEvents: 'none' }}
+                  />
                   
                   <span className="relative z-10">{tab.label}</span>
                   
                   {/* Active indicator line */}
-                  {activeTab === tab.id && (
-                    <motion.div
-                      layoutId="activeTabIndicator"
-                      className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 via-primary-600 to-primary-500 rounded-t-full"
-                      initial={false}
-                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                      style={{
-                        boxShadow: '0 -2px 10px rgba(127, 40, 96, 0.3)',
-                      }}
-                    />
-                  )}
+                  <motion.div
+                    className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 via-primary-600 to-primary-500 rounded-t-full"
+                    initial={{ scaleX: 0, opacity: 0 }}
+                    animate={{ 
+                      scaleX: activeTab === tab.id ? 1 : 0,
+                      opacity: activeTab === tab.id ? 1 : 0
+                    }}
+                    transition={{ 
+                      duration: 0.2,
+                      ease: 'easeOut',
+                      originX: 0.5
+                    }}
+                    style={{
+                      boxShadow: '0 -2px 10px rgba(127, 40, 96, 0.3)',
+                      transformOrigin: 'center'
+                    }}
+                  />
                   
                   {/* Hover effect */}
                   <motion.div
@@ -1564,6 +1633,13 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
             </motion.div>
             </div>
 
+            {/* Section Separator */}
+            <div className="my-12 flex items-center">
+              <div className="flex-1 border-t border-gray-200"></div>
+              <div className="px-4 text-sm text-gray-400 font-medium">About</div>
+              <div className="flex-1 border-t border-gray-200"></div>
+            </div>
+
             {/* About Section */}
             <div ref={aboutRef} id="about" className="scroll-mt-44 space-y-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-6">About This Position</h2>
@@ -1785,6 +1861,13 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
               </motion.div>
             </div>
 
+            {/* Section Separator */}
+            <div className="my-12 flex items-center">
+              <div className="flex-1 border-t border-gray-200"></div>
+              <div className="px-4 text-sm text-gray-400 font-medium">Weather</div>
+              <div className="flex-1 border-t border-gray-200"></div>
+            </div>
+
             {/* Weather Section */}
             <div ref={weatherRef} id="weather" className="scroll-mt-44 space-y-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-6">Weather</h2>
@@ -1884,6 +1967,13 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
               </motion.div>
             </div>
 
+            {/* Section Separator */}
+            <div className="my-12 flex items-center">
+              <div className="flex-1 border-t border-gray-200"></div>
+              <div className="px-4 text-sm text-gray-400 font-medium">Transportation and Crime</div>
+              <div className="flex-1 border-t border-gray-200"></div>
+            </div>
+
             {/* Transportation and Crime Section */}
             <div ref={transportationRef} id="transportation" className="scroll-mt-44 space-y-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-6">Transportation and Crime</h2>
@@ -1968,6 +2058,13 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                   </div>
                 </div>
               </motion.div>
+            </div>
+
+            {/* Section Separator */}
+            <div className="my-12 flex items-center">
+              <div className="flex-1 border-t border-gray-200"></div>
+              <div className="px-4 text-sm text-gray-400 font-medium">Cost of Living</div>
+              <div className="flex-1 border-t border-gray-200"></div>
             </div>
 
             {/* Cost of Living Section */}
@@ -2194,9 +2291,6 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <Footer />
     </div>
   )
 }

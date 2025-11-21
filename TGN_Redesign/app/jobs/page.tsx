@@ -77,7 +77,7 @@ export const SAMPLE_JOBS: Job[] = [
     facilityAvailable: false,
     staffingCompany: 'AB Staffing Solutions',
     tags: ['Day Shift', 'Emergency Room', 'Registered Nurse', '13 Weeks'],
-    facilityImage: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&h=600&fit=crop',
+    facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Sanford Medical Center',
     licenseSpecialty: 'RN - Emergency Room',
     payPerWeek: '$4,872.50',
@@ -117,7 +117,7 @@ export const SAMPLE_JOBS: Job[] = [
     facilityAvailable: true,
     staffingCompany: 'AB Staffing Solutions',
     tags: ['Strike', 'Clinical Lab Scientist', '8 Weeks'],
-    facilityImage: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&h=600&fit=crop',
+    facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Gila Regional Medical Center',
     licenseSpecialty: 'CLS - Clinical Lab Scientist',
     payPerWeek: '$4,032',
@@ -137,13 +137,53 @@ export const SAMPLE_JOBS: Job[] = [
     facilityAvailable: true,
     staffingCompany: 'AB Staffing Solutions',
     tags: ['Night Shift', 'ICU', 'Registered Nurse', '13 Weeks'],
-    facilityImage: 'https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=800&h=600&fit=crop',
+    facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Banner University Medical Center',
     licenseSpecialty: 'RN - Intensive Care Unit',
     payPerWeek: '$5,460.25',
     featured: true,
     daysAgo: 5,
     startDate: 'Dec 10'
+  },
+  {
+    id: '5',
+    title: 'Cardiac Cath Lab Travel Nurse - Boston, MA',
+    location: 'Boston',
+    state: 'Massachusetts',
+    shift: 'Day Shift',
+    shiftHours: '10h',
+    salary: '$72',
+    postedDate: 'Nov 12, 2025',
+    facilityAvailable: true,
+    staffingCompany: 'AB Staffing Solutions',
+    tags: ['Day Shift', 'Cardiac Cath Lab', 'Registered Nurse', '13 Weeks'],
+    facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
+    facilityName: 'Massachusetts General Hospital',
+    licenseSpecialty: 'RN - Cardiac Catheterization Laboratory and Interventional Cardiology Specialization',
+    payPerWeek: '$6,048.80',
+    featured: true,
+    daysAgo: 3,
+    startDate: 'Dec 20'
+  },
+  {
+    id: '6',
+    title: 'Neonatal Intensive Care Unit Travel Nurse - Seattle, WA',
+    location: 'Seattle',
+    state: 'Washington',
+    shift: 'Night Shift',
+    shiftHours: '12h',
+    salary: '$70',
+    postedDate: 'Nov 11, 2025',
+    facilityAvailable: true,
+    staffingCompany: 'AB Staffing Solutions',
+    tags: ['Night Shift', 'NICU', 'Registered Nurse', '13 Weeks'],
+    facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
+    facilityName: 'Seattle Children\'s Hospital',
+    licenseSpecialty: 'RN - Neonatal Intensive Care Unit with Advanced Life Support Certification',
+    payPerWeek: '$5,880.00',
+    featured: false,
+    daysAgo: 4,
+    startDate: 'Dec 18'
   }
 ]
 
@@ -965,6 +1005,18 @@ export default function JobsPage() {
                   loading="lazy"
                 />
                 
+                {/* Black Overlay from Four Corners (Vignette Effect) */}
+                <div className="absolute inset-0" 
+                  style={{
+                    background: `
+                      radial-gradient(circle at top left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+                      radial-gradient(circle at top right, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+                      radial-gradient(circle at bottom left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+                      radial-gradient(circle at bottom right, rgba(0, 0, 0, 0.4) 0%, transparent 50%)
+                    `
+                  }}
+                />
+                
                 {/* Gradient Overlay for better text readability */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
                 
@@ -1058,14 +1110,14 @@ export default function JobsPage() {
               {/* Card Body */}
               <div className="p-3 bg-white/80 backdrop-blur-sm flex-1 flex flex-col">
                 {/* Title and Days Ago */}
-                <div className="flex items-baseline justify-between mb-1.5">
-                  <div className="flex-1 pr-2">
-                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+                <div className="flex items-center justify-between mb-1.5 gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 break-words leading-tight">
                       {job.licenseSpecialty}
                     </h3>
                   </div>
                   {job.daysAgo !== undefined && (
-                    <span className="text-xs text-gray-500 whitespace-nowrap">
+                    <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0 self-start pt-0.5">
                       {job.daysAgo} {job.daysAgo === 1 ? 'day' : 'days'} ago
                     </span>
                   )}

@@ -62,9 +62,13 @@ export default function Navigation() {
 
   const navItems = [
     { 
-      name: 'Search Jobs', 
+      name: 'Find a job', 
       href: '/jobs',
-      isRoute: true
+      dropdown: [
+        'View all jobs',
+        'Jobs by State',
+        'Nursing Specialties'
+      ]
     },
     { 
       name: 'Resources', 
@@ -111,7 +115,7 @@ export default function Navigation() {
 
   const handleNavClick = (href: string, isRoute?: boolean) => {
     setIsMobileMenuOpen(false)
-    if (isRoute) {
+    if (isRoute || href.startsWith('/')) {
       window.location.href = href
     } else {
     const element = document.querySelector(href)
@@ -466,7 +470,16 @@ export default function Navigation() {
                       >
                         <div className="p-2">
                           {item.dropdown.map((subItem, idx) => {
-                            const href = subItem === 'Advertise With Us' ? '/advertise-with-us' : '#'
+                            let href = '#'
+                            if (subItem === 'Advertise With Us') {
+                              href = '/advertise-with-us'
+                            } else if (subItem === 'View all jobs') {
+                              href = '/jobs'
+                            } else if (subItem === 'Jobs by State') {
+                              href = '/jobs-by-state'
+                            } else if (subItem === 'Nursing Specialties') {
+                              href = '/jobs?filter=specialty'
+                            }
                             return (
                               <motion.a
                                 key={subItem}
@@ -972,7 +985,16 @@ export default function Navigation() {
                       {item.dropdown && (
                         <div className="ml-4 mt-2 space-y-2">
                           {item.dropdown.map((subItem) => {
-                            const href = subItem === 'Advertise With Us' ? '/advertise-with-us' : '#'
+                            let href = '#'
+                            if (subItem === 'Advertise With Us') {
+                              href = '/advertise-with-us'
+                            } else if (subItem === 'View all jobs') {
+                              href = '/jobs'
+                            } else if (subItem === 'Jobs by State') {
+                              href = '/jobs-by-state'
+                            } else if (subItem === 'Nursing Specialties') {
+                              href = '/jobs?filter=specialty'
+                            }
                             return (
                               <a
                                 key={subItem}

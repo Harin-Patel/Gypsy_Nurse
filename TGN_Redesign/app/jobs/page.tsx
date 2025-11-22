@@ -10,7 +10,6 @@ import {
   DollarSign, 
   Calendar,
   Briefcase,
-  Building2,
   Bookmark,
   ChevronRight,
   ArrowUpRight,
@@ -22,7 +21,9 @@ import {
   Filter,
   ArrowRight,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Star,
+  Sun
 } from 'lucide-react'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
@@ -42,7 +43,7 @@ import {
   removeBookmarkedJob
 } from '@/utils/jobStorage'
 
-interface Job {
+export interface Job {
   id: string
   title: string
   location: string
@@ -54,6 +55,13 @@ interface Job {
   facilityAvailable: boolean
   staffingCompany: string
   tags: string[]
+  facilityImage?: string
+  facilityName: string
+  licenseSpecialty: string
+  payPerWeek: string
+  featured?: boolean
+  daysAgo?: number
+  startDate?: string
 }
 
 export const SAMPLE_JOBS: Job[] = [
@@ -63,12 +71,19 @@ export const SAMPLE_JOBS: Job[] = [
     location: 'Sioux Falls',
     state: 'South Dakota',
     shift: 'Day Shift',
-    shiftHours: '12 Hours',
+    shiftHours: '8h',
     salary: '$58',
     postedDate: 'Nov 7, 2025',
     facilityAvailable: false,
     staffingCompany: 'AB Staffing Solutions',
-    tags: ['Day Shift', 'Emergency Room', 'Registered Nurse', '13 Weeks']
+    tags: ['Day Shift', 'Emergency Room', 'Registered Nurse', '13 Weeks'],
+    facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
+    facilityName: 'Sanford Medical Center',
+    licenseSpecialty: 'RN - Emergency Room',
+    payPerWeek: '$4,872.50',
+    featured: true,
+    daysAgo: 10,
+    startDate: 'Dec 8'
   },
   {
     id: '2',
@@ -76,12 +91,19 @@ export const SAMPLE_JOBS: Job[] = [
     location: 'Greenbrae',
     state: 'California',
     shift: 'Day Shift',
-    shiftHours: '12 Hours',
+    shiftHours: '8h',
     salary: '$68',
     postedDate: 'Nov 6, 2025',
     facilityAvailable: false,
     staffingCompany: 'AB Staffing Solutions',
-    tags: ['Day Shift', 'Emergency Room', 'Registered Nurse', '13 Weeks']
+    tags: ['Day Shift', 'Emergency Room', 'Registered Nurse', '13 Weeks'],
+    facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
+    facilityName: 'Marin General Hospital',
+    licenseSpecialty: 'RN - Emergency Department',
+    payPerWeek: '$5,712.75',
+    featured: true,
+    daysAgo: 10,
+    startDate: 'Dec 1'
   },
   {
     id: '3',
@@ -89,12 +111,19 @@ export const SAMPLE_JOBS: Job[] = [
     location: 'Merrill',
     state: 'New Mexico',
     shift: 'Day Shift',
-    shiftHours: '12 Hours',
+    shiftHours: '8h',
     salary: '$48',
     postedDate: 'Oct 11, 2025',
     facilityAvailable: true,
     staffingCompany: 'AB Staffing Solutions',
-    tags: ['Strike', 'Clinical Lab Scientist', '8 Weeks']
+    tags: ['Strike', 'Clinical Lab Scientist', '8 Weeks'],
+    facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
+    facilityName: 'Gila Regional Medical Center',
+    licenseSpecialty: 'CLS - Clinical Lab Scientist',
+    payPerWeek: '$4,032',
+    featured: false,
+    daysAgo: 15,
+    startDate: 'Dec 15'
   },
   {
     id: '4',
@@ -107,7 +136,54 @@ export const SAMPLE_JOBS: Job[] = [
     postedDate: 'Nov 10, 2025',
     facilityAvailable: true,
     staffingCompany: 'AB Staffing Solutions',
-    tags: ['Night Shift', 'ICU', 'Registered Nurse', '13 Weeks']
+    tags: ['Night Shift', 'ICU', 'Registered Nurse', '13 Weeks'],
+    facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
+    facilityName: 'Banner University Medical Center',
+    licenseSpecialty: 'RN - Intensive Care Unit',
+    payPerWeek: '$5,460.25',
+    featured: true,
+    daysAgo: 5,
+    startDate: 'Dec 10'
+  },
+  {
+    id: '5',
+    title: 'Cardiac Cath Lab Travel Nurse - Boston, MA',
+    location: 'Boston',
+    state: 'Massachusetts',
+    shift: 'Day Shift',
+    shiftHours: '10h',
+    salary: '$72',
+    postedDate: 'Nov 12, 2025',
+    facilityAvailable: true,
+    staffingCompany: 'AB Staffing Solutions',
+    tags: ['Day Shift', 'Cardiac Cath Lab', 'Registered Nurse', '13 Weeks'],
+    facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
+    facilityName: 'Massachusetts General Hospital',
+    licenseSpecialty: 'RN - Cardiac Catheterization Laboratory and Interventional Cardiology Specialization',
+    payPerWeek: '$6,048.80',
+    featured: true,
+    daysAgo: 3,
+    startDate: 'Dec 20'
+  },
+  {
+    id: '6',
+    title: 'Neonatal Intensive Care Unit Travel Nurse - Seattle, WA',
+    location: 'Seattle',
+    state: 'Washington',
+    shift: 'Night Shift',
+    shiftHours: '12h',
+    salary: '$70',
+    postedDate: 'Nov 11, 2025',
+    facilityAvailable: true,
+    staffingCompany: 'AB Staffing Solutions',
+    tags: ['Night Shift', 'NICU', 'Registered Nurse', '13 Weeks'],
+    facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
+    facilityName: 'Seattle Children\'s Hospital',
+    licenseSpecialty: 'RN - Neonatal Intensive Care Unit with Advanced Life Support Certification',
+    payPerWeek: '$5,880.00',
+    featured: false,
+    daysAgo: 4,
+    startDate: 'Dec 18'
   }
 ]
 
@@ -908,272 +984,195 @@ export default function JobsPage() {
                   delay: index * 0.1,
                   ease: [0.25, 0.46, 0.45, 0.94]
                 }}
-                className="group relative bg-white rounded-xl border-2 border-gray-200 transition-all duration-300 overflow-hidden flex flex-col cursor-pointer h-full"
+                className="group relative bg-white/95 backdrop-blur-2xl rounded-2xl overflow-hidden flex flex-col cursor-pointer h-full shadow-xl border border-gray-200/50 hover:border-primary-300/50 transition-all duration-300"
                 style={{
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                  backdropFilter: 'saturate(180%) blur(20px)',
+                  WebkitBackdropFilter: 'saturate(180%) blur(20px)',
                 }}
-                onHoverStart={() => {}}
                 whileHover={{
-                  y: -6,
-                  boxShadow: '0 12px 24px rgba(127, 40, 96, 0.15)',
-                  transition: { duration: 0.2, ease: "easeOut" }
+                  y: -4,
+                  scale: 1.02,
+                  boxShadow: '0 20px 40px rgba(127, 40, 96, 0.15)',
+                  transition: { duration: 0.3, ease: "easeOut" }
                 }}
               >
-              {/* Animated gradient border on hover - Theme Color */}
-              <motion.div
-                className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                style={{
-                  padding: '2px',
-                  WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                  WebkitMaskComposite: 'xor',
-                  maskComposite: 'exclude',
-                }}
-              >
-                {/* Animated gradient sweep on border */}
-                <motion.div
-                  className="absolute inset-0 rounded-xl"
+              {/* Facility Image Header with Gradient Overlay */}
+              <div className="relative h-44 overflow-hidden">
+                <img
+                  src={job.facilityImage || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&h=600&fit=crop'}
+                  alt={job.facilityName}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  loading="lazy"
+                />
+                
+                {/* Black Overlay from Four Corners (Vignette Effect) */}
+                <div className="absolute inset-0" 
                   style={{
-                    padding: '2px',
-                    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                    WebkitMaskComposite: 'xor',
-                    maskComposite: 'exclude',
-                  }}
-                  animate={{
-                    background: [
-                      'linear-gradient(0deg, transparent, rgba(127, 40, 96, 0.8), transparent)',
-                      'linear-gradient(90deg, transparent, rgba(127, 40, 96, 0.8), transparent)',
-                      'linear-gradient(180deg, transparent, rgba(127, 40, 96, 0.8), transparent)',
-                      'linear-gradient(270deg, transparent, rgba(127, 40, 96, 0.8), transparent)',
-                      'linear-gradient(360deg, transparent, rgba(127, 40, 96, 0.8), transparent)',
-                    ]
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "linear"
+                    background: `
+                      radial-gradient(circle at top left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+                      radial-gradient(circle at top right, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+                      radial-gradient(circle at bottom left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+                      radial-gradient(circle at bottom right, rgba(0, 0, 0, 0.4) 0%, transparent 50%)
+                    `
                   }}
                 />
-              </motion.div>
-
-              {/* Card Header */}
-              <div className="relative p-5 border-b border-gray-100">
-                <div className="flex items-start justify-between gap-3 mb-3">
+                
+                {/* Gradient Overlay for better text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+                
+                {/* Featured Tag - Top Left */}
+                {job.featured && (
                   <motion.div
-                    className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg flex items-center justify-center"
-                    whileHover={{ 
-                      scale: 1.1,
-                      rotate: [0, -5, 5, 0],
-                      transition: { duration: 0.3 }
-                    }}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-md flex items-center gap-1.5 z-10 shadow-sm border border-white/50"
                   >
-                    <Briefcase className="w-6 h-6 text-primary-600" />
+                    <Star className="w-3 h-3 text-amber-600 fill-amber-600" />
+                    <span className="text-xs font-semibold text-gray-900">Featured</span>
                   </motion.div>
-                  
-                  <div className="flex items-center gap-2">
-                    {/* PENDING Badge - Show if job is pending */}
-                    {pendingJobs.includes(job.id) && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg font-semibold text-xs shadow-lg border border-primary-400/50 flex items-center gap-1.5"
-                      >
-                        <AlertCircle className="w-3.5 h-3.5" />
-                        <span>PENDING</span>
-                      </motion.div>
-                    )}
+                )}
 
-                    {/* Like/Dislike Buttons - Only show when logged in and NOT pending */}
-                    {isAuthenticated && !pendingJobs.includes(job.id) && (
-                      <>
-                        {/* Like Button */}
-                        <motion.button
-                          type="button"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            toggleLikeJob(job.id)
-                          }}
-                          className={`relative p-2 rounded-lg transition-all ${
-                            likedJobs.includes(job.id)
-                              ? 'bg-green-50 text-green-600'
-                              : 'bg-gray-50 text-gray-400 hover:bg-green-50 hover:text-green-600'
-                          }`}
-                        >
-                          <motion.div
-                            animate={likedJobs.includes(job.id) ? {
-                              scale: [1, 1.3, 1],
-                              rotate: [0, -15, 15, 0]
-                            } : {}}
-                            transition={{ duration: 0.4, ease: "easeOut" }}
-                          >
-                            <ThumbsUp className={`w-4 h-4 transition-all ${likedJobs.includes(job.id) ? 'fill-current' : ''}`} />
-                          </motion.div>
-                        </motion.button>
+                {/* Action Buttons - Top Right (if authenticated) */}
+                {isAuthenticated && !pendingJobs.includes(job.id) && (
+                  <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+                    {/* Like Button */}
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.15, rotate: 5 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        toggleLikeJob(job.id)
+                      }}
+                      className={`p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg ${
+                        likedJobs.includes(job.id)
+                          ? 'bg-primary-500 text-white'
+                          : 'bg-white/30 text-white hover:bg-primary-500'
+                      }`}
+                    >
+                      <ThumbsUp className={`w-4 h-4 ${likedJobs.includes(job.id) ? 'fill-white' : 'text-white'}`} />
+                    </motion.button>
 
-                        {/* Dislike Button */}
-                        <motion.button
-                          type="button"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            toggleDislikeJob(job.id)
-                          }}
-                          className={`relative p-2 rounded-lg transition-all ${
-                            dislikedJobs.includes(job.id)
-                              ? 'bg-red-50 text-red-600'
-                              : 'bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600'
-                          }`}
-                        >
-                          <motion.div
-                            animate={dislikedJobs.includes(job.id) ? {
-                              scale: [1, 1.3, 1],
-                              rotate: [0, 15, -15, 0]
-                            } : {}}
-                            transition={{ duration: 0.4, ease: "easeOut" }}
-                          >
-                            <ThumbsDown className={`w-4 h-4 transition-all ${dislikedJobs.includes(job.id) ? 'fill-current' : ''}`} />
-                          </motion.div>
-                        </motion.button>
-                      </>
-                    )}
+                    {/* Dislike Button */}
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.15, rotate: -5 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        toggleDislikeJob(job.id)
+                      }}
+                      className={`p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg ${
+                        dislikedJobs.includes(job.id)
+                          ? 'bg-primary-500 text-white'
+                          : 'bg-white/30 text-white hover:bg-primary-500'
+                      }`}
+                    >
+                      <ThumbsDown className={`w-4 h-4 ${dislikedJobs.includes(job.id) ? 'fill-white' : 'text-white'}`} />
+                    </motion.button>
 
                     {/* Bookmark Button */}
                     <motion.button
                       type="button"
-                      whileHover={{ scale: 1.1 }}
+                      whileHover={{ scale: 1.15, rotate: -5 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
                         toggleSaveJob(job.id)
                       }}
-                      className={`relative p-2 rounded-lg transition-all ${
+                      className={`p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg ${
                         savedJobs.includes(job.id)
-                          ? 'bg-primary-50 text-primary-600'
-                          : 'bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+                          ? 'bg-primary-500 text-white'
+                          : 'bg-white/30 text-white hover:bg-primary-500'
                       }`}
                     >
-                      <motion.div
-                        animate={savedJobs.includes(job.id) ? {
-                          scale: [1, 1.3, 1],
-                          rotate: [0, -10, 10, 0]
-                        } : {}}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                      >
-                        <Bookmark className={`w-4 h-4 transition-all ${savedJobs.includes(job.id) ? 'fill-current' : ''}`} />
-                      </motion.div>
+                      <Bookmark className={`w-4 h-4 ${savedJobs.includes(job.id) ? 'fill-white' : 'text-white'}`} />
                     </motion.button>
                   </div>
-                </div>
+                )}
 
-                <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors leading-snug">
-                  {job.title}
-                </h3>
-
-                <p className="text-sm font-medium text-gray-600 mb-1">
-                  {job.staffingCompany}
-                </p>
-
-                <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span>{job.location}, {job.state}</span>
-                </div>
+                {/* PENDING Badge */}
+                {pendingJobs.includes(job.id) && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute top-3 right-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-md font-semibold text-xs shadow-sm border border-white/50 flex items-center gap-1.5 z-10"
+                  >
+                    <AlertCircle className="w-3 h-3 text-orange-600" />
+                    <span className="text-gray-900">PENDING</span>
+                  </motion.div>
+                )}
               </div>
 
               {/* Card Body */}
-              <div className="p-5 flex-1 flex flex-col">
-                {/* Job Details */}
-                <div className="space-y-3 mb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      <span>{job.shift}</span>
-                    </div>
-                    <span className="text-xs text-gray-500">{job.shiftHours}</span>
+              <div className="p-3 bg-white/80 backdrop-blur-sm flex-1 flex flex-col">
+                {/* Title and Days Ago */}
+                <div className="flex items-center justify-between mb-1.5 gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 break-words leading-tight">
+                      {job.licenseSpecialty}
+                    </h3>
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <DollarSign className="w-4 h-4 text-green-500" />
-                      <span className="font-bold text-green-600">{job.salary}</span>
-                    </div>
-                    <span className="text-xs text-gray-500">per hour</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Building2 className="w-4 h-4 text-gray-400" />
-                    <span className="text-xs">
-                      {job.facilityAvailable ? 'Facility Available' : 'Facility TBD'}
+                  {job.daysAgo !== undefined && (
+                    <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0 self-start pt-0.5">
+                      {job.daysAgo} {job.daysAgo === 1 ? 'day' : 'days'} ago
                     </span>
+                  )}
+                </div>
+
+                {/* Location */}
+                <div className="mb-2 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                  <p className="text-xs text-gray-700">
+                    {job.location}, {job.state}
+                  </p>
+                </div>
+
+                {/* Details - Simple Three Rows */}
+                <div className="space-y-2 mb-3">
+                  {/* Posted Date */}
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-gray-500">Start Date</p>
+                      <p className="text-xs font-semibold text-gray-900">{job.startDate || job.postedDate}</p>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    <span className="text-xs">Posted {job.postedDate}</span>
+                  {/* Shift Type with Hours */}
+                  <div className="flex items-center gap-2">
+                    <Sun className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-gray-500">Shift</p>
+                      <p className="text-xs font-semibold text-gray-900">{job.shift} • {job.shiftHours}</p>
+                    </div>
+                  </div>
+
+                  {/* Facility Name */}
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-gray-500">Facility</p>
+                      <p className="text-xs font-semibold text-gray-900">{job.facilityName}</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Tags */}
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  {job.tags.slice(0, 3).map((tag, tagIndex) => (
-                    <span
-                      key={tagIndex}
-                      className={`px-2 py-0.5 text-xs font-medium rounded ${
-                        tag.includes('Shift')
-                          ? 'bg-blue-50 text-blue-700'
-                          : tag.includes('Nurse')
-                          ? 'bg-pink-50 text-pink-700'
-                          : 'bg-green-50 text-green-700'
-                      }`}
-                    >
-                      {tag}
-                    </span>
-                  ))}
+                {/* Pay - Simple Display */}
+                <div className="mt-auto pt-3 border-t border-gray-200">
+                  <div className="flex items-center justify-end gap-2">
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">Weekly Pay</p>
+                      <div className="flex items-baseline justify-end gap-1">
+                        <span className="text-xl font-bold text-gray-900">{job.payPerWeek}</span>
+                        <span className="text-sm font-medium text-gray-600">/week</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-
-                {/* View Details Button */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="relative mt-auto w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2 overflow-hidden group/btn"
-                  style={{
-                    boxShadow: '0 4px 12px rgba(127, 40, 96, 0.2)'
-                  }}
-                >
-                  {/* Shimmer effect */}
-                  <motion.div
-                    className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent"
-                    animate={{
-                      translateX: ['-100%', '100%']
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      repeatDelay: 3,
-                      ease: "easeInOut"
-                    }}
-                  />
-                  
-                  <span className="relative z-10">View Details</span>
-                  <motion.div
-                    className="relative z-10"
-                    animate={{
-                      x: [0, 2, 0],
-                      y: [0, -2, 0]
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      repeatType: "reverse"
-                    }}
-                  >
-                    <ArrowUpRight className="w-4 h-4" />
-                  </motion.div>
-                </motion.button>
               </div>
             </motion.div>
             </Link>

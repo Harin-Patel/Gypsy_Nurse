@@ -360,7 +360,7 @@ export default function Navigation() {
                     setHoveredItem(null)
                   }}
                 >
-                  {item.isRoute ? (
+                  {item.href.startsWith('/') ? (
                     <Link href={item.href}>
                       <motion.div
                         className="relative text-gray-700 hover:text-primary-600 font-semibold transition-colors duration-300 flex items-center space-x-1 px-4 py-2.5 group cursor-pointer"
@@ -406,7 +406,7 @@ export default function Navigation() {
                     </Link>
                   ) : (
                   <motion.button
-                      onClick={() => handleNavClick(item.href, item.isRoute)}
+                      onClick={() => handleNavClick(item.href, item.href.startsWith('/'))}
                     className="relative text-gray-700 hover:text-primary-600 font-semibold transition-colors duration-300 flex items-center space-x-1 px-4 py-2.5 group"
                     whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.98 }}
@@ -965,7 +965,7 @@ export default function Navigation() {
                 <div className="space-y-4">
                   {navItems.map((item) => (
                     <div key={item.name}>
-                      {item.isRoute ? (
+                      {item.href.startsWith('/') ? (
                         <Link href={item.href}>
                           <div
                             onClick={() => setIsMobileMenuOpen(false)}
@@ -976,7 +976,7 @@ export default function Navigation() {
                         </Link>
                       ) : (
                       <button
-                          onClick={() => handleNavClick(item.href, item.isRoute)}
+                          onClick={() => handleNavClick(item.href, item.href.startsWith('/'))}
                         className="w-full text-left px-4 py-3 rounded-lg text-primary-600 hover:bg-primary-50 hover:text-primary-700 font-medium transition-colors"
                       >
                         {item.name}

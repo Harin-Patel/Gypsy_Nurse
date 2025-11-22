@@ -26,6 +26,7 @@ import {
   Sun
 } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import toast from 'react-hot-toast'
@@ -188,6 +189,7 @@ export const SAMPLE_JOBS: Job[] = [
 ]
 
 export default function JobsPage() {
+  const router = useRouter()
   const { isAuthenticated } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('relevance')
@@ -975,7 +977,11 @@ export default function JobsPage() {
       <main className="flex-1 max-w-7xl mx-auto px-4 py-6 w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {jobs.map((job, index) => (
-            <Link key={job.id} href={`/jobs/${job.id}`}>
+            <a
+              key={job.id}
+              href={`/jobs/${job.id}`}
+              className="block h-full no-underline"
+            >
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1006,7 +1012,8 @@ export default function JobsPage() {
                 />
                 
                 {/* Black Overlay from Four Corners (Vignette Effect) */}
-                <div className="absolute inset-0" 
+                <div 
+                  className="absolute inset-0 pointer-events-none" 
                   style={{
                     background: `
                       radial-gradient(circle at top left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
@@ -1018,7 +1025,7 @@ export default function JobsPage() {
                 />
                 
                 {/* Gradient Overlay for better text readability */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity pointer-events-none" />
                 
                 {/* Featured Tag - Top Left */}
                 {job.featured && (
@@ -1045,6 +1052,7 @@ export default function JobsPage() {
                         e.stopPropagation()
                         toggleLikeJob(job.id)
                       }}
+                      style={{ pointerEvents: 'auto', zIndex: 20 }}
                       className={`p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg ${
                         likedJobs.includes(job.id)
                           ? 'bg-primary-500 text-white'
@@ -1064,6 +1072,7 @@ export default function JobsPage() {
                         e.stopPropagation()
                         toggleDislikeJob(job.id)
                       }}
+                      style={{ pointerEvents: 'auto', zIndex: 20 }}
                       className={`p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg ${
                         dislikedJobs.includes(job.id)
                           ? 'bg-primary-500 text-white'
@@ -1083,6 +1092,7 @@ export default function JobsPage() {
                         e.stopPropagation()
                         toggleSaveJob(job.id)
                       }}
+                      style={{ pointerEvents: 'auto', zIndex: 20 }}
                       className={`p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg ${
                         savedJobs.includes(job.id)
                           ? 'bg-primary-500 text-white'
@@ -1175,7 +1185,7 @@ export default function JobsPage() {
                 </div>
               </div>
             </motion.div>
-            </Link>
+            </a>
           ))}
         </div>
 

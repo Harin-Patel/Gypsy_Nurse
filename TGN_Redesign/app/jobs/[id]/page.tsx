@@ -1679,10 +1679,10 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
               <div ref={tabBarPlaceholderRef} className="relative">
                 <motion.div 
                   ref={tabBarRef}
+                  layout={false}
                   transition={{ 
                     duration: 0.15, 
-                    ease: [0.25, 0.1, 0.25, 1],
-                    layout: false
+                    ease: [0.25, 0.1, 0.25, 1]
                   }}
                   className={`border-b-2 transition-colors duration-150 ${
                     isTabBarFixed 
@@ -1756,8 +1756,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                     }}
                     transition={{ 
                       duration: 0.2,
-                      ease: 'easeOut',
-                      originX: 0.5
+                      ease: 'easeOut'
                     }}
                     style={{
                       boxShadow: '0 -2px 10px rgba(127, 40, 96, 0.3)',
@@ -1954,7 +1953,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                   </div>
 
                     {/* Requirements Section */}
-                    {(job.requirements?.length > 0 || job.licensureRequired?.length > 0 || job.certifications?.length > 0 || job.vaccineRequirements?.length > 0) && (
+                    {((job.requirements?.length ?? 0) > 0 || (job.licensureRequired?.length ?? 0) > 0 || (job.certifications?.length ?? 0) > 0 || (job.vaccineRequirements?.length ?? 0) > 0) && (
                       <div className="pt-6 mt-6 border-t border-gray-200">
                         <div className="flex items-center gap-2 mb-3">
                           <CheckCircle2 className="w-5 h-5 text-gray-400" />
@@ -1980,7 +1979,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         </div>
 
                         {/* Certifications & Vaccines - Compact */}
-                        {(job.certifications?.length > 0 || job.vaccineRequirements?.length > 0) && (
+                        {((job.certifications?.length ?? 0) > 0 || (job.vaccineRequirements?.length ?? 0) > 0) && (
                           <div className="mt-3 pt-3 border-t border-gray-100">
                             <div className="flex flex-wrap gap-1.5">
                               {job.certifications?.map((cert, index) => (
@@ -3117,7 +3116,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                   <div className="mb-4">
                     <p className="text-xs text-gray-500 mb-1">Estimated weekly pay</p>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-gray-900">{job.weeklyPay || job.payPerWeek || 'N/A'}</span>
+                      <span className="text-3xl font-bold text-gray-900">{job.weeklyPay || 'N/A'}</span>
                       <span className="text-sm font-normal text-gray-500">/week</span>
                     </div>
                   </div>
@@ -3149,7 +3148,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         <p className="text-xs text-gray-500">Weekly Total*</p>
                         <span className="text-lg font-bold text-gray-900">
                           {(() => {
-                            const payValue = parseFloat((job.weeklyPay || job.payPerWeek || '0').replace(/[^0-9.]/g, '')) || 0
+                            const payValue = parseFloat((job.weeklyPay || '0').replace(/[^0-9.]/g, '')) || 0
                             const regularHours = 40
                             const otHours = 8
                             const regularRate = parseFloat((job.salary || '0').replace(/[^0-9.]/g, '')) || 53.11

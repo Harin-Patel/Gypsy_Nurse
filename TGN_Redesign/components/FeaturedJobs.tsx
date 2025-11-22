@@ -5,6 +5,7 @@ import { MapPin, DollarSign, ArrowRight, Bookmark, ThumbsUp, ThumbsDown, Star, A
 import { useState, useEffect } from 'react'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import toast from 'react-hot-toast'
 import {
@@ -106,6 +107,7 @@ const jobs: Job[] = [
 ]
 
 export default function FeaturedJobs() {
+  const router = useRouter()
   const isMobile = useIsMobile()
   const { isAuthenticated } = useAuth()
   const [savedJobs, setSavedJobs] = useState<string[]>([])
@@ -223,7 +225,11 @@ export default function FeaturedJobs() {
         {/* Jobs Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {jobs.map((job, index) => (
-            <Link key={job.id} href={`/jobs/${job.id}`}>
+            <a
+              key={job.id}
+              href={`/jobs/${job.id}`}
+              className="block h-full no-underline"
+            >
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -254,7 +260,7 @@ export default function FeaturedJobs() {
                   />
                   
                   {/* Gradient Overlay for better text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity pointer-events-none" />
                   
                   {/* Featured Tag - Top Left */}
                   {job.featured && (
@@ -411,7 +417,7 @@ export default function FeaturedJobs() {
                   </div>
                 </div>
               </motion.div>
-            </Link>
+            </a>
           ))}
         </div>
 

@@ -39,7 +39,6 @@ export default function ToastConfig() {
   return (
     <Toaster 
       position={isMobile ? "top-center" : "top-right"}
-      closeButton={false}
       toastOptions={{
         duration: 4000,
         style: isMobile ? mobileToastStyle : desktopToastStyle,

@@ -23,6 +23,7 @@ import {
   getJobById,
   jobToApplication
 } from '@/utils/jobData'
+import { getFacilityImageWithFallback } from '@/utils/stateImages'
 
 interface Application {
   id: string
@@ -402,7 +403,7 @@ export default function ApplicationsPage() {
                       {/* Facility Image Header with Gradient Overlay */}
                       <div className="relative h-44 overflow-hidden">
                         <img
-                          src={job.facilityImage || 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop'}
+                          src={getFacilityImageWithFallback(job.facilityImage, job.state || '')}
                           alt={job.facilityName || job.facility}
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                           loading="lazy"

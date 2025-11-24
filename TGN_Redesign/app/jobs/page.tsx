@@ -23,7 +23,11 @@ import {
   AlertCircle,
   CheckCircle2,
   Star,
-  Sun
+  Sun,
+  Stethoscope,
+  Save,
+  Trash2,
+  BookmarkCheck
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -43,6 +47,14 @@ import {
   addBookmarkedJob,
   removeBookmarkedJob
 } from '@/utils/jobStorage'
+import {
+  getSavedFilters,
+  saveFilter,
+  deleteFilter,
+  getFilterById,
+  type FilterPreset
+} from '@/utils/filterStorage'
+import { getFacilityImageWithFallback } from '@/utils/stateImages'
 
 export interface Job {
   id: string
@@ -223,6 +235,23 @@ export default function JobsPage() {
   const [filterShift, setFilterShift] = useState('all')
   const [filterDuration, setFilterDuration] = useState('all')
   const [filterFeaturedOnly, setFilterFeaturedOnly] = useState(false)
+  
+  // Applied filters for display
+  const [appliedFilters, setAppliedFilters] = useState<Array<{id: string, type: string, label: string, value: string}>>([])
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>(SAMPLE_JOBS)
+  
+  // Saved filter presets
+  const [savedFilterPresets, setSavedFilterPresets] = useState<FilterPreset[]>([])
+  const [showSaveFilterModal, setShowSaveFilterModal] = useState(false)
+  const [filterPresetName, setFilterPresetName] = useState('')
+  const [showSavedFilters, setShowSavedFilters] = useState(false)
+  
+  // Load saved filters on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSavedFilterPresets(getSavedFilters())
+    }
+  }, [])
 
   const toggleSaveJob = (jobId: string) => {
     // Check current state first
@@ -298,12 +327,371 @@ export default function JobsPage() {
     }
   }
 
+  // Filter jobs based on all active filters
+  const applyFilters = () => {
+    let filtered = [...SAMPLE_JOBS]
+    const newAppliedFilters: Array<{id: string, type: string, label: string, value: string}> = []
+
+    // Search query filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(job => 
+        job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.facilityName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.licenseSpecialty.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.staffingCompany.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    }
+
+    // City filter
+    if (filterCity.trim()) {
+      filtered = filtered.filter(job => 
+        job.location.toLowerCase().includes(filterCity.toLowerCase())
+      )
+      newAppliedFilters.push({
+        id: 'city',
+        type: 'city',
+        label: 'City',
+        value: filterCity
+      })
+    }
+
+    // Zip code filter
+    if (filterZipCode.trim()) {
+      filtered = filtered.filter(job => 
+        job.location.toLowerCase().includes(filterZipCode.toLowerCase())
+      )
+      newAppliedFilters.push({
+        id: 'zipcode',
+        type: 'zipcode',
+        label: 'Zip Code',
+        value: filterZipCode
+      })
+    }
+
+    // States filter
+    if (filterStates.length > 0) {
+      filtered = filtered.filter(job => 
+        filterStates.some(state => job.state.toLowerCase() === state.toLowerCase())
+      )
+      filterStates.forEach(state => {
+        newAppliedFilters.push({
+          id: `state-${state}`,
+          type: 'state',
+          label: 'State',
+          value: state
+        })
+      })
+    }
+
+    // Facility filter
+    if (filterFacility.trim()) {
+      filtered = filtered.filter(job => 
+        job.facilityName.toLowerCase().includes(filterFacility.toLowerCase())
+      )
+      newAppliedFilters.push({
+        id: 'facility',
+        type: 'facility',
+        label: 'Facility',
+        value: filterFacility
+      })
+    }
+
+    // Certification filter
+    if (filterCertification.trim()) {
+      filtered = filtered.filter(job => 
+        job.licenseSpecialty.toLowerCase().includes(filterCertification.toLowerCase())
+      )
+      newAppliedFilters.push({
+        id: 'certification',
+        type: 'certification',
+        label: 'Certification',
+        value: filterCertification
+      })
+    }
+
+    // Specialty filter
+    if (filterSpecialty.trim()) {
+      filtered = filtered.filter(job => 
+        job.licenseSpecialty.toLowerCase().includes(filterSpecialty.toLowerCase())
+      )
+      newAppliedFilters.push({
+        id: 'specialty',
+        type: 'specialty',
+        label: 'Specialty',
+        value: filterSpecialty
+      })
+    }
+
+    // Salary range filter
+    if (filterMinSalary) {
+      const minSalary = parseFloat(filterMinSalary.replace(/[^0-9.]/g, ''))
+      filtered = filtered.filter(job => {
+        const jobSalary = parseFloat(job.salary.replace(/[^0-9.]/g, ''))
+        return jobSalary >= minSalary
+      })
+      newAppliedFilters.push({
+        id: 'minsalary',
+        type: 'minsalary',
+        label: 'Min Salary',
+        value: `$${filterMinSalary}`
+      })
+    }
+
+    if (filterMaxSalary) {
+      const maxSalary = parseFloat(filterMaxSalary.replace(/[^0-9.]/g, ''))
+      filtered = filtered.filter(job => {
+        const jobSalary = parseFloat(job.salary.replace(/[^0-9.]/g, ''))
+        return jobSalary <= maxSalary
+      })
+      newAppliedFilters.push({
+        id: 'maxsalary',
+        type: 'maxsalary',
+        label: 'Max Salary',
+        value: `$${filterMaxSalary}`
+      })
+    }
+
+    // Shift filter
+    if (filterShift !== 'all') {
+      filtered = filtered.filter(job => {
+        const jobShift = job.shift.toLowerCase()
+        if (filterShift === 'day') return jobShift.includes('day')
+        if (filterShift === 'night') return jobShift.includes('night')
+        if (filterShift === 'evening') return jobShift.includes('evening')
+        return true
+      })
+      newAppliedFilters.push({
+        id: 'shift',
+        type: 'shift',
+        label: 'Shift',
+        value: filterShift.charAt(0).toUpperCase() + filterShift.slice(1)
+      })
+    }
+
+    // Duration filter
+    if (filterDuration !== 'all') {
+      filtered = filtered.filter(job => 
+        job.shiftHours.includes(filterDuration)
+      )
+      newAppliedFilters.push({
+        id: 'duration',
+        type: 'duration',
+        label: 'Duration',
+        value: `${filterDuration} Hours`
+      })
+    }
+
+    // Featured only filter
+    if (filterFeaturedOnly) {
+      filtered = filtered.filter(job => job.featured === true)
+      newAppliedFilters.push({
+        id: 'featured',
+        type: 'featured',
+        label: 'Featured Only',
+        value: 'Yes'
+      })
+    }
+
+    // Sort filtered results
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'salary-high-to-low':
+          return parseFloat(b.salary.replace(/[^0-9.]/g, '')) - parseFloat(a.salary.replace(/[^0-9.]/g, ''))
+        case 'salary-low-to-high':
+          return parseFloat(a.salary.replace(/[^0-9.]/g, '')) - parseFloat(b.salary.replace(/[^0-9.]/g, ''))
+        case 'date-newest':
+          return (b.daysAgo || 0) - (a.daysAgo || 0)
+        case 'date-oldest':
+          return (a.daysAgo || 0) - (b.daysAgo || 0)
+        case 'title-a-z':
+          return a.title.localeCompare(b.title)
+        case 'title-z-a':
+          return b.title.localeCompare(a.title)
+        case 'facility-a-z':
+          return a.facilityName.localeCompare(b.facilityName)
+        case 'facility-z-a':
+          return b.facilityName.localeCompare(a.facilityName)
+        default:
+          return 0
+      }
+    })
+
+    setFilteredJobs(sorted)
+    setAppliedFilters(newAppliedFilters)
+  }
+
+  // Apply filters when filter values change
+  useEffect(() => {
+    applyFilters()
+  }, [searchQuery, filterCity, filterZipCode, filterStates, filterFacility, filterCertification, filterSpecialty, filterMinSalary, filterMaxSalary, filterShift, filterDuration, filterFeaturedOnly, sortBy])
+
   const handleApplyFilters = () => {
-    // Apply filters logic here
+    applyFilters()
+    setShowFilters(false)
+    
+    // Show save dialog after applying filters
+    setTimeout(() => {
+      setShowSaveFilterModal(true)
+    }, 300)
+  }
+
+  // Remove a specific applied filter
+  const removeFilter = (filterId: string) => {
+    const filter = appliedFilters.find(f => f.id === filterId)
+    if (!filter) return
+
+    switch (filter.type) {
+      case 'city':
+        setFilterCity('')
+        break
+      case 'zipcode':
+        setFilterZipCode('')
+        break
+      case 'state':
+        setFilterStates(prev => prev.filter(s => s !== filter.value))
+        break
+      case 'facility':
+        setFilterFacility('')
+        break
+      case 'certification':
+        setFilterCertification('')
+        break
+      case 'specialty':
+        setFilterSpecialty('')
+        break
+      case 'minsalary':
+        setFilterMinSalary('')
+        break
+      case 'maxsalary':
+        setFilterMaxSalary('')
+        break
+      case 'shift':
+        setFilterShift('all')
+        break
+      case 'duration':
+        setFilterDuration('all')
+        break
+      case 'featured':
+        setFilterFeaturedOnly(false)
+        break
+    }
+    
+    toast.success('Filter removed', {
+      duration: 2000,
+    })
+  }
+
+  // Clear all applied filters
+  const clearAllFilters = () => {
+    handleResetFilters()
+    setSearchQuery('')
+    toast.success('All filters cleared', {
+      duration: 2000,
+    })
+  }
+
+  // Save current filter as preset
+  const [isSavingFilter, setIsSavingFilter] = useState(false)
+  
+  const handleSaveFilter = () => {
+    if (isSavingFilter) return // Prevent double-saving
+    
+    if (!filterPresetName.trim()) {
+      toast.error('Please enter a name for this filter', {
+        duration: 3000,
+      })
+      return
+    }
+
+    // Check for duplicate name
+    const existingFilters = getSavedFilters()
+    const duplicateName = existingFilters.find(
+      f => f.name.toLowerCase().trim() === filterPresetName.toLowerCase().trim()
+    )
+    
+    if (duplicateName) {
+      toast.error('A filter with this name already exists', {
+        duration: 3000,
+      })
+      return
+    }
+
+    setIsSavingFilter(true)
+
+    const filterData = {
+      name: filterPresetName.trim(),
+      filters: {
+        city: filterCity,
+        zipCode: filterZipCode,
+        states: filterStates,
+        facility: filterFacility,
+        certification: filterCertification,
+        specialty: filterSpecialty,
+        minSalary: filterMinSalary,
+        maxSalary: filterMaxSalary,
+        shift: filterShift,
+        duration: filterDuration,
+        featuredOnly: filterFeaturedOnly,
+      }
+    }
+
+    try {
+      saveFilter(filterData)
+      setSavedFilterPresets(getSavedFilters())
+      setFilterPresetName('')
+      setShowSaveFilterModal(false)
+      
+      toast.success('Filter saved successfully', {
+        duration: 3000,
+      })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to save filter', {
+        duration: 3000,
+      })
+    } finally {
+      setTimeout(() => {
+        setIsSavingFilter(false)
+      }, 500)
+    }
+  }
+
+  // Handle cancel save filter
+  const handleCancelSaveFilter = () => {
+    setFilterPresetName('')
+    setShowSaveFilterModal(false)
     toast.success('Filters applied successfully', {
+      duration: 2000,
+    })
+  }
+
+  // Apply a saved filter preset
+  const applySavedFilter = (preset: FilterPreset) => {
+    setFilterCity(preset.filters.city)
+    setFilterZipCode(preset.filters.zipCode)
+    setFilterStates(preset.filters.states)
+    setFilterFacility(preset.filters.facility)
+    setFilterCertification(preset.filters.certification)
+    setFilterSpecialty(preset.filters.specialty)
+    setFilterMinSalary(preset.filters.minSalary)
+    setFilterMaxSalary(preset.filters.maxSalary)
+    setFilterShift(preset.filters.shift)
+    setFilterDuration(preset.filters.duration)
+    setFilterFeaturedOnly(preset.filters.featuredOnly)
+    toast.success(`Applied filter: ${preset.name}`, {
       duration: 3000,
     })
-    setShowFilters(false)
+  }
+
+  // Delete a saved filter preset
+  const handleDeleteSavedFilter = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    deleteFilter(id)
+    setSavedFilterPresets(getSavedFilters())
+    toast.success('Filter deleted', {
+      duration: 2000,
+    })
   }
 
   const handleResetFilters = () => {
@@ -322,6 +710,7 @@ export default function JobsPage() {
 
   const handleClearFilters = () => {
     handleResetFilters()
+    setSearchQuery('')
     setShowFilters(false)
   }
 
@@ -748,7 +1137,7 @@ export default function JobsPage() {
 
       {/* Header Section */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 pt-32 pb-8">
+        <div className="max-w-7xl mx-auto px-4 pt-32 pb-6">
           {/* Simple Glass Breadcrumb */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -778,68 +1167,133 @@ export default function JobsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-3xl md:text-4xl font-bold text-gray-900 mb-6"
+            className="text-3xl md:text-4xl font-bold text-gray-900 mb-4"
           >
             Find Your Next Travel Nursing Job
           </motion.h1>
 
-          {/* Search Bar */}
+          {/* All-in-One Search & Filter Bar */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="relative bg-white rounded-xl shadow-md border border-gray-200 p-2 flex flex-col md:flex-row gap-2 overflow-hidden"
+            className="flex flex-wrap items-center gap-2 lg:gap-3"
           >
-            {/* Subtle gradient background */}
-            <div className="absolute inset-0 bg-gradient-to-r from-primary-50/30 via-transparent to-purple-50/30 opacity-0 hover:opacity-100 transition-opacity duration-500" />
-            
-            <div className="relative flex-1 flex items-center gap-3 px-4 py-2">
-              <Search className="w-5 h-5 text-gray-400" />
+            {/* Search Input */}
+            <div className="relative flex-1 min-w-[200px] flex items-center gap-3 px-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-primary-300 transition-colors focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-200">
+              <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by job title, facility, location, certification..."
-                className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500"
+                className="flex-1 bg-transparent border-none outline-none text-base text-gray-900 placeholder-gray-400"
               />
             </div>
 
-            <div className="relative flex items-center gap-2">
-              <motion.button
-                whileHover={{ scale: 1.02, backgroundColor: 'rgba(249, 250, 251, 1)' }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-4 py-3 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg transition-colors font-medium text-gray-700"
+            {/* Advanced Filters Button */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowFilters(!showFilters)}
+              className="relative flex items-center gap-2 px-4 py-3 bg-white border border-gray-200 hover:border-primary-300 rounded-lg transition-all text-base font-medium text-gray-700 overflow-hidden group"
+            >
+              {/* Glassmorphism overlay on hover */}
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"
+                style={{
+                  backdropFilter: 'saturate(180%) blur(20px)',
+                  WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+                }}
+              />
+              <motion.div
+                animate={{ rotate: showFilters ? 90 : 0 }}
+                transition={{ duration: 0.3 }}
+                className="relative z-10"
               >
-                <motion.div
-                  animate={{ rotate: showFilters ? 90 : 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <SlidersHorizontal className="w-4 h-4" />
-                </motion.div>
-                <span className="hidden sm:inline">Advanced Filters</span>
-              </motion.button>
+                <SlidersHorizontal className="w-5 h-5" />
+              </motion.div>
+              <span className="hidden sm:inline relative z-10">Advanced Filters</span>
+            </motion.button>
 
-              <motion.button
-                whileHover={{ scale: 1.03 }}
+            {/* Search Button */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="relative px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold text-base transition-all overflow-hidden shadow-sm hover:shadow-md group"
+            >
+              {/* Glassmorphism overlay on hover */}
+              <div className="absolute inset-0 bg-white/20 backdrop-blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"
+                style={{
+                  backdropFilter: 'saturate(180%) blur(20px)',
+                  WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+                }}
+              />
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                animate={{
+                  x: ['-200%', '200%']
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatDelay: 1,
+                  ease: "easeInOut"
+                }}
+              />
+              <span className="relative z-10">Search</span>
+            </motion.button>
+
+            {/* Divider */}
+            <div className="hidden lg:block w-px h-6 bg-gray-300"></div>
+
+            {/* Quick Access - Jobs by State */}
+            <Link href="/jobs-by-state" className="group">
+              <motion.button 
+                whileHover={{ y: -2, scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="relative px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition-colors overflow-hidden"
+                className="relative inline-flex items-center gap-2.5 px-4 py-3 bg-white border border-gray-200 hover:border-primary-300 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden"
               >
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                  animate={{
-                    x: ['-200%', '200%']
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    repeatDelay: 1,
-                    ease: "easeInOut"
+                {/* Glassmorphism overlay on hover */}
+                <div className="absolute inset-0 bg-white/80 backdrop-blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"
+                  style={{
+                    backdropFilter: 'saturate(180%) blur(20px)',
+                    WebkitBackdropFilter: 'saturate(180%) blur(20px)',
                   }}
                 />
-                <span className="relative z-10">Search</span>
+                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-all group-hover:scale-110 relative z-10">
+                  <MapPin className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-sm font-semibold text-gray-900 group-hover:text-primary-700 transition-colors whitespace-nowrap relative z-10">
+                  Jobs by State
+                </span>
+                <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all relative z-10" />
               </motion.button>
-            </div>
+            </Link>
+
+            {/* Quick Access - Nursing Specialties */}
+            <Link href="/nursing-specialties" className="group">
+              <motion.button 
+                whileHover={{ y: -2, scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="relative inline-flex items-center gap-2.5 px-4 py-3 bg-white border border-gray-200 hover:border-primary-300 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden"
+              >
+                {/* Glassmorphism overlay on hover */}
+                <div className="absolute inset-0 bg-white/80 backdrop-blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"
+                  style={{
+                    backdropFilter: 'saturate(180%) blur(20px)',
+                    WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+                  }}
+                />
+                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-all group-hover:scale-110 relative z-10">
+                  <Stethoscope className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-sm font-semibold text-gray-900 group-hover:text-primary-700 transition-colors whitespace-nowrap relative z-10">
+                  Nursing Specialties
+                </span>
+                <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all relative z-10" />
+              </motion.button>
+            </Link>
+
           </motion.div>
         </div>
       </div>
@@ -849,134 +1303,393 @@ export default function JobsPage() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.3 }}
-        className="bg-white border-b border-gray-200 sticky top-20 z-30"
+        className="bg-white sticky top-20 z-30"
       >
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <motion.div
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 className="w-2 h-2 bg-primary-600 rounded-full"
               />
               <span className="text-gray-700">
-                Showing <span className="font-semibold text-gray-900">{jobs.length}</span> jobs
-                <span className="text-gray-500"> (of 48,091 total)</span>
+                Showing <span className="font-semibold text-gray-900">{filteredJobs.length}</span> jobs
+                <span className="text-gray-500"> (of {SAMPLE_JOBS.length} total)</span>
               </span>
+              
+              
             </div>
 
-            <div className="relative">
-              <motion.button
-                onClick={() => setShowSortDropdown(!showSortDropdown)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-gray-200 hover:border-primary-300 rounded-xl text-sm font-semibold text-gray-700 hover:text-primary-600 transition-all shadow-sm"
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                <span>Sort: {
-                  sortBy === 'relevance' ? 'Relevance' : 
-                  sortBy === 'salary-high-to-low' ? 'Salary: High to Low' :
-                  sortBy === 'salary-low-to-high' ? 'Salary: Low to High' :
-                  sortBy === 'date-newest' ? 'Date: Newest First' :
-                  sortBy === 'date-oldest' ? 'Date: Oldest First' :
-                  sortBy === 'title-a-z' ? 'Title: A-Z' :
-                  sortBy === 'title-z-a' ? 'Title: Z-A' :
-                  sortBy === 'facility-a-z' ? 'Facility: A-Z' :
-                  'Facility: Z-A'
-                }</span>
-                <motion.div
-                  animate={{ rotate: showSortDropdown ? 180 : 0 }}
-                  transition={{ duration: 0.3 }}
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Saved Filters Button */}
+              <div className="relative">
+                <motion.button
+                  onClick={() => setShowSavedFilters(!showSavedFilters)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="relative flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-gray-200 hover:border-primary-300 rounded-xl text-sm font-semibold text-gray-700 hover:text-primary-600 transition-all shadow-sm overflow-hidden group"
                 >
-                  <ChevronRight size={16} className="rotate-90" />
-                </motion.div>
-              </motion.button>
+                  {/* Glassmorphism overlay on hover */}
+                  <div className="absolute inset-0 bg-white/80 backdrop-blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"
+                    style={{
+                      backdropFilter: 'saturate(180%) blur(20px)',
+                      WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+                    }}
+                  />
+                  <BookmarkCheck className="w-4 h-4 relative z-10" />
+                  <span className="relative z-10">Saved Filters</span>
+                  {savedFilterPresets.length > 0 && (
+                    <span className="relative z-10 px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full text-xs font-bold">
+                      {savedFilterPresets.length}
+                    </span>
+                  )}
+                  <motion.div
+                    animate={{ rotate: showSavedFilters ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="relative z-10"
+                  >
+                    <ChevronRight size={16} className="rotate-90" />
+                  </motion.div>
+                </motion.button>
 
-              {/* Enhanced Dropdown Menu */}
-              <AnimatePresence>
-                {showSortDropdown && (
-                  <>
-                    {/* Backdrop to close on outside click */}
-                    <div 
-                      className="fixed inset-0 z-40" 
-                      onClick={() => setShowSortDropdown(false)}
-                    />
-                    
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
-                      className="absolute top-full right-0 mt-4 w-64 bg-white/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden max-h-[70vh] overflow-y-auto"
-                      style={{ zIndex: 100 }}
-                    >
-                    <div className="p-2">
-                      {[
-                        { value: 'relevance', icon: '✅', label: 'Relevance' },
-                        { value: 'salary-high-to-low', icon: '💰', label: 'Salary: High to Low' },
-                        { value: 'salary-low-to-high', icon: '💰', label: 'Salary: Low to High' },
-                        { value: 'date-newest', icon: '📅', label: 'Date: Newest First' },
-                        { value: 'date-oldest', icon: '📅', label: 'Date: Oldest First' },
-                        { value: 'title-a-z', icon: '📝', label: 'Title: A-Z' },
-                        { value: 'title-z-a', icon: '📝', label: 'Title: Z-A' },
-                        { value: 'facility-a-z', icon: '🏥', label: 'Facility: A-Z' },
-                        { value: 'facility-z-a', icon: '🏥', label: 'Facility: Z-A' },
-                      ].map((option, idx) => (
-                        <motion.button
-                          key={option.value}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.03 }}
-                          onClick={() => {
-                            setSortBy(option.value)
-                            setShowSortDropdown(false)
-                          }}
-                          className={`block w-full px-4 py-3 rounded-xl transition-all text-sm font-medium group text-left ${
-                            sortBy === option.value 
-                              ? 'bg-gradient-to-r from-primary-50 to-primary-100/50 text-primary-700' 
-                              : 'text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100/50 hover:text-primary-700'
-                          }`}
-                          whileHover={{ x: 4 }}
-                        >
-                          <span className="flex items-center justify-between">
-                            <span className="flex items-center gap-2">
-                              <span>{option.icon}</span>
-                              <span>{option.label}</span>
-                            </span>
-                            {sortBy === option.value ? (
-                              <motion.span
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="text-primary-600 font-bold"
-                              >
-                                ✓
-                              </motion.span>
-                            ) : (
-                              <motion.span
-                                className="opacity-0 group-hover:opacity-100"
-                                initial={{ x: -5 }}
-                                whileHover={{ x: 0 }}
-                              >
-                                →
-                              </motion.span>
-                            )}
-                          </span>
-                        </motion.button>
-                      ))}
-                    </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
+                {/* Saved Filters Dropdown */}
+                <AnimatePresence>
+                  {showSavedFilters && (
+                    <>
+                      {/* Backdrop to close on outside click */}
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setShowSavedFilters(false)}
+                      />
+                      
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="absolute top-full right-0 mt-4 w-80 bg-white/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden max-h-[70vh] overflow-y-auto"
+                        style={{ zIndex: 100 }}
+                      >
+                        <div className="p-4">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-bold text-gray-900">Saved Filters</h3>
+                            <span className="text-sm text-gray-500">{savedFilterPresets.length} saved</span>
+                          </div>
+                          
+                          {savedFilterPresets.length === 0 ? (
+                            <div className="text-center py-8">
+                              <BookmarkCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                              <p className="text-sm text-gray-500">No saved filters yet</p>
+                              <p className="text-xs text-gray-400 mt-1">Save filters from the Advanced Filters to access them here</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {savedFilterPresets.map((preset, idx) => (
+                                <motion.div
+                                  key={preset.id}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: idx * 0.03 }}
+                                  onClick={() => {
+                                    applySavedFilter(preset)
+                                    setShowSavedFilters(false)
+                                  }}
+                                  className="relative p-4 bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl cursor-pointer hover:border-primary-300 hover:shadow-md transition-all group"
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="font-semibold text-gray-900 mb-2 group-hover:text-primary-700 transition-colors">
+                                        {preset.name}
+                                      </h4>
+                                      <div className="space-y-1.5">
+                                        {preset.filters.city && (
+                                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                                            <MapPin className="w-3 h-3" />
+                                            <span>City: {preset.filters.city}</span>
+                                          </div>
+                                        )}
+                                        {preset.filters.states.length > 0 && (
+                                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                                            <MapPin className="w-3 h-3" />
+                                            <span>States: {preset.filters.states.join(', ')}</span>
+                                          </div>
+                                        )}
+                                        {preset.filters.facility && (
+                                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                                            <Briefcase className="w-3 h-3" />
+                                            <span>Facility: {preset.filters.facility}</span>
+                                          </div>
+                                        )}
+                                        {preset.filters.specialty && (
+                                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                                            <Stethoscope className="w-3 h-3" />
+                                            <span>Specialty: {preset.filters.specialty}</span>
+                                          </div>
+                                        )}
+                                        {preset.filters.shift !== 'all' && (
+                                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                                            <Clock className="w-3 h-3" />
+                                            <span>Shift: {preset.filters.shift}</span>
+                                          </div>
+                                        )}
+                                        {(preset.filters.minSalary || preset.filters.maxSalary) && (
+                                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                                            <DollarSign className="w-3 h-3" />
+                                            <span>
+                                              Salary: {preset.filters.minSalary ? `$${preset.filters.minSalary}` : ''}
+                                              {preset.filters.minSalary && preset.filters.maxSalary ? ' - ' : ''}
+                                              {preset.filters.maxSalary ? `$${preset.filters.maxSalary}` : ''}
+                                            </span>
+                                          </div>
+                                        )}
+                                        {preset.filters.featuredOnly && (
+                                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                                            <Star className="w-3 h-3 text-amber-600" />
+                                            <span>Featured Only</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <button
+                                      onClick={(e) => handleDeleteSavedFilter(preset.id, e)}
+                                      className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
+                                      aria-label="Delete filter"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Sort Dropdown */}
+              <div className="relative">
+                <motion.button
+                  onClick={() => setShowSortDropdown(!showSortDropdown)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="relative flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-gray-200 hover:border-primary-300 rounded-xl text-sm font-semibold text-gray-700 hover:text-primary-600 transition-all shadow-sm overflow-hidden group"
+                >
+                  {/* Glassmorphism overlay on hover */}
+                  <div className="absolute inset-0 bg-white/80 backdrop-blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"
+                    style={{
+                      backdropFilter: 'saturate(180%) blur(20px)',
+                      WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+                    }}
+                  />
+                  <SlidersHorizontal className="w-4 h-4 relative z-10" />
+                  <span className="relative z-10">Sort: {
+                    sortBy === 'relevance' ? 'Relevance' : 
+                    sortBy === 'salary-high-to-low' ? 'Salary: High to Low' :
+                    sortBy === 'salary-low-to-high' ? 'Salary: Low to High' :
+                    sortBy === 'date-newest' ? 'Date: Newest First' :
+                    sortBy === 'date-oldest' ? 'Date: Oldest First' :
+                    sortBy === 'title-a-z' ? 'Title: A-Z' :
+                    sortBy === 'title-z-a' ? 'Title: Z-A' :
+                    sortBy === 'facility-a-z' ? 'Facility: A-Z' :
+                    'Facility: Z-A'
+                  }</span>
+                  <motion.div
+                    animate={{ rotate: showSortDropdown ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="relative z-10"
+                  >
+                    <ChevronRight size={16} className="rotate-90" />
+                  </motion.div>
+                </motion.button>
+
+                {/* Enhanced Dropdown Menu */}
+                <AnimatePresence>
+                  {showSortDropdown && (
+                    <>
+                      {/* Backdrop to close on outside click */}
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setShowSortDropdown(false)}
+                      />
+                      
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="absolute top-full right-0 mt-4 w-64 bg-white/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden max-h-[70vh] overflow-y-auto"
+                        style={{ zIndex: 100 }}
+                      >
+                        <div className="p-2">
+                          {[
+                            { value: 'relevance', icon: '✅', label: 'Relevance' },
+                            { value: 'salary-high-to-low', icon: '💰', label: 'Salary: High to Low' },
+                            { value: 'salary-low-to-high', icon: '💰', label: 'Salary: Low to High' },
+                            { value: 'date-newest', icon: '📅', label: 'Date: Newest First' },
+                            { value: 'date-oldest', icon: '📅', label: 'Date: Oldest First' },
+                            { value: 'title-a-z', icon: '📝', label: 'Title: A-Z' },
+                            { value: 'title-z-a', icon: '📝', label: 'Title: Z-A' },
+                            { value: 'facility-a-z', icon: '🏥', label: 'Facility: A-Z' },
+                            { value: 'facility-z-a', icon: '🏥', label: 'Facility: Z-A' },
+                          ].map((option, idx) => (
+                            <motion.button
+                              key={option.value}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: idx * 0.03 }}
+                              onClick={() => {
+                                setSortBy(option.value)
+                                setShowSortDropdown(false)
+                              }}
+                              className={`block w-full px-4 py-3 rounded-xl transition-all text-sm font-medium group text-left ${
+                                sortBy === option.value 
+                                  ? 'bg-gradient-to-r from-primary-50 to-primary-100/50 text-primary-700' 
+                                  : 'text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100/50 hover:text-primary-700'
+                              }`}
+                              whileHover={{ x: 4 }}
+                            >
+                              <span className="flex items-center justify-between">
+                                <span className="flex items-center gap-2">
+                                  <span>{option.icon}</span>
+                                  <span>{option.label}</span>
+                                </span>
+                                {sortBy === option.value ? (
+                                  <motion.span
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="text-primary-600 font-bold"
+                                  >
+                                    ✓
+                                  </motion.span>
+                                ) : (
+                                  <motion.span
+                                    className="opacity-0 group-hover:opacity-100"
+                                    initial={{ x: -5 }}
+                                    whileHover={{ x: 0 }}
+                                  >
+                                    →
+                                  </motion.span>
+                                )}
+                              </span>
+                            </motion.button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </div>
       </motion.div>
 
+
+      {/* Save Filter Modal */}
+      <AnimatePresence>
+        {showSaveFilterModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => handleCancelSaveFilter()}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary-100 rounded-lg">
+                      <Save className="w-5 h-5 text-primary-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900">Save This Filter?</h3>
+                  </div>
+                  <button
+                    onClick={() => handleCancelSaveFilter()}
+                    className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Would you like to save your current filter settings for quick access later?
+                </p>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Filter Name
+                  </label>
+                  <input
+                    type="text"
+                    value={filterPresetName}
+                    onChange={(e) => setFilterPresetName(e.target.value)}
+                    placeholder="e.g., High Salary ER Jobs"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && filterPresetName.trim()) {
+                        handleSaveFilter()
+                      }
+                    }}
+                    autoFocus
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleCancelSaveFilter()}
+                    className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition-colors"
+                  >
+                    Skip
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleSaveFilter}
+                    disabled={!filterPresetName.trim()}
+                    className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+                  >
+                    Save Filter
+                  </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+
       {/* Job Listings - Modern Card Grid */}
       <main className="flex-1 max-w-7xl mx-auto px-4 py-6 w-full">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {jobs.map((job, index) => (
+        {filteredJobs.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="max-w-md mx-auto">
+              <Filter className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No jobs found</h3>
+              <p className="text-gray-600 mb-6">
+                Try adjusting your filters or search criteria to find more jobs.
+              </p>
+              <button
+                onClick={clearAllFilters}
+                className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                Clear All Filters
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredJobs.map((job, index) => (
             <a
               key={job.id}
               href={`/jobs/${job.id}`}
@@ -1005,7 +1718,7 @@ export default function JobsPage() {
               {/* Facility Image Header with Gradient Overlay */}
               <div className="relative h-44 overflow-hidden">
                 <img
-                  src={job.facilityImage || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&h=600&fit=crop'}
+                  src={getFacilityImageWithFallback(job.facilityImage, job.state)}
                   alt={job.facilityName}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   loading="lazy"
@@ -1186,24 +1899,26 @@ export default function JobsPage() {
               </div>
             </motion.div>
             </a>
-          ))}
-        </div>
-
-        {/* Load More */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="mt-8 text-center"
-        >
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="px-6 py-3 bg-white border-2 border-gray-300 hover:border-primary-600 hover:bg-gray-50 text-gray-900 rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
-          >
-            Load More Jobs
-          </motion.button>
-        </motion.div>
+              ))}
+            </div>
+            
+            {/* Load More */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="mt-8 text-center"
+            >
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="px-6 py-3 bg-white border-2 border-gray-300 hover:border-primary-600 hover:bg-gray-50 text-gray-900 rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
+              >
+                Load More Jobs
+              </motion.button>
+            </motion.div>
+          </>
+        )}
       </main>
 
       <Footer />

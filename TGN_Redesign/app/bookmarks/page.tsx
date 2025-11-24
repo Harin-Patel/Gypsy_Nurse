@@ -19,6 +19,7 @@ import {
   getJobById,
   jobToBookmarkedJob
 } from '@/utils/jobData'
+import { getFacilityImageWithFallback } from '@/utils/stateImages'
 
 interface BookmarkedJob {
   id: string
@@ -172,7 +173,7 @@ export default function BookmarksPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto items-stretch"
         >
           {bookmarkedJobs.length === 0 ? (
             <motion.div
@@ -200,10 +201,10 @@ export default function BookmarksPage() {
           ) : (
             bookmarkedJobs.map((job, index) => {
               return (
-                <div key={job.id} className="relative group">
+                <div key={job.id} className="relative group h-full">
                   <Link 
                     href={`/jobs/${job.id}?from=bookmarks`} 
-                    className="block"
+                    className="block h-full no-underline"
                     onClick={(e) => {
                       // Prevent navigation if clicking on delete button
                       if ((e.target as HTMLElement).closest('button[title="Remove from bookmarks"]')) {
@@ -234,7 +235,7 @@ export default function BookmarksPage() {
                       {/* Facility Image Header with Gradient Overlay */}
                       <div className="relative h-44 overflow-hidden">
                         <img
-                          src={job.facilityImage || 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop'}
+                          src={getFacilityImageWithFallback(job.facilityImage, job.state || '')}
                           alt={job.facilityName || job.facility}
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                           loading="lazy"

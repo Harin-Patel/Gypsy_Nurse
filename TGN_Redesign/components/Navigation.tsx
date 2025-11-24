@@ -368,6 +368,14 @@ export default function Navigation() {
                         whileTap={{ scale: 0.98 }}
                       >
                         <span className="relative z-10">{item.name}</span>
+                        {item.dropdown && (
+                          <motion.div
+                            animate={{ rotate: activeDropdown === item.name ? 180 : 0 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <ChevronDown size={16} className="relative z-10" />
+                          </motion.div>
+                        )}
                         
                         {/* Glass Hover Effect */}
                         <motion.div
@@ -478,7 +486,7 @@ export default function Navigation() {
                             } else if (subItem === 'Jobs by State') {
                               href = '/jobs-by-state'
                             } else if (subItem === 'Nursing Specialties') {
-                              href = '/jobs?filter=specialty'
+                              href = '/nursing-specialties'
                             }
                             return (
                               <motion.a
@@ -993,7 +1001,7 @@ export default function Navigation() {
                             } else if (subItem === 'Jobs by State') {
                               href = '/jobs-by-state'
                             } else if (subItem === 'Nursing Specialties') {
-                              href = '/jobs?filter=specialty'
+                              href = '/nursing-specialties'
                             }
                             return (
                               <a

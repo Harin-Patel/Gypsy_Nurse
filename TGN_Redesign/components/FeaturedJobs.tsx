@@ -20,6 +20,7 @@ import {
   addBookmarkedJob,
   removeBookmarkedJob
 } from '@/utils/jobStorage'
+import { getFacilityImageWithFallback } from '@/utils/stateImages'
 
 interface Job {
   id: string
@@ -253,10 +254,23 @@ export default function FeaturedJobs() {
                 {/* Facility Image Header with Gradient Overlay */}
                 <div className="relative h-44 overflow-hidden">
                   <img
-                    src={job.facilityImage || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&h=600&fit=crop'}
+                    src={getFacilityImageWithFallback(job.facilityImage, job.state)}
                     alt={job.facilityName}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     loading="lazy"
+                  />
+                  
+                  {/* Black Overlay from Four Corners (Vignette Effect) */}
+                  <div 
+                    className="absolute inset-0 pointer-events-none" 
+                    style={{
+                      background: `
+                        radial-gradient(circle at top left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+                        radial-gradient(circle at top right, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+                        radial-gradient(circle at bottom left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+                        radial-gradient(circle at bottom right, rgba(0, 0, 0, 0.4) 0%, transparent 50%)
+                      `
+                    }}
                   />
                   
                   {/* Gradient Overlay for better text readability */}

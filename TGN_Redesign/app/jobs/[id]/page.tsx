@@ -51,6 +51,7 @@ import {
   addBookmarkedJob,
   removeBookmarkedJob
 } from '@/utils/jobStorage'
+import { getFacilityImageWithFallback } from '@/utils/stateImages'
 import { Job, SAMPLE_JOBS } from '../page'
 
 interface JobDetails {
@@ -1505,46 +1506,23 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
             <div ref={cardRef} className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mt-8">
               {/* Facility Image */}
               <div className="relative w-full h-80 overflow-hidden">
-                {job.facilityImage ? (
-                  <>
-                    <img 
-                      src={job.facilityImage} 
-                      alt={job.facilityName || job.title}
-                      className="w-full h-full object-cover"
-                    />
-                    {/* Black Overlay from Four Corners (Vignette Effect) */}
-                    <div className="absolute inset-0" 
-                      style={{
-                        background: `
-                          radial-gradient(circle at top left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
-                          radial-gradient(circle at top right, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
-                          radial-gradient(circle at bottom left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
-                          radial-gradient(circle at bottom right, rgba(0, 0, 0, 0.4) 0%, transparent 50%)
-                        `
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                  </>
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 flex items-center justify-center">
-                    <Building2 className="w-32 h-32 text-white/20" />
-                  </div>
-                )}
-                {!job.facilityImage && (
-                  <>
-                    <div className="absolute inset-0" 
-                      style={{
-                        background: `
-                          radial-gradient(circle at top left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
-                          radial-gradient(circle at top right, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
-                          radial-gradient(circle at bottom left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
-                          radial-gradient(circle at bottom right, rgba(0, 0, 0, 0.4) 0%, transparent 50%)
-                        `
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                  </>
-                )}
+                <img 
+                  src={getFacilityImageWithFallback(job.facilityImage, job.state)} 
+                  alt={job.facilityName || job.title}
+                  className="w-full h-full object-cover"
+                />
+                {/* Black Overlay from Four Corners (Vignette Effect) */}
+                <div className="absolute inset-0" 
+                  style={{
+                    background: `
+                      radial-gradient(circle at top left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+                      radial-gradient(circle at top right, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+                      radial-gradient(circle at bottom left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+                      radial-gradient(circle at bottom right, rgba(0, 0, 0, 0.4) 0%, transparent 50%)
+                    `
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
                 {/* PENDING Badge - Top Left (if pending, positioned below back button) */}
                 {isPending && (
@@ -2017,17 +1995,11 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                 {/* Facility Name and Image */}
                 <div className="mb-6 pb-6 border-b border-gray-200">
                   <div className="flex items-start gap-4">
-                    {job.facilityImage ? (
-                      <img 
-                        src={job.facilityImage} 
-                        alt={job.facilityName || 'Facility'} 
-                        className="w-20 h-20 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                        <Building2 className="w-10 h-10 text-white" />
-                </div>
-                    )}
+                    <img 
+                      src={getFacilityImageWithFallback(job.facilityImage, job.state)} 
+                      alt={job.facilityName || 'Facility'} 
+                      className="w-20 h-20 rounded-lg object-cover"
+                    />
                     <div className="flex-1">
                       <h3 className="text-xl font-bold text-gray-900 mb-1">
                         {job.facilityName || 'Facility information not available'}

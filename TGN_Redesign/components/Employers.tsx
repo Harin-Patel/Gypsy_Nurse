@@ -3,12 +3,13 @@
 import { motion } from 'framer-motion'
 import { Building2, Users, TrendingUp, Award } from 'lucide-react'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import Image from 'next/image'
 
 const employers = [
-  { name: 'AMN Healthcare', logo: 'AMN' },
-  { name: 'TNAA', logo: 'TNAA' },
-  { name: 'TotalMed', logo: 'TM' },
-  { name: 'Cross Country', logo: 'CC' },
+  { name: 'AMN Healthcare', logo: '/logos/amn-healthcare.png' },
+  { name: 'TNAA', logo: '/logos/tnaa.png' },
+  { name: 'TotalMed', logo: '/logos/totalmed.png' },
+  { name: 'Cross Country', logo: '/logos/cross-country.png' },
 ]
 
 export default function Employers() {
@@ -50,9 +51,15 @@ export default function Employers() {
               whileHover={isMobile ? undefined : { scale: 1.05, y: -5 }}
               className="glass-effect rounded-2xl p-8 flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
             >
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-primary-600 to-accent-600 rounded-xl flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">{employer.logo}</span>
+              <div className="text-center w-full">
+                <div className="w-full h-20 mx-auto mb-3 flex items-center justify-center">
+                  <Image
+                    src={employer.logo}
+                    alt={employer.name}
+                    width={120}
+                    height={80}
+                    className="object-contain max-h-16 w-auto"
+                  />
                 </div>
                 <p className="text-sm font-semibold text-gray-700">{employer.name}</p>
               </div>

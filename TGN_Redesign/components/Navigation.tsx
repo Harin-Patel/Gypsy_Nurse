@@ -8,6 +8,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import toast from 'react-hot-toast'
+import { getProfilePhotoWithFallback } from '@/utils/profilePhoto'
 
 export default function Navigation() {
   const pathname = usePathname()
@@ -24,6 +25,26 @@ export default function Navigation() {
   
   // Use real authentication
   const { user, isAuthenticated, isLoading, logout } = useAuth()
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null)
+
+  // Load and listen for profile photo updates
+  useEffect(() => {
+    const updatePhoto = () => {
+      const photo = getProfilePhotoWithFallback(user?.avatar)
+      setProfilePhoto(photo)
+    }
+    
+    updatePhoto()
+    
+    const handlePhotoUpdate = () => {
+      updatePhoto()
+    }
+    
+    window.addEventListener('profilePhotoUpdated', handlePhotoUpdate)
+    return () => {
+      window.removeEventListener('profilePhotoUpdated', handlePhotoUpdate)
+    }
+  }, [user?.avatar])
 
   // Get page title for mobile
   const getPageTitle = () => {
@@ -63,12 +84,7 @@ export default function Navigation() {
   const navItems = [
     { 
       name: 'Find a job', 
-      href: '/jobs',
-      dropdown: [
-        'View all jobs',
-        'Jobs by State',
-        'Nursing Specialties'
-      ]
+      href: '/jobs'
     },
     { 
       name: 'Resources', 
@@ -154,10 +170,10 @@ export default function Navigation() {
               {/* User Info Header */}
               <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-br from-primary-50/50 to-purple-50/50">
                 <div className="flex items-center gap-3">
-                  {user?.avatar ? (
+                  {(profilePhoto || user?.avatar) ? (
                     <img 
-                      src={user.avatar} 
-                      alt={user.name || 'User'}
+                      src={profilePhoto || user?.avatar || ''} 
+                      alt={user?.name || 'User'}
                       className="w-12 h-12 rounded-full object-cover ring-2 ring-primary-200"
                     />
                   ) : (
@@ -273,9 +289,9 @@ export default function Navigation() {
                       onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                       className="relative"
                     >
-                      {user?.avatar ? (
+                      {(profilePhoto || user?.avatar) ? (
                         <img
-                          src={user.avatar}
+                          src={profilePhoto || user?.avatar}
                           alt={user.name || 'User'}
                           className="w-10 h-10 rounded-full object-cover ring-2 ring-primary-200"
                         />
@@ -541,7 +557,7 @@ export default function Navigation() {
                     {/* Profile Picture */}
                     <div className="relative z-10">
                       <img 
-                        src={user?.avatar || '/default-avatar.png'} 
+                        src={profilePhoto || user?.avatar || '/default-avatar.png'} 
                         alt={user?.name || 'User'}
                         className="w-9 h-9 rounded-full object-cover ring-2 ring-primary-100 transition-all"
                       />
@@ -611,7 +627,7 @@ export default function Navigation() {
                         <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-br from-primary-50/50 to-purple-50/50">
                           <div className="flex items-center gap-3">
                             <img 
-                              src={user?.avatar || '/default-avatar.png'} 
+                              src={profilePhoto || user?.avatar || '/default-avatar.png'} 
                               alt={user?.name || 'User'}
                               className="w-12 h-12 rounded-full object-cover ring-2 ring-primary-200"
                             />
@@ -1025,7 +1041,7 @@ export default function Navigation() {
                         <div className="space-y-2">
                           <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200">
                             <img 
-                              src={user?.avatar || '/default-avatar.png'} 
+                              src={profilePhoto || user?.avatar || '/default-avatar.png'} 
                               alt={user?.name || 'User'}
                               className="w-10 h-10 rounded-full object-cover ring-2 ring-primary-200"
                             />

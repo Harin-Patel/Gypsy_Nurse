@@ -15,6 +15,7 @@ import {
   getBookmarkedJobs,
   removeBookmarkedJob
 } from '@/utils/jobStorage'
+import { useDisableBodyScroll } from '@/utils/useDisableBodyScroll'
 import {
   getJobById,
   jobToBookmarkedJob
@@ -43,6 +44,18 @@ interface BookmarkedJob {
   postedDate?: string
   daysAgo?: number
   featured?: boolean
+}
+
+// Helper function to add year to date if not present
+const formatDateWithYear = (date: string | undefined): string => {
+  if (!date) return ''
+  // Check if date already has a year (contains comma followed by 4 digits)
+  if (/\d{4}/.test(date)) {
+    return date
+  }
+  // Add current year if not present
+  const currentYear = new Date().getFullYear()
+  return `${date}, ${currentYear}`
 }
 
 export default function BookmarksPage() {
@@ -90,6 +103,9 @@ export default function BookmarksPage() {
   }, [])
 
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  
+  // Disable body scroll when modal is open
+  useDisableBodyScroll(showDeleteModal)
   const [jobToDelete, setJobToDelete] = useState<string | null>(null)
 
   const handleDeleteClick = (jobId: string) => {
@@ -327,12 +343,12 @@ export default function BookmarksPage() {
 
                         {/* Details - Simple Three Rows */}
                         <div className="space-y-2 mb-3">
-                          {/* Saved Date / Start Date */}
+                          {/* Start Date */}
                           <div className="flex items-center gap-2">
                             <Calendar className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
                             <div>
-                              <p className="text-xs text-gray-500">Saved</p>
-                              <p className="text-xs font-semibold text-gray-900">{job.savedDate}</p>
+                              <p className="text-xs text-gray-500">Start Date</p>
+                              <p className="text-xs font-semibold text-gray-900">{(job.startDate || job.postedDate) ? formatDateWithYear(job.startDate || job.postedDate) : 'N/A'}</p>
                             </div>
                           </div>
 

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import ProtectedRoute from '@/components/ProtectedRoute'
@@ -9,9 +9,13 @@ import { useAuth } from '@/contexts/AuthContext'
 import { 
   Mail, MapPin, Calendar, Shield, Award, Briefcase, 
   GraduationCap, Users, Edit, Download, Upload,
-  Plus, Trash2, Clock, ArrowUpRight, FileX, Inbox, X
+  Plus, Trash2, Clock, ArrowUpRight, FileX, Inbox, X,
+  Camera, Image as ImageIcon
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useDisableBodyScroll } from '@/utils/useDisableBodyScroll'
+import { getProfilePhoto, setProfilePhoto as saveProfilePhoto, removeProfilePhoto as deleteProfilePhoto, getProfilePhotoWithFallback } from '@/utils/profilePhoto'
+import { compressImage } from '@/utils/imageCompression'
 
 export default function ProfilePage() {
   const { user: authUser } = useAuth()
@@ -39,6 +43,29 @@ export default function ProfilePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteItem, setDeleteItem] = useState<any>(null)
   const [deleteSection, setDeleteSection] = useState<string>('')
+  
+  // Profile Photo States
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null)
+  const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  
+  // Disable body scroll when any modal is open
+  useDisableBodyScroll(showEditModal)
+  useDisableBodyScroll(showAddModal)
+  useDisableBodyScroll(showAddCertificateModal)
+  useDisableBodyScroll(showAddSpecialtyModal)
+  useDisableBodyScroll(showAddWorkHistoryModal)
+  useDisableBodyScroll(showAddEducationModal)
+  useDisableBodyScroll(showAddReferenceModal)
+  useDisableBodyScroll(showEditLicenseModal)
+  useDisableBodyScroll(showEditCertificateModal)
+  useDisableBodyScroll(showEditSpecialtyModal)
+  useDisableBodyScroll(showEditWorkHistoryModal)
+  useDisableBodyScroll(showEditEducationModal)
+  useDisableBodyScroll(showEditReferenceModal)
+  useDisableBodyScroll(showDeleteModal)
+  useDisableBodyScroll(showPhotoUploadModal)
   
   // Work History Modal States (Add)
   const [currentlyWorking, setCurrentlyWorking] = useState(false)
@@ -140,11 +167,110 @@ export default function ProfilePage() {
     setSelectedItem(null)
   }
 
-  // Use real user data with defaults
+  // Profile Photo Handlers
+  const handlePhotoClick = () => {
+    // Load current photo when opening modal
+    const currentPhoto = getProfilePhoto()
+    if (currentPhoto) {
+      setPhotoPreview(currentPhoto)
+    }
+    setShowPhotoUploadModal(true)
+  }
+
+  const handlePhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file')
+      return
+    }
+
+    // Validate file size (max 5MB before compression)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      toast.error('Image size must be less than 5MB')
+      return
+    }
+
+    setPhotoFile(file)
+    
+    try {
+      // Compress and create preview
+      const compressedImage = await compressImage(file, {
+        maxWidth: 800,
+        maxHeight: 800,
+        quality: 0.85, // High quality to avoid dull appearance
+        maxSizeMB: 1
+      })
+      setPhotoPreview(compressedImage)
+    } catch (error) {
+      console.error('Error compressing image:', error)
+      toast.error('Failed to process image. Please try again.')
+      // Fallback to original if compression fails
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleSavePhoto = () => {
+    if (!photoPreview) return
+
+    // Save to localStorage using utility function
+    saveProfilePhoto(photoPreview)
+    setProfilePhoto(photoPreview)
+    setShowPhotoUploadModal(false)
+    setPhotoFile(null)
+    setPhotoPreview(null)
+    toast.success('Profile photo updated successfully')
+  }
+
+  const handleRemovePhoto = () => {
+    deleteProfilePhoto()
+    setProfilePhoto(null)
+    setShowPhotoUploadModal(false)
+    setPhotoFile(null)
+    setPhotoPreview(null)
+    toast.success('Profile photo removed successfully')
+  }
+
+  const handleCancelPhotoUpload = () => {
+    setShowPhotoUploadModal(false)
+    // Reset to current photo if user cancels without saving
+    const currentPhoto = getProfilePhoto()
+    setPhotoPreview(currentPhoto)
+    setPhotoFile(null)
+  }
+
+  // Load profile photo from localStorage on mount
+  useEffect(() => {
+    const savedPhoto = getProfilePhoto()
+    if (savedPhoto) {
+      setProfilePhoto(savedPhoto)
+    }
+  }, [])
+
+  // Listen for profile photo updates from other components
+  useEffect(() => {
+    const handlePhotoUpdate = (e: CustomEvent) => {
+      setProfilePhoto(e.detail)
+    }
+    
+    window.addEventListener('profilePhotoUpdated', handlePhotoUpdate as EventListener)
+    return () => {
+      window.removeEventListener('profilePhotoUpdated', handlePhotoUpdate as EventListener)
+    }
+  }, [])
+
+  // Use real user data with defaults - dynamically update avatar when profilePhoto changes
   const user = {
     name: authUser?.name || 'User',
     email: authUser?.email || 'user@example.com',
-    avatar: authUser?.avatar || 'https://ui-avatars.com/api/?name=User&background=7f2860&color=fff&size=256',
+    avatar: profilePhoto || getProfilePhotoWithFallback(authUser?.avatar),
     experience: '25 Years Experience',
     address: '3371 Columbia Boulevard, Baltimore, Maryland 21218',
     dob: '03/20/1997',
@@ -366,7 +492,8 @@ export default function ProfilePage() {
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 300 }}
-                className="relative"
+                className="relative group cursor-pointer"
+                onClick={handlePhotoClick}
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-primary-400 to-primary-600 rounded-3xl blur-xl opacity-40" />
                 <img
@@ -374,6 +501,10 @@ export default function ProfilePage() {
                   alt={user.name}
                   className="relative w-28 h-28 rounded-3xl object-cover ring-4 ring-white/50 shadow-2xl"
                 />
+                {/* Overlay on hover */}
+                <div className="absolute inset-0 bg-black/40 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Camera className="w-6 h-6 text-white" />
+                </div>
               </motion.div>
 
               {/* User Info */}
@@ -4951,6 +5082,132 @@ export default function ProfilePage() {
           </motion.div>
         </>
       )}
+
+      {/* Profile Photo Upload Modal */}
+      <AnimatePresence>
+        {showPhotoUploadModal && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+              onClick={handleCancelPhotoUpload}
+            >
+              {/* Modal */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+              {/* Header */}
+              <div className="px-6 py-5 border-b border-gray-200 bg-white flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary-100 rounded-lg">
+                      <Camera className="w-5 h-5 text-primary-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900">Change Profile Photo</h2>
+                      <p className="text-sm text-gray-500 mt-0.5">Upload a new profile picture</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleCancelPhotoUpload}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    aria-label="Close modal"
+                  >
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="px-6 py-6">
+                {!photoPreview ? (
+                  <div className="space-y-4">
+                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-8 hover:border-primary-400 transition-colors">
+                      <ImageIcon className="w-12 h-12 text-gray-400 mb-4" />
+                      <p className="text-sm text-gray-600 mb-2">Click to upload or drag and drop</p>
+                      <p className="text-xs text-gray-500 mb-4">PNG, JPG, GIF up to 5MB</p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoFileChange}
+                        className="hidden"
+                        id="photo-upload"
+                      />
+                      <label
+                        htmlFor="photo-upload"
+                        className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium cursor-pointer transition-colors"
+                      >
+                        Select Image
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex flex-col items-center">
+                      <div className="relative w-48 h-48 rounded-2xl overflow-hidden border-4 border-gray-200 mb-4">
+                        <img
+                          src={photoPreview}
+                          alt="Profile preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoFileChange}
+                        className="hidden"
+                        id="photo-upload-change"
+                      />
+                      <label
+                        htmlFor="photo-upload-change"
+                        className="text-sm text-primary-600 hover:text-primary-700 font-medium cursor-pointer"
+                      >
+                        Choose Different Image
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-end gap-3">
+                <button
+                  onClick={handleCancelPhotoUpload}
+                  className="px-4 py-2 bg-white border border-gray-300 hover:border-gray-400 text-gray-700 rounded-lg font-medium text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+                {photoPreview && (
+                  <button
+                    onClick={handleRemovePhoto}
+                    className="px-4 py-2 bg-white border border-red-300 hover:border-red-400 text-red-600 rounded-lg font-medium text-sm transition-colors"
+                  >
+                    Remove Photo
+                  </button>
+                )}
+                <button
+                  onClick={handleSavePhoto}
+                  disabled={!photoPreview}
+                  className="px-6 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm transition-colors flex items-center gap-2"
+                >
+                  <Camera className="w-4 h-4" />
+                  Save Photo
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+          </>
+        )}
+      </AnimatePresence>
       </div>
     </ProtectedRoute>
   )

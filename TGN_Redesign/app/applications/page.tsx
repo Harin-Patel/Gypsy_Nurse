@@ -50,6 +50,18 @@ interface Application {
   featured?: boolean
 }
 
+// Helper function to add year to date if not present
+const formatDateWithYear = (date: string | undefined): string => {
+  if (!date) return ''
+  // Check if date already has a year (contains comma followed by 4 digits)
+  if (/\d{4}/.test(date)) {
+    return date
+  }
+  // Add current year if not present
+  const currentYear = new Date().getFullYear()
+  return `${date}, ${currentYear}`
+}
+
 export default function ApplicationsPage() {
   const [activeTab, setActiveTab] = useState<'applied' | 'liked' | 'disliked'>('applied')
   const [appliedJobs, setAppliedJobs] = useState<Application[]>([])
@@ -497,12 +509,12 @@ export default function ApplicationsPage() {
 
                         {/* Details - Simple Three Rows */}
                         <div className="space-y-2 mb-3">
-                          {/* Start Date / Applied Date */}
+                          {/* Start Date */}
                           <div className="flex items-center gap-2">
                             <Calendar className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
                             <div>
-                              <p className="text-xs text-gray-500">{activeTab === 'applied' ? 'Applied' : 'Start Date'}</p>
-                              <p className="text-xs font-semibold text-gray-900">{activeTab === 'applied' ? job.appliedDate : (job.startDate || job.postedDate || 'N/A')}</p>
+                              <p className="text-xs text-gray-500">Start Date</p>
+                              <p className="text-xs font-semibold text-gray-900">{(job.startDate || job.postedDate) ? formatDateWithYear(job.startDate || job.postedDate) : 'N/A'}</p>
                             </div>
                           </div>
 

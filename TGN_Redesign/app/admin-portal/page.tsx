@@ -43,6 +43,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import toast from 'react-hot-toast'
+import { useDisableBodyScroll } from '@/utils/useDisableBodyScroll'
 
 type TabKey = 'dashboard' | 'users' | 'authors' | 'jobs' | 'vendors' | 'applications' | 'blogs' | 'facilities' | 'certifications' | 'specialties' | 'certificationSpecialties' | 'licenseTypes' | 'certificateTypes' | 'degrees' | 'courseOfStudy' | 'schools' | 'vectorSearch' | 'vectorAnalytics' | 'ragDocuments' | 'analytics'
 
@@ -217,6 +218,11 @@ export default function AdminPortalPage() {
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
+  
+  // Disable body scroll when modals are open
+  useDisableBodyScroll(showProfileModal)
+  useDisableBodyScroll(showSettingsModal)
+  
   const [isWelcomeHovered, setIsWelcomeHovered] = useState(false)
   const [hoveredActionIndex, setHoveredActionIndex] = useState<number | null>(null)
   const [hoveredModuleIndex, setHoveredModuleIndex] = useState<number | null>(null)

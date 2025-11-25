@@ -31,13 +31,17 @@ import {
   Infinity,
   Star,
   CloudRain,
-  Wind
+  Wind,
+  X,
+  FileText,
+  Upload
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import toast from 'react-hot-toast'
+import { useDisableBodyScroll } from '@/utils/useDisableBodyScroll'
 import {
   getLikedJobs,
   getDislikedJobs,
@@ -705,6 +709,18 @@ const LIKED_JOB_IDS = ['4', '5']
 const DISLIKED_JOB_IDS = ['6']
 const BOOKMARKED_JOB_IDS = ['4', '5', '7']
 
+// Helper function to add year to date if not present
+const formatDateWithYear = (date: string | undefined): string => {
+  if (!date) return ''
+  // Check if date already has a year (contains comma followed by 4 digits)
+  if (/\d{4}/.test(date)) {
+    return date
+  }
+  // Add current year if not present
+  const currentYear = new Date().getFullYear()
+  return `${date}, ${currentYear}`
+}
+
 function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
   // Unwrap params Promise FIRST - must be called before any other hooks
   const unwrappedParams = use(params)
@@ -725,6 +741,19 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
   const [isSaved, setIsSaved] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
   const [isDisliked, setIsDisliked] = useState(false)
+  
+  // Apply modal state
+  const [showApplyModal, setShowApplyModal] = useState(false)
+  const [coverLetter, setCoverLetter] = useState('')
+  const [resumeFile, setResumeFile] = useState<File | null>(null)
+  const [resumeFileName, setResumeFileName] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+  
+  // Disable body scroll when modals are open
+  useDisableBodyScroll(showApplyModal)
+  useDisableBodyScroll(showRemoveConfirm)
   
   // Cost of Living state
   const [costOfLivingData, setCostOfLivingData] = useState<any>(null)
@@ -1400,7 +1429,6 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
       navigator.clipboard.writeText(window.location.href)
       toast.success('Job link copied to clipboard!', {
         duration: 3000,
-        icon: null,
       })
     }
   }
@@ -1410,25 +1438,145 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
     if (!isAuthenticated) {
       toast.error('Please log in to apply for jobs.', {
         duration: 3000,
-        icon: null,
       })
-      router.push('/login')
       return
     }
-    // Add job to pending list
-    setIsPending(true)
-    addPendingJob(job.id)
-    toast.success(`Successfully applied for ${job.title}!`, {
-      duration: 3000,
-      icon: null,
-    })
+    // Open apply modal
+    setShowApplyModal(true)
+  }
+
+  const validateFile = (file: File): boolean => {
+    // Check file type
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    const allowedExtensions = ['.pdf', '.doc', '.docx']
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
+    
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+      toast.error('Please upload a valid file format (PDF, DOC, or DOCX)', {
+        duration: 3000,
+      })
+      return false
+    }
+    
+    // Check file size (10MB = 10 * 1024 * 1024 bytes)
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      toast.error('File size must be less than 10MB', {
+        duration: 3000,
+      })
+      return false
+    }
+    
+    return true
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (validateFile(file)) {
+        setResumeFile(file)
+        setResumeFileName(file.name)
+      } else {
+        // Reset input
+        e.target.value = ''
+      }
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    
+    if (isSubmitting) return
+    
+    const file = e.dataTransfer.files?.[0]
+    if (file) {
+      if (validateFile(file)) {
+        setResumeFile(file)
+        setResumeFileName(file.name)
+      }
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!isSubmitting) {
+      setIsDragging(true)
+    }
+  }
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleRemoveFile = () => {
+    setShowRemoveConfirm(true)
+  }
+
+  const confirmRemoveFile = () => {
+    setResumeFile(null)
+    setResumeFileName('')
+    setShowRemoveConfirm(false)
+    // Reset file input
+    const fileInput = document.getElementById('resume-upload') as HTMLInputElement
+    if (fileInput) {
+      fileInput.value = ''
+    }
+  }
+
+  const cancelRemoveFile = () => {
+    setShowRemoveConfirm(false)
+  }
+
+  const handleSubmitApplication = () => {
+    // Validate that Resume/CV is mandatory
+    if (!resumeFile) {
+      toast.error('Please upload your Resume/CV to continue.', {
+        duration: 3000,
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+    
+    // Simulate API call
+    setTimeout(() => {
+      // Add job to pending list
+      setIsPending(true)
+      addPendingJob(job!.id)
+      
+      // Reset form
+      setCoverLetter('')
+      setResumeFile(null)
+      setResumeFileName('')
+      setShowApplyModal(false)
+      setIsSubmitting(false)
+      
+      // Set flag in sessionStorage to show toast on jobs page
+      sessionStorage.setItem('showAppliedToast', 'true')
+      
+      // Redirect to job listing page immediately
+      window.location.href = '/jobs'
+    }, 1000)
+  }
+
+  const handleCloseApplyModal = () => {
+    if (!isSubmitting) {
+      setShowApplyModal(false)
+      setCoverLetter('')
+      setResumeFile(null)
+      setResumeFileName('')
+    }
   }
 
   const handleLike = () => {
     if (!isAuthenticated) {
       toast.error('Please log in to like jobs.', {
         duration: 3000,
-        icon: null,
       })
       router.push('/login')
       return
@@ -1454,7 +1602,6 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
     if (!isAuthenticated) {
       toast.error('Please log in to dislike jobs.', {
         duration: 3000,
-        icon: null,
       })
       router.push('/login')
       return
@@ -1524,25 +1671,6 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
-                {/* PENDING Badge - Top Left (if pending, positioned below back button) */}
-                {isPending && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="absolute top-20 left-4 z-20 px-2.5 py-1 rounded-md font-semibold text-xs flex items-center gap-1.5"
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.15)',
-                      backdropFilter: 'blur(20px) saturate(180%)',
-                      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                      border: '1px solid rgba(255, 255, 255, 0.3)',
-                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                    }}
-                  >
-                    <AlertCircle className="w-3 h-3 text-orange-300" />
-                    <span className="text-white drop-shadow-lg">PENDING</span>
-                  </motion.div>
-                )}
-
                 {/* Back Button - Top Left with Glassmorphism */}
                 <div className="absolute top-4 left-4 z-20">
                   <Link href={fromApplications ? "/applications" : fromBookmarks ? "/bookmarks" : "/jobs"}>
@@ -1569,85 +1697,103 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                     {/* Like Button */}
                     <motion.button
                       type="button"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
+                      disabled={isPending}
+                      whileHover={isPending ? {} : { scale: 1.1 }}
+                      whileTap={isPending ? {} : { scale: 0.9 }}
                       onClick={(e) => {
+                        if (isPending) {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          return
+                        }
                         e.preventDefault()
                         e.stopPropagation()
                         handleLike()
                       }}
-                      className="w-12 h-12 rounded-xl transition-all flex items-center justify-center"
+                      className={`w-12 h-12 rounded-xl transition-all flex items-center justify-center ${isPending ? 'cursor-not-allowed opacity-70' : ''}`}
                       style={isLiked ? {
-                        background: 'rgba(127, 40, 96, 0.9)',
+                        background: isPending ? 'rgba(127, 40, 96, 0.6)' : 'rgba(127, 40, 96, 0.9)',
                         backdropFilter: 'blur(20px) saturate(180%)',
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                         border: '1px solid rgba(127, 40, 96, 0.5)',
                         boxShadow: '0 8px 32px rgba(127, 40, 96, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
                       } : {
-                        background: 'rgba(255, 255, 255, 0.15)',
+                        background: isPending ? 'rgba(200, 200, 200, 0.4)' : 'rgba(255, 255, 255, 0.15)',
                         backdropFilter: 'blur(20px) saturate(180%)',
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                        border: '1px solid rgba(255, 255, 255, 0.3)',
-                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                        border: isPending ? '1px solid rgba(200, 200, 200, 0.5)' : '1px solid rgba(255, 255, 255, 0.3)',
+                        boxShadow: isPending ? '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
                       }}
                     >
-                      <ThumbsUp className={`w-5 h-5 ${isLiked ? 'fill-white text-white' : 'text-white'} drop-shadow-lg`} />
+                      <ThumbsUp className={`w-5 h-5 ${isLiked ? 'fill-white text-white' : isPending ? 'text-gray-300' : 'text-white'} drop-shadow-lg`} />
                     </motion.button>
 
                     {/* Dislike Button */}
                     <motion.button
                       type="button"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
+                      disabled={isPending}
+                      whileHover={isPending ? {} : { scale: 1.1 }}
+                      whileTap={isPending ? {} : { scale: 0.9 }}
                       onClick={(e) => {
+                        if (isPending) {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          return
+                        }
                         e.preventDefault()
                         e.stopPropagation()
                         handleDislike()
                       }}
-                      className="w-12 h-12 rounded-xl transition-all flex items-center justify-center"
+                      className={`w-12 h-12 rounded-xl transition-all flex items-center justify-center ${isPending ? 'cursor-not-allowed opacity-70' : ''}`}
                       style={isDisliked ? {
-                        background: 'rgba(127, 40, 96, 0.9)',
+                        background: isPending ? 'rgba(127, 40, 96, 0.6)' : 'rgba(127, 40, 96, 0.9)',
                         backdropFilter: 'blur(20px) saturate(180%)',
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                         border: '1px solid rgba(127, 40, 96, 0.5)',
                         boxShadow: '0 8px 32px rgba(127, 40, 96, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
                       } : {
-                        background: 'rgba(255, 255, 255, 0.15)',
+                        background: isPending ? 'rgba(200, 200, 200, 0.4)' : 'rgba(255, 255, 255, 0.15)',
                         backdropFilter: 'blur(20px) saturate(180%)',
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                        border: '1px solid rgba(255, 255, 255, 0.3)',
-                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                        border: isPending ? '1px solid rgba(200, 200, 200, 0.5)' : '1px solid rgba(255, 255, 255, 0.3)',
+                        boxShadow: isPending ? '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
                       }}
                     >
-                      <ThumbsDown className={`w-5 h-5 ${isDisliked ? 'fill-white text-white' : 'text-white'} drop-shadow-lg`} />
+                      <ThumbsDown className={`w-5 h-5 ${isDisliked ? 'fill-white text-white' : isPending ? 'text-gray-300' : 'text-white'} drop-shadow-lg`} />
                     </motion.button>
 
                     {/* Bookmark Button */}
                     <motion.button
                       type="button"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
+                      disabled={isPending}
+                      whileHover={isPending ? {} : { scale: 1.1 }}
+                      whileTap={isPending ? {} : { scale: 0.9 }}
                       onClick={(e) => {
+                        if (isPending) {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          return
+                        }
                         e.preventDefault()
                         e.stopPropagation()
                         handleSave()
                       }}
-                      className="w-12 h-12 rounded-xl transition-all flex items-center justify-center"
+                      className={`w-12 h-12 rounded-xl transition-all flex items-center justify-center ${isPending ? 'cursor-not-allowed opacity-70' : ''}`}
                       style={isSaved ? {
-                        background: 'rgba(127, 40, 96, 0.9)',
+                        background: isPending ? 'rgba(127, 40, 96, 0.6)' : 'rgba(127, 40, 96, 0.9)',
                         backdropFilter: 'blur(20px) saturate(180%)',
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                         border: '1px solid rgba(127, 40, 96, 0.5)',
                         boxShadow: '0 8px 32px rgba(127, 40, 96, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
                       } : {
-                        background: 'rgba(255, 255, 255, 0.15)',
+                        background: isPending ? 'rgba(200, 200, 200, 0.4)' : 'rgba(255, 255, 255, 0.15)',
                         backdropFilter: 'blur(20px) saturate(180%)',
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                        border: '1px solid rgba(255, 255, 255, 0.3)',
-                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                        border: isPending ? '1px solid rgba(200, 200, 200, 0.5)' : '1px solid rgba(255, 255, 255, 0.3)',
+                        boxShadow: isPending ? '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
                       }}
                     >
-                      <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-white text-white' : 'text-white'} drop-shadow-lg`} />
+                      <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-white text-white' : isPending ? 'text-gray-300' : 'text-white'} drop-shadow-lg`} />
                     </motion.button>
                   </div>
                 )}
@@ -1768,9 +1914,22 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                   <div className="bg-white/80 backdrop-blur-xl rounded-lg border border-gray-200/50 shadow-lg p-6">
                     {/* Main Header - License-Specialty */}
                     <div className="mb-6 pb-6 border-b border-gray-200">
-                      <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                    {job.specialtyRequired || job.title}
-                  </h1>
+                      <div className="flex items-start justify-between gap-4 mb-2">
+                        <h1 className="text-2xl font-bold text-gray-900 flex-1 min-w-0 break-words">
+                          {job.specialtyRequired || job.title}
+                        </h1>
+                        {/* PENDING Badge - Top Right */}
+                        {isPending && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex-shrink-0 px-2.5 py-1 rounded-md font-semibold text-xs flex items-center gap-1.5 bg-orange-50 border border-orange-200 whitespace-nowrap"
+                          >
+                            <AlertCircle className="w-3 h-3 text-orange-600" />
+                            <span className="text-orange-900">PENDING</span>
+                          </motion.div>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 text-gray-600">
                         <MapPin className="w-4 h-4" />
                         <span className="text-base">{job.city}, {job.state}</span>
@@ -1784,7 +1943,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                         <div className="flex flex-col">
                           <span className="text-xs text-gray-500 mb-1">Estimated Start Date</span>
-                          <span className="text-sm font-semibold text-gray-900">{job.startDate || 'TBD'}</span>
+                          <span className="text-sm font-semibold text-gray-900">{job.startDate ? formatDateWithYear(job.startDate) : 'TBD'}</span>
                         </div>
                       </div>
 
@@ -3079,7 +3238,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                       <span className="text-xs font-semibold text-amber-900">Featured</span>
                     </div>
                   )}
-                  <span className="text-xs text-gray-500 ml-auto">Posted {job.postedDate}</span>
+                  <span className="text-xs text-gray-500 ml-auto">Posted {formatDateWithYear(job.postedDate)}</span>
                 </div>
 
                 {/* Card Body */}
@@ -3099,7 +3258,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                       <p className="text-xs text-gray-500 mb-1">Shift</p>
                       <p className="text-sm text-gray-900">
                         {job.shiftHours && `${job.shiftHours} `}{job.shift}
-                        {job.startDate && ` | ${job.startDate}`}
+                        {job.startDate && ` | ${formatDateWithYear(job.startDate)}`}
                       </p>
                     </div>
                   )}
@@ -3199,43 +3358,288 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                   </div>
                 </div>
 
-                  {/* Apply Now Button */}
-                  <motion.button
-                    onClick={handleApply}
-                    className="relative w-full py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 text-white font-bold rounded-xl shadow-lg overflow-hidden group"
-                    whileHover={{ scale: 1.02, boxShadow: "0 20px 40px rgba(127, 40, 96, 0.3)" }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {/* Animated Wave Effect */}
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-primary-700 via-primary-600 to-primary-700 opacity-0 group-hover:opacity-100"
-                      initial={{ x: '-100%' }}
-                      whileHover={{ x: '100%' }}
-                      transition={{
-                        duration: 0.6,
-                        ease: "easeInOut"
-                      }}
-                    />
-                    
-                    {/* Ripple Effect */}
-                    <motion.div
-                      className="absolute inset-0"
-                      initial={{ scale: 0, opacity: 0.5 }}
-                      whileTap={{ scale: 2, opacity: 0 }}
-                      transition={{ duration: 0.5 }}
+                  {/* Apply Now / Applied Button */}
+                  {isPending ? (
+                    <button
+                      disabled
+                      className="relative w-full py-3.5 bg-gray-300 text-gray-600 font-bold rounded-xl shadow-sm cursor-not-allowed"
                     >
-                      <div className="w-full h-full bg-white/20 rounded-xl" />
-                    </motion.div>
+                      <span className="relative z-10">Applied</span>
+                    </button>
+                  ) : (
+                    <motion.button
+                      onClick={handleApply}
+                      className="relative w-full py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 text-white font-bold rounded-xl shadow-lg overflow-hidden group"
+                      whileHover={{ scale: 1.02, boxShadow: "0 20px 40px rgba(127, 40, 96, 0.3)" }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {/* Animated Wave Effect */}
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-primary-700 via-primary-600 to-primary-700 opacity-0 group-hover:opacity-100"
+                        initial={{ x: '-100%' }}
+                        whileHover={{ x: '100%' }}
+                        transition={{
+                          duration: 0.6,
+                          ease: "easeInOut"
+                        }}
+                      />
+                      
+                      {/* Ripple Effect */}
+                      <motion.div
+                        className="absolute inset-0"
+                        initial={{ scale: 0, opacity: 0.5 }}
+                        whileTap={{ scale: 2, opacity: 0 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <div className="w-full h-full bg-white/20 rounded-xl" />
+                      </motion.div>
 
-                    {/* Button Text */}
-                    <span className="relative z-10">Apply Now</span>
-                  </motion.button>
+                      {/* Button Text */}
+                      <span className="relative z-10">Apply Now</span>
+                    </motion.button>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Apply Modal */}
+      <AnimatePresence>
+        {showApplyModal && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleCloseApplyModal}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[110] flex items-center justify-center p-4"
+            >
+              {/* Modal */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative w-full max-w-2xl mx-4 sm:mx-0"
+                style={{ maxHeight: '90vh' }}
+              >
+                {/* Glow effect behind modal */}
+                <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
+                
+                {/* Main modal container */}
+                <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
+                  {/* Header Section */}
+                  <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        {/* Icon */}
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-primary-100 rounded-2xl blur-xl opacity-60" />
+                          <div className="relative p-3 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-lg">
+                            <Send className="w-7 h-7 text-white" />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
+                            Apply for Position
+                          </h2>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {job?.title}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Close Button */}
+                      <motion.button
+                        whileHover={{ scale: 1.1, rotate: 90 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={handleCloseApplyModal}
+                        disabled={isSubmitting}
+                        className="p-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <X className="w-5 h-5 text-gray-600" />
+                      </motion.button>
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="px-4 sm:px-6 md:px-8">
+                    <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                  </div>
+
+                  {/* Content */}
+                  <div className="px-4 sm:px-6 md:px-8 py-6 space-y-6 overflow-y-auto flex-1">
+                  {/* Cover Letter Field */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Cover Letter
+                      <span className="text-gray-400 font-normal ml-1">(Optional)</span>
+                    </label>
+                    <textarea
+                      value={coverLetter}
+                      onChange={(e) => setCoverLetter(e.target.value)}
+                      placeholder="Write your cover letter here..."
+                      rows={6}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all resize-none"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+
+                  {/* Resume/CV Field */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Resume/CV
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        id="resume-upload"
+                        accept=".pdf,.doc,.docx"
+                        onChange={handleFileChange}
+                        disabled={isSubmitting}
+                        className="hidden"
+                      />
+                      <div
+                        onDrop={handleDrop}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        className={`flex items-center gap-3 px-4 py-3 border-2 border-dashed rounded-lg transition-all ${
+                          isDragging
+                            ? 'border-primary-500 bg-primary-50 scale-105'
+                            : resumeFile
+                            ? 'border-primary-500 bg-primary-50'
+                            : 'border-gray-300 hover:border-primary-400 hover:bg-gray-50'
+                        } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                        onClick={() => !isSubmitting && !resumeFile && document.getElementById('resume-upload')?.click()}
+                      >
+                        <div className={`p-2 rounded-lg ${resumeFile ? 'bg-primary-100' : 'bg-gray-100'}`}>
+                          {resumeFile ? (
+                            <FileText className="w-5 h-5 text-primary-600" />
+                          ) : (
+                            <Upload className="w-5 h-5 text-gray-400" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          {resumeFileName ? (
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{resumeFileName}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {(resumeFile.size / (1024 * 1024)).toFixed(2)} MB
+                              </p>
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="text-sm font-medium text-gray-700">
+                                {isDragging ? 'Drop file here' : 'Click to upload or drag and drop'}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                PDF, DOC, DOCX (Max 10MB)
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        {resumeFile && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRemoveFile()
+                            }}
+                            disabled={isSubmitting}
+                            className="p-1 hover:bg-red-100 rounded transition-colors disabled:opacity-50"
+                            title="Remove file"
+                          >
+                            <X className="w-4 h-4 text-red-600" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {!resumeFile && (
+                      <p className="text-xs text-red-500 mt-1">Resume/CV is required</p>
+                    )}
+                  </div>
+                </div>
+
+                  {/* Footer */}
+                  <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-t border-gray-200 flex items-center gap-3 flex-shrink-0">
+                    <button
+                      onClick={handleCloseApplyModal}
+                      disabled={isSubmitting}
+                      className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Cancel
+                    </button>
+                    <motion.button
+                      onClick={handleSubmitApplication}
+                      disabled={isSubmitting || !resumeFile}
+                      whileHover={{ scale: isSubmitting || !resumeFile ? 1 : 1.02 }}
+                      whileTap={{ scale: isSubmitting || !resumeFile ? 1 : 0.98 }}
+                      className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors shadow-sm hover:shadow-md"
+                    >
+                      {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                    </motion.button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Remove File Confirmation Dialog */}
+      <AnimatePresence>
+        {showRemoveConfirm && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[120] flex items-center justify-center p-4"
+              onClick={cancelRemoveFile}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-red-100 rounded-lg">
+                    <AlertCircle className="w-5 h-5 text-red-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">Remove File?</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-6">
+                  Are you sure you want to remove the uploaded file? You'll need to upload a new file to continue.
+                </p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={cancelRemoveFile}
+                    className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <motion.button
+                    onClick={confirmRemoveFile}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors shadow-sm hover:shadow-md"
+                  >
+                    Remove
+                  </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

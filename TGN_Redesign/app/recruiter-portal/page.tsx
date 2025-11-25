@@ -35,6 +35,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import toast from 'react-hot-toast'
+import { useDisableBodyScroll } from '@/utils/useDisableBodyScroll'
 
 type TabKey = 'dashboard' | 'jobs' | 'applications' | 'candidates'
 
@@ -136,6 +137,9 @@ export default function RecruiterPortalPage() {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const [isProfileHovered, setIsProfileHovered] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
+  
+  // Disable body scroll when modal is open
+  useDisableBodyScroll(showProfileModal)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [isWelcomeHovered, setIsWelcomeHovered] = useState(false)
   const [hoveredActionIndex, setHoveredActionIndex] = useState<number | null>(null)

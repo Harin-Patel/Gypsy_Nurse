@@ -57,6 +57,10 @@ export default function ToastConfig() {
           style: isMobile ? mobileToastStyle : desktopToastStyle,
         },
         loading: {
+          iconTheme: {
+            primary: '#7F2860',
+            secondary: '#fff',
+          },
           style: isMobile ? mobileToastStyle : desktopToastStyle,
         },
       }}

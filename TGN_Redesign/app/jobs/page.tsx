@@ -15,6 +15,7 @@ import {
   ChevronDown,
   ArrowUpRight,
   ThumbsUp,
+  
   ThumbsDown,
   X,
   Award,
@@ -32,7 +33,7 @@ import {
   Pencil
 } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import toast from 'react-hot-toast'
@@ -458,6 +459,7 @@ const formatDateWithYear = (date: string | undefined): string => {
 
 export default function JobsPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { isAuthenticated } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('relevance')
@@ -488,6 +490,29 @@ export default function JobsPage() {
       }
     }
   }, [])
+  
+  // Initialize search query and location from URL params
+  useEffect(() => {
+    if (!searchParams) return
+    
+    const urlQuery = searchParams.get('q') || ''
+    const urlLocation = searchParams.get('location') || ''
+    
+    // Set search query for job title/keywords search
+    if (urlQuery) {
+      setSearchQuery(urlQuery)
+    }
+    
+    // Set location in filterCity for location-based filtering
+    // This will search in both city (location) and state fields
+    if (urlLocation) {
+      setFilterCity(urlLocation)
+      // Also add location to search query if no query exists, so it searches in all fields
+      if (!urlQuery) {
+        setSearchQuery(urlLocation)
+      }
+    }
+  }, [searchParams])
 
   // Advanced Filter States
   const [filterCity, setFilterCity] = useState('')
@@ -663,10 +688,11 @@ export default function JobsPage() {
       )
     }
 
-    // City filter
+    // City filter (also searches in state field for location-based searches)
     if (filterCity.trim()) {
       filtered = filtered.filter(job => 
-        job.location.toLowerCase().includes(filterCity.toLowerCase())
+        job.location.toLowerCase().includes(filterCity.toLowerCase()) ||
+        job.state.toLowerCase().includes(filterCity.toLowerCase())
       )
       newAppliedFilters.push({
         id: 'city',
@@ -847,6 +873,23 @@ export default function JobsPage() {
     applyFilters()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, sortBy])
+  
+  // Apply filters when filterCity is set from URL params (initial load from hero search)
+  useEffect(() => {
+    if (!searchParams) return
+    
+    const urlLocation = searchParams.get('location') || ''
+    
+    // If location is provided in URL, apply filters after a short delay to ensure state is set
+    if (urlLocation && filterCity === urlLocation) {
+      const timer = setTimeout(() => {
+        applyFilters()
+      }, 150)
+      return () => clearTimeout(timer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterCity, searchParams])
+  
   
   // Apply filters when filter values change, but only if filters have already been applied
   // This handles the case when removing applied filters - the job list should refresh
@@ -1796,7 +1839,27 @@ export default function JobsPage() {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => {
+                      // Check if location param exists before clearing (to know if filterCity was set from URL)
+                      const hadLocationParam = searchParams?.get('location') ? true : false
+                      const currentSearchQuery = searchQuery
+                      
+                      // Clear URL params from browser to prevent them from being re-applied
+                      if (typeof window !== 'undefined') {
+                        const newUrl = new URL(window.location.href)
+                        newUrl.searchParams.delete('q')
+                        newUrl.searchParams.delete('location')
+                        window.history.replaceState({}, '', newUrl.toString())
+                      }
+                      
+                      // Clear search query
                       setSearchQuery('')
+                      
+                      // If location param existed OR if searchQuery matches filterCity (location was in search),
+                      // also clear filterCity to ensure location-based filters are cleared
+                      if ((hadLocationParam || (filterCity && currentSearchQuery.toLowerCase().includes(filterCity.toLowerCase()))) && filterCity) {
+                        setFilterCity('')
+                      }
+                      
                       applyFilters()
                     }}
                     className="flex-shrink-0 p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
@@ -2554,14 +2617,10 @@ export default function JobsPage() {
                 
                 {/* Featured Tag - Top Left */}
                 {job.featured && (
-                  <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-md flex items-center gap-1.5 z-10 shadow-sm border border-white/50"
-                  >
+                  <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 rounded-md border border-amber-200 z-10">
                     <Star className="w-3 h-3 text-amber-600 fill-amber-600" />
-                    <span className="text-xs font-semibold text-gray-900">Featured</span>
-                  </motion.div>
+                    <span className="text-xs font-semibold text-amber-900">Featured</span>
+                  </div>
                 )}
 
                 {/* Action Buttons - Top Right (if authenticated) */}
@@ -2631,14 +2690,10 @@ export default function JobsPage() {
 
                 {/* PENDING Badge */}
                 {pendingJobs.includes(job.id) && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="absolute top-3 right-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-md font-semibold text-xs shadow-sm border border-white/50 flex items-center gap-1.5 z-10"
-                  >
+                  <div className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-50 rounded-md border border-orange-200 z-10">
                     <AlertCircle className="w-3 h-3 text-orange-600" />
-                    <span className="text-gray-900">PENDING</span>
-                  </motion.div>
+                    <span className="text-xs font-semibold text-orange-900">Pending</span>
+                  </div>
                 )}
               </div>
 

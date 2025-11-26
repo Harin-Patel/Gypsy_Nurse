@@ -274,27 +274,19 @@ export default function BookmarksPage() {
                         
                         {/* Featured Tag - Top Left */}
                         {job.featured && (
-                          <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-md flex items-center gap-1.5 z-10 shadow-sm border border-white/50"
-                          >
+                          <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 rounded-md border border-amber-200 z-10">
                             <Star className="w-3 h-3 text-amber-600 fill-amber-600" />
-                            <span className="text-xs font-semibold text-gray-900">Featured</span>
-                          </motion.div>
+                            <span className="text-xs font-semibold text-amber-900">Featured</span>
+                          </div>
                         )}
 
                         {/* Bookmarked Badge and Delete Button - Top Right */}
                         <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
                           {/* Bookmarked Badge */}
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-md font-semibold text-xs shadow-sm border border-white/50 flex items-center gap-1.5 bg-primary-50 text-primary-700 border-primary-200"
-                          >
-                            <Bookmark className="w-3 h-3 fill-current" />
-                            <span>SAVED</span>
-                          </motion.div>
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary-50 rounded-md border border-primary-200">
+                            <Bookmark className="w-3 h-3 text-primary-600 fill-primary-600" />
+                            <span className="text-xs font-semibold text-primary-900">Saved</span>
+                          </div>
                           
                           {/* Delete Icon Button */}
                           <motion.button

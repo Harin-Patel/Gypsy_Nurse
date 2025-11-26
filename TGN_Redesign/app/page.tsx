@@ -16,10 +16,11 @@ export default function Home() {
       <Navigation />
       <Hero />
       <FeaturedJobs />
-      <Events />
-      <Employers />
+      {/* Hidden sections - accessible via top menu bar */}
+      {/* <Events /> */}
+      {/* <Employers /> */}
       <InstagramFeed />
-      <Resources />
+      {/* <Resources /> */}
       <Blog />
       <Footer />
     </main>

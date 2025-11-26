@@ -154,39 +154,43 @@ export default function ApplicationsPage() {
     switch (status) {
       case 'pending':
         return {
-          label: 'PENDING',
+          label: 'Pending',
           icon: AlertCircle,
           gradient: 'from-primary-500 to-primary-600',
-          bg: 'bg-primary-50',
-          text: 'text-primary-700',
-          border: 'border-primary-200'
+          bg: 'bg-orange-50',
+          text: 'text-orange-900',
+          iconColor: 'text-orange-600',
+          border: 'border-orange-200'
         }
       case 'approved':
         return {
-          label: 'APPROVED',
+          label: 'Approved',
           icon: CheckCircle2,
           gradient: 'from-green-400 to-emerald-500',
           bg: 'bg-green-50',
-          text: 'text-green-700',
+          text: 'text-green-900',
+          iconColor: 'text-green-600',
           border: 'border-green-200'
         }
       case 'rejected':
         return {
-          label: 'REJECTED',
+          label: 'Rejected',
           icon: XCircle,
           gradient: 'from-red-400 to-rose-500',
           bg: 'bg-red-50',
-          text: 'text-red-700',
+          text: 'text-red-900',
+          iconColor: 'text-red-600',
           border: 'border-red-200'
         }
       default:
         return {
-          label: 'PENDING',
+          label: 'Pending',
           icon: AlertCircle,
           gradient: 'from-primary-500 to-primary-600',
-          bg: 'bg-primary-50',
-          text: 'text-primary-700',
-          border: 'border-primary-200'
+          bg: 'bg-orange-50',
+          text: 'text-orange-900',
+          iconColor: 'text-orange-600',
+          border: 'border-orange-200'
         }
     }
   }
@@ -438,47 +442,31 @@ export default function ApplicationsPage() {
                         
                         {/* Featured Tag - Top Left */}
                         {job.featured && (
-                          <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-md flex items-center gap-1.5 z-10 shadow-sm border border-white/50"
-                          >
+                          <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 rounded-md border border-amber-200 z-10">
                             <Star className="w-3 h-3 text-amber-600 fill-amber-600" />
-                            <span className="text-xs font-semibold text-gray-900">Featured</span>
-                          </motion.div>
+                            <span className="text-xs font-semibold text-amber-900">Featured</span>
+                          </div>
                         )}
 
                         {/* Status/Like/Dislike Badge - Top Right */}
                         <div className="absolute top-3 right-3 z-10">
                           {activeTab === 'applied' && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.9 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              className={`px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-md font-semibold text-xs shadow-sm border border-white/50 flex items-center gap-1.5 ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
-                            >
-                              <StatusIcon className="w-3 h-3" />
-                              <span>{statusConfig.label}</span>
-                            </motion.div>
+                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${statusConfig.bg} ${statusConfig.border}`}>
+                              <StatusIcon className={`w-3 h-3 ${statusConfig.iconColor || statusConfig.text}`} />
+                              <span className={`text-xs font-semibold ${statusConfig.text}`}>{statusConfig.label}</span>
+                            </div>
                           )}
                           {activeTab === 'liked' && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.9 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              className="px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-md font-semibold text-xs shadow-sm border border-white/50 flex items-center gap-1.5 bg-green-50 text-green-700 border-green-200"
-                            >
-                              <Heart className="w-3 h-3 fill-current" />
-                              <span>LIKED</span>
-                            </motion.div>
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 rounded-md border border-green-200">
+                              <Heart className="w-3 h-3 text-green-600 fill-green-600" />
+                              <span className="text-xs font-semibold text-green-900">Liked</span>
+                            </div>
                           )}
                           {activeTab === 'disliked' && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.9 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              className="px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-md font-semibold text-xs shadow-sm border border-white/50 flex items-center gap-1.5 bg-red-50 text-red-700 border-red-200"
-                            >
-                              <ThumbsDown className="w-3 h-3 fill-current" />
-                              <span>DISLIKED</span>
-                            </motion.div>
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-50 rounded-md border border-red-200">
+                              <ThumbsDown className="w-3 h-3 text-red-600 fill-red-600" />
+                              <span className="text-xs font-semibold text-red-900">Disliked</span>
+                            </div>
                           )}
                         </div>
                       </div>

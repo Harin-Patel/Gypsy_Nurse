@@ -29,11 +29,14 @@ export function jobToApplication(job: any, appliedDate?: string): any {
   const duration = job.tags?.find((tag: string) => tag.includes('Weeks')) || '13 Weeks'
   const salaryPerWeek = job.payPerWeek || (job.salary ? `$${parseInt(job.salary.replace('$', '')) * 40}/week` : undefined)
   
-  // Calculate days ago from applied date
-  const applied = appliedDate ? new Date(appliedDate) : new Date()
+  // Calculate days ago from posted date (same as job listing)
+  let diffDays = job.daysAgo
+  if (diffDays === undefined && job.postedDate) {
+    const posted = new Date(job.postedDate)
   const today = new Date()
-  const diffTime = Math.abs(today.getTime() - applied.getTime())
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    const diffTime = Math.abs(today.getTime() - posted.getTime())
+    diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  }
   
   return {
     id: job.id,
@@ -66,11 +69,14 @@ export function jobToBookmarkedJob(job: any, savedDate?: string): any {
   const duration = job.tags?.find((tag: string) => tag.includes('Weeks')) || '13 Weeks'
   const salaryPerWeek = job.payPerWeek || (job.salary ? `$${parseInt(job.salary.replace('$', '')) * 40}/week` : undefined)
   
-  // Calculate days ago from saved date
-  const saved = savedDate ? new Date(savedDate) : new Date()
+  // Calculate days ago from posted date (same as job listing)
+  let diffDays = job.daysAgo
+  if (diffDays === undefined && job.postedDate) {
+    const posted = new Date(job.postedDate)
   const today = new Date()
-  const diffTime = Math.abs(today.getTime() - saved.getTime())
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    const diffTime = Math.abs(today.getTime() - posted.getTime())
+    diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  }
   
   return {
     id: job.id,

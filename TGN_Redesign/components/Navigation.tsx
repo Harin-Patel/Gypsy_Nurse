@@ -83,7 +83,7 @@ export default function Navigation() {
 
   const navItems = [
     { 
-      name: 'Find a job', 
+      name: 'Search Jobs', 
       href: '/jobs'
     },
     { 
@@ -292,14 +292,14 @@ export default function Navigation() {
                       {(profilePhoto || user?.avatar) ? (
                         <img
                           src={profilePhoto || user?.avatar}
-                          alt={user.name || 'User'}
+                          alt={user?.name || 'User'}
                           className="w-10 h-10 rounded-full object-cover ring-2 ring-primary-200"
                         />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center ring-2 ring-primary-200">
                           {isMobile && user?.name ? (() => {
                             // Extract initials from name (first character of first name and first character of last name)
-                            const nameParts = user.name.trim().split(/\s+/)
+                            const nameParts = user?.name?.trim().split(/\s+/) || []
                             let initials = ''
                             if (nameParts.length >= 2) {
                               initials = (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()

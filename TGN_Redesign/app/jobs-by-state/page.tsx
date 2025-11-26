@@ -601,14 +601,10 @@ export default function JobsByStatePage() {
                             
                             <div className="flex items-center gap-2">
                               {pendingJobs.includes(job.id) && (
-                                <motion.div
-                                  initial={{ opacity: 0, scale: 0.9 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  className="px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg font-semibold text-xs shadow-lg border border-primary-400/50 flex items-center gap-1.5"
-                                >
-                                  <AlertCircle className="w-3.5 h-3.5" />
-                                  <span>PENDING</span>
-                                </motion.div>
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-50 rounded-md border border-orange-200">
+                                  <AlertCircle className="w-3 h-3 text-orange-600" />
+                                  <span className="text-xs font-semibold text-orange-900">Pending</span>
+                                </div>
                               )}
 
                               {isAuthenticated && !pendingJobs.includes(job.id) && (

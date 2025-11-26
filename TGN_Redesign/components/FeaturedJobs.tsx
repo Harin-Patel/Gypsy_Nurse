@@ -278,14 +278,10 @@ export default function FeaturedJobs() {
                   
                   {/* Featured Tag - Top Left */}
                   {job.featured && (
-                    <motion.div
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-md flex items-center gap-1.5 z-10 shadow-sm border border-white/50"
-                    >
+                    <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 rounded-md border border-amber-200 z-10">
                       <Star className="w-3 h-3 text-amber-600 fill-amber-600" />
-                      <span className="text-xs font-semibold text-gray-900">Featured</span>
-                    </motion.div>
+                      <span className="text-xs font-semibold text-amber-900">Featured</span>
+                    </div>
                   )}
 
                   {/* Action Buttons - Top Right (if authenticated) */}
@@ -352,14 +348,10 @@ export default function FeaturedJobs() {
 
                   {/* PENDING Badge */}
                   {pendingJobs.includes(job.id) && index !== jobs.length - 1 && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="absolute top-3 right-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-md font-semibold text-xs shadow-sm border border-white/50 flex items-center gap-1.5 z-10"
-                    >
+                    <div className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-50 rounded-md border border-orange-200 z-10">
                       <AlertCircle className="w-3 h-3 text-orange-600" />
-                      <span className="text-gray-900">PENDING</span>
-                    </motion.div>
+                      <span className="text-xs font-semibold text-orange-900">Pending</span>
+                    </div>
                   )}
                 </div>
 
@@ -443,6 +435,7 @@ export default function FeaturedJobs() {
           transition={isMobile ? { duration: 0 } : {}}
           className="text-center"
         >
+          <Link href="/jobs">
           <motion.button
             whileHover={isMobile ? undefined : { scale: 1.05 }}
             whileTap={isMobile ? { scale: 0.98 } : { scale: 0.95 }}
@@ -451,6 +444,7 @@ export default function FeaturedJobs() {
             <span>View All Jobs</span>
             <ArrowRight size={20} />
           </motion.button>
+          </Link>
         </motion.div>
       </div>
     </section>

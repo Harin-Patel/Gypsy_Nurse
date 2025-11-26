@@ -1918,17 +1918,21 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         <h1 className="text-2xl font-bold text-gray-900 flex-1 min-w-0 break-words">
                           {job.specialtyRequired || job.title}
                         </h1>
-                        {/* PENDING Badge - Top Right */}
-                        {isPending && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="flex-shrink-0 px-2.5 py-1 rounded-md font-semibold text-xs flex items-center gap-1.5 bg-orange-50 border border-orange-200 whitespace-nowrap"
-                          >
-                            <AlertCircle className="w-3 h-3 text-orange-600" />
-                            <span className="text-orange-900">PENDING</span>
-                          </motion.div>
-                        )}
+                        {/* Badges - Featured and Pending */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {job.featured && (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 rounded-md border border-amber-200">
+                              <Star className="w-3 h-3 text-amber-600 fill-amber-600" />
+                              <span className="text-xs font-semibold text-amber-900">Featured</span>
+                            </div>
+                          )}
+                          {isPending && (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-50 rounded-md border border-orange-200">
+                              <AlertCircle className="w-3 h-3 text-orange-600" />
+                              <span className="text-xs font-semibold text-orange-900">Pending</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 text-gray-600">
                         <MapPin className="w-4 h-4" />
@@ -3230,24 +3234,27 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
             <div className="sticky top-28 mt-8">
               {/* Job Summary Card */}
               <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-                {/* Header - Featured Badge and Posted Date */}
-                <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-                  {job.featured && (
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 rounded-md border border-amber-200">
-                      <Star className="w-3 h-3 text-amber-600 fill-amber-600" />
-                      <span className="text-xs font-semibold text-amber-900">Featured</span>
-                    </div>
-                  )}
-                  <span className="text-xs text-gray-500 ml-auto">Posted {formatDateWithYear(job.postedDate)}</span>
+                {/* Header - Posted Date and Estimated Weekly Pay Title */}
+                <div className="px-4 py-3 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">Estimated weekly pay</p>
+                  <span className="text-xs text-gray-500">Posted {formatDateWithYear(job.postedDate)}</span>
                 </div>
 
                 {/* Card Body */}
-                <div className="p-4">
+                <div className="p-4 pt-0">
                   {/* Amount Per Week - Left Aligned */}
                   <div className="mb-4">
-                    <p className="text-xs text-gray-500 mb-1">Estimated weekly pay</p>
+                    <p className="text-xs text-gray-500 mb-1 hidden">Estimated weekly pay</p>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-gray-900">{job.weeklyPay || 'N/A'}</span>
+                      <span className="text-3xl font-bold text-gray-900">
+                        {(() => {
+                          // Extract numeric value from job.weeklyPay and format with 2 decimals
+                          const payValue = parseFloat((job.weeklyPay || '0').replace(/[^0-9.]/g, '')) || 0
+                          return payValue > 0 
+                            ? `$${payValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            : 'N/A'
+                        })()}
+                      </span>
                       <span className="text-sm font-normal text-gray-500">/week</span>
                     </div>
                   </div>
@@ -3279,76 +3286,82 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         <p className="text-xs text-gray-500">Weekly Total*</p>
                         <span className="text-lg font-bold text-gray-900">
                           {(() => {
+                            // Extract numeric value from job.weeklyPay (e.g., "$2,800" -> 2800)
                             const payValue = parseFloat((job.weeklyPay || '0').replace(/[^0-9.]/g, '')) || 0
-                            const regularHours = 40
-                            const otHours = 8
-                            const regularRate = parseFloat((job.salary || '0').replace(/[^0-9.]/g, '')) || 53.11
-                            const otRate = regularRate * 2
-                            const mniPerDiem = 518
-                            const housingPerDiem = 994
-                            const total = (regularHours * regularRate) + (otHours * otRate) + mniPerDiem + housingPerDiem
-                            return `$${total.toLocaleString()}`
+                            // Format with 2 decimal places to match the Estimated weekly pay format
+                            return `$${payValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                           })()}
                   </span>
                       </div>
                 </div>
 
                     {/* Pay Components */}
-                    <div className="space-y-2.5 mb-4">
-                      {/* 40 Hours */}
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-600">40 Hours</span>
-                          <span className="text-gray-500 text-xs">x {job.salary || '$53.11/hr'}</span>
-                  </div>
-                        <span className="font-semibold text-gray-900">
-                          {(() => {
-                            const rate = parseFloat((job.salary || '53.11').replace(/[^0-9.]/g, '')) || 53.11
-                            return `$${(40 * rate).toLocaleString()}`
-                          })()}
-                        </span>
-                </div>
+                    {(() => {
+                      // Extract weekly pay value
+                      const weeklyPayValue = parseFloat((job.weeklyPay || '0').replace(/[^0-9.]/g, '')) || 0
+                      const rate = parseFloat((job.salary || '53.11').replace(/[^0-9.]/g, '')) || 53.11
+                      
+                      // Fixed per diem amounts
+                      const mniPerDiem = 518.00
+                      const housingPerDiem = 994.00
+                      
+                      // Calculate regular hours (40 hours)
+                      const regularHoursPay = 40 * rate
+                      
+                      // Calculate OT hours (8 hours at 2x rate)
+                      const otHoursPay = 8 * rate * 2
+                      
+                      // Calculate remaining amount for Call Back/Holiday to make total match weekly pay
+                      const callBackHolidayPay = weeklyPayValue - regularHoursPay - otHoursPay - mniPerDiem - housingPerDiem
+                      
+                      return (
+                        <div className="space-y-2.5 mb-4">
+                          {/* 40 Hours */}
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-600">40 Hours</span>
+                              <span className="text-gray-500 text-xs">x {job.salary || '$53.11/hr'}</span>
+                            </div>
+                            <span className="font-semibold text-gray-900">
+                              ${regularHoursPay.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
 
-                      {/* 8 OT Hours */}
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-600">8 OT Hours</span>
-                          <span className="text-gray-500 text-xs">x {(() => {
-                            const rate = parseFloat((job.salary || '53.11').replace(/[^0-9.]/g, '')) || 53.11
-                            return `$${(rate * 2).toFixed(2)}/hr`
-                          })()}</span>
+                          {/* 8 OT Hours */}
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-600">8 OT Hours</span>
+                              <span className="text-gray-500 text-xs">x ${(rate * 2).toFixed(2)}/hr</span>
+                            </div>
+                            <span className="font-semibold text-gray-900">
+                              ${otHoursPay.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+
+                          {/* Call Back/Holiday */}
+                          {callBackHolidayPay > 0 && (
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-600">Call Back/Holiday</span>
+                              <span className="font-semibold text-gray-900">
+                                ${callBackHolidayPay.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Weekly M&I Per Diem */}
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Weekly M&I Per Diem</span>
+                            <span className="font-semibold text-gray-900">${mniPerDiem.toFixed(2)}</span>
+                          </div>
+
+                          {/* Weekly Housing Per Diem */}
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Weekly Housing Per Diem</span>
+                            <span className="font-semibold text-gray-900">${housingPerDiem.toFixed(2)}</span>
+                          </div>
                         </div>
-                        <span className="font-semibold text-gray-900">
-                          {(() => {
-                            const rate = parseFloat((job.salary || '53.11').replace(/[^0-9.]/g, '')) || 53.11
-                            return `$${(8 * rate * 2).toLocaleString()}`
-                          })()}
-                        </span>
-                </div>
-
-                      {/* Call Back/Holiday */}
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Call Back/Holiday</span>
-                        <span className="font-semibold text-gray-900">
-                          {(() => {
-                            const rate = parseFloat((job.salary || '53.11').replace(/[^0-9.]/g, '')) || 53.11
-                            return `$${(rate * 2).toFixed(2)}/hr`
-                          })()}
-                        </span>
-                </div>
-
-                      {/* Weekly M&I Per Diem */}
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Weekly M&I Per Diem</span>
-                        <span className="font-semibold text-gray-900">$518</span>
-                </div>
-
-                      {/* Weekly Housing Per Diem */}
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Weekly Housing Per Diem</span>
-                        <span className="font-semibold text-gray-900">$994</span>
-                  </div>
-                    </div>
+                      )
+                    })()}
 
                     {/* Disclaimer/Footnote */}
                     <div className="mt-4 pt-3 border-t border-gray-200">
@@ -3530,7 +3543,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                             <div>
                               <p className="text-sm font-medium text-gray-900">{resumeFileName}</p>
                               <p className="text-xs text-gray-500 mt-0.5">
-                                {(resumeFile.size / (1024 * 1024)).toFixed(2)} MB
+                                {resumeFile ? ((resumeFile.size / (1024 * 1024)).toFixed(2)) : '0.00'} MB
                               </p>
                             </div>
                           ) : (

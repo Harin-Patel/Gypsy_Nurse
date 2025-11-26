@@ -14,7 +14,15 @@ export default function Hero() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    router.push('/jobs')
+    const params = new URLSearchParams()
+    if (searchQuery.trim()) {
+      params.set('q', searchQuery.trim())
+    }
+    if (location.trim()) {
+      params.set('location', location.trim())
+    }
+    const queryString = params.toString()
+    router.push(`/jobs${queryString ? `?${queryString}` : ''}`)
   }
 
   return (

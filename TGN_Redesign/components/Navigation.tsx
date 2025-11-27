@@ -497,6 +497,14 @@ export default function Navigation() {
                             let href = '#'
                             if (subItem === 'Advertise With Us') {
                               href = '/advertise-with-us'
+                            } else if (subItem === 'Benefits') {
+                              href = '/benefits'
+                            } else if (subItem === 'Contact Us') {
+                              href = '/contact-us'
+                            } else if (subItem === 'Maximize ROI') {
+                              href = '/maximize-roi'
+                            } else if (subItem === 'Sponsors') {
+                              href = '/sponsors'
                             } else if (subItem === 'View all jobs') {
                               href = '/jobs'
                             } else if (subItem === 'Jobs by State') {
@@ -1012,6 +1020,14 @@ export default function Navigation() {
                             let href = '#'
                             if (subItem === 'Advertise With Us') {
                               href = '/advertise-with-us'
+                            } else if (subItem === 'Benefits') {
+                              href = '/benefits'
+                            } else if (subItem === 'Contact Us') {
+                              href = '/contact-us'
+                            } else if (subItem === 'Maximize ROI') {
+                              href = '/maximize-roi'
+                            } else if (subItem === 'Sponsors') {
+                              href = '/sponsors'
                             } else if (subItem === 'View all jobs') {
                               href = '/jobs'
                             } else if (subItem === 'Jobs by State') {

@@ -202,23 +202,8 @@ export default function AdvertiseWithUsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30">
       <Navigation />
       
-      {/* Top Banner */}
-      <section className="bg-primary-100 py-3 border-b border-primary-200">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-center gap-2 text-center">
-            <p className="text-primary-800 font-semibold text-sm md:text-base">
-              Book your advertising package with The Gypsy Nurse today!
-            </p>
-            <span className="hidden md:inline text-primary-400">•</span>
-            <p className="text-primary-700 text-sm md:text-base">
-              Contact us at <a href="mailto:sharper@thegypsynurse.com" className="font-semibold hover:underline">sharper@thegypsynurse.com</a>
-            </p>
-          </div>
-        </div>
-      </section>
-      
       {/* Hero Section */}
-      <section className="relative pt-20 pb-20 overflow-hidden min-h-[70vh] flex items-center">
+      <section className="relative pt-32 pb-12 overflow-hidden min-h-[80vh] flex items-center">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
           <motion.div 
@@ -524,15 +509,12 @@ export default function AdvertiseWithUsPage() {
       </section>
 
       {/* About Us Section */}
-      <section className="pt-4 pb-12 md:pt-6 md:pb-16 bg-white relative overflow-hidden">
+      <section className="pt-16 pb-12 md:pt-20 md:pb-16 bg-white relative overflow-hidden">
         {/* Decorative Elements */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-30 -z-10" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent-100 rounded-full blur-3xl opacity-30 -z-10" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Separator Line */}
-          <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-10 opacity-40"></div>
-          
           {/* Section Header */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -1093,6 +1075,95 @@ export default function AdvertiseWithUsPage() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+
+      {/* Contact Information Section */}
+      <section className="pt-4 pb-12 md:pt-6 md:pb-16 bg-white relative overflow-hidden">
+        {/* Decorative Elements */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-30 -z-10" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent-100 rounded-full blur-3xl opacity-30 -z-10" />
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Separator Line */}
+          <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-10 opacity-40"></div>
+          
+          {/* Section Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-10"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="inline-block mb-3"
+            >
+              <span className="px-4 py-2 bg-primary-100 text-primary-600 rounded-full text-sm font-semibold">
+                Get In Touch
+              </span>
+            </motion.div>
+            
+            <h2 className="text-4xl md:text-5xl font-bold mb-3">
+              Ready to <span className="gradient-text">Advertise with Us?</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Contact our team today to book your advertising package and reach thousands of qualified healthcare professionals
+            </p>
+          </motion.div>
+
+          {/* Contact Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="max-w-3xl mx-auto"
+          >
+            <div className="bg-white rounded-2xl p-8 md:p-12 border-2 border-gray-100 shadow-xl">
+              <div className="text-center space-y-6">
+                <div className="inline-flex p-4 bg-gradient-to-br from-primary-600 to-primary-700 rounded-2xl shadow-lg">
+                  <Mail className="w-8 h-8 text-white" />
+                </div>
+                
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    Email Us Directly
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Our team is ready to help you reach 675,000+ travel healthcare professionals
+                  </p>
+                  <motion.a
+                    href="mailto:sharper@thegypsynurse.com"
+                    whileHover={{ scale: 1.02 }}
+                    className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold text-lg transition-colors"
+                  >
+                    <Mail className="w-5 h-5" />
+                    <span className="underline decoration-2 underline-offset-4">sharper@thegypsynurse.com</span>
+                  </motion.a>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="grid grid-cols-3 gap-4 pt-6 border-t border-gray-200">
+                  {[
+                    { value: '675K+', label: 'Members' },
+                    { value: '48hrs', label: 'Response Time' },
+                    { value: '98%', label: 'Satisfaction' }
+                  ].map((stat, index) => (
+                    <div key={index} className="text-center">
+                      <div className="text-2xl font-bold text-primary-600">{stat.value}</div>
+                      <div className="text-xs text-gray-600 mt-1">{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 

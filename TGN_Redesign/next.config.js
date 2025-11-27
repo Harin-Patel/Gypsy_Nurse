@@ -11,6 +11,26 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'static.thegypsynurse.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'ariohealthcare.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'staffinghub.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.rapidtemps.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.prod.website-files.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'scontent.fstv8-3.fna.fbcdn.net',
+      },
     ],
   },
 }

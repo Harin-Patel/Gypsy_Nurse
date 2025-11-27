@@ -160,7 +160,7 @@ export default function MaximizeROIPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30">
       <Navigation />
       
-      {/* Hero Section */}
+      {/* Hero Section - Updated to match sponsors page styling */}
       <section className="relative pt-32 pb-12 overflow-hidden min-h-[100vh] flex items-center">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">

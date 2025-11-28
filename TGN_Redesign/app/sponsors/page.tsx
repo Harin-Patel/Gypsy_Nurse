@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
@@ -30,6 +30,13 @@ import Footer from '@/components/Footer'
 export default function SponsorsPage() {
   const router = useRouter()
   const [expandedCards, setExpandedCards] = useState<{ [key: string]: boolean }>({})
+  const [activeTab, setActiveTab] = useState<string>('')
+  const [isTabBarFixed, setIsTabBarFixed] = useState(false)
+  
+  const platinumRef = useRef<HTMLDivElement>(null)
+  const executiveRef = useRef<HTMLDivElement>(null)
+  const premiumRef = useRef<HTMLDivElement>(null)
+  const standardRef = useRef<HTMLDivElement>(null)
   
   const toggleCard = (tierIndex: number, sponsorIndex: number) => {
     const key = `${tierIndex}-${sponsorIndex}`
@@ -38,6 +45,72 @@ export default function SponsorsPage() {
       [key]: !prev[key]
     }))
   }
+
+  const scrollToSection = (section: string) => {
+    let ref: React.RefObject<HTMLDivElement> | null = null
+    switch (section) {
+      case 'platinum':
+        ref = platinumRef
+        break
+      case 'executive':
+        ref = executiveRef
+        break
+      case 'premium':
+        ref = premiumRef
+        break
+      case 'standard':
+        ref = standardRef
+        break
+    }
+    
+    if (ref?.current) {
+      const offset = 100 // Account for sticky nav
+      const elementPosition = ref.current.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.pageYOffset - offset
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      })
+      setActiveTab(section)
+    }
+  }
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY
+      const aboutSection = document.getElementById('about-sponsors')
+      
+      if (aboutSection) {
+        const aboutSectionTop = aboutSection.offsetTop
+        setIsTabBarFixed(scrollPosition > aboutSectionTop - 100)
+      }
+
+      // Determine active tab based on scroll position
+      const sections = [
+        { ref: platinumRef, id: 'platinum' },
+        { ref: executiveRef, id: 'executive' },
+        { ref: premiumRef, id: 'premium' },
+        { ref: standardRef, id: 'standard' }
+      ]
+
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const section = sections[i]
+        if (section.ref.current) {
+          const rect = section.ref.current.getBoundingClientRect()
+          if (rect.top <= 150) {
+            setActiveTab(section.id)
+            break
+          }
+        }
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    handleScroll() // Initial check
+
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const sponsorTiers = [
     {
@@ -368,8 +441,56 @@ export default function SponsorsPage() {
         </div>
       </section>
 
+      {/* Sticky Navigation Tabs */}
+      <div className={`sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-gray-200 shadow-sm transition-all ${isTabBarFixed ? '' : 'hidden'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+            <button
+              onClick={() => scrollToSection('platinum')}
+              className={`px-6 py-4 text-sm font-semibold transition-all duration-300 whitespace-nowrap border-b-2 ${
+                activeTab === 'platinum'
+                  ? 'text-primary-600 border-primary-600'
+                  : 'text-gray-600 border-transparent hover:text-gray-900 hover:border-primary-200'
+              }`}
+            >
+              Platinum Sponsors
+            </button>
+            <button
+              onClick={() => scrollToSection('executive')}
+              className={`px-6 py-4 text-sm font-semibold transition-all duration-300 whitespace-nowrap border-b-2 ${
+                activeTab === 'executive'
+                  ? 'text-primary-600 border-primary-600'
+                  : 'text-gray-600 border-transparent hover:text-gray-900 hover:border-primary-200'
+              }`}
+            >
+              Executive Sponsors
+            </button>
+            <button
+              onClick={() => scrollToSection('premium')}
+              className={`px-6 py-4 text-sm font-semibold transition-all duration-300 whitespace-nowrap border-b-2 ${
+                activeTab === 'premium'
+                  ? 'text-primary-600 border-primary-600'
+                  : 'text-gray-600 border-transparent hover:text-gray-900 hover:border-primary-200'
+              }`}
+            >
+              Premium Sponsors
+            </button>
+            <button
+              onClick={() => scrollToSection('standard')}
+              className={`px-6 py-4 text-sm font-semibold transition-all duration-300 whitespace-nowrap border-b-2 ${
+                activeTab === 'standard'
+                  ? 'text-primary-600 border-primary-600'
+                  : 'text-gray-600 border-transparent hover:text-gray-900 hover:border-primary-200'
+              }`}
+            >
+              Standard Sponsors
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* About Sponsors Section */}
-      <section className="pt-16 pb-8 md:pt-20 md:pb-10 bg-white relative overflow-hidden">
+      <section id="about-sponsors" className="pt-16 pb-8 md:pt-20 md:pb-10 bg-white relative overflow-hidden">
         {/* Decorative Elements */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-30 -z-10" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent-100 rounded-full blur-3xl opacity-30 -z-10" />
@@ -491,10 +612,32 @@ export default function SponsorsPage() {
       </section>
 
       {/* Sponsors by Tier */}
-      {sponsorTiers.map((tier, tierIndex) => (
-        tier.sponsors.length > 0 && (
-          <section key={tierIndex} className="pt-12 pb-12 md:pt-16 md:pb-16 relative overflow-hidden bg-white">
-            
+      {sponsorTiers.map((tier, tierIndex) => {
+        const getSectionRef = () => {
+          if (tier.tier === 'Platinum Sponsors') return platinumRef
+          if (tier.tier === 'Executive Sponsors') return executiveRef
+          if (tier.tier === 'Premium Sponsors') return premiumRef
+          if (tier.tier === 'Standard Sponsors') return standardRef
+          return null
+        }
+        
+        const getSectionId = () => {
+          if (tier.tier === 'Platinum Sponsors') return 'platinum'
+          if (tier.tier === 'Executive Sponsors') return 'executive'
+          if (tier.tier === 'Premium Sponsors') return 'premium'
+          if (tier.tier === 'Standard Sponsors') return 'standard'
+          return ''
+        }
+        
+        if (tier.sponsors.length === 0) return null
+        
+        return (
+          <section 
+            key={tierIndex} 
+            ref={getSectionRef()}
+            id={getSectionId()}
+            className="pt-12 pb-12 md:pt-16 md:pb-16 relative overflow-hidden bg-white scroll-mt-24"
+          >
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               {/* Separator Line */}
               <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-8 opacity-40"></div>
@@ -550,9 +693,46 @@ export default function SponsorsPage() {
                   ? 'md:grid-cols-2 lg:grid-cols-4'
                   : 'md:grid-cols-2 lg:grid-cols-3'
               } gap-6`}>
-                {tier.sponsors.map((sponsor, index) => (
-                  <motion.div
+                {tier.sponsors.map((sponsor, index) => {
+                  const getSponsorSlug = (name: string) => {
+                    const slugMap: { [key: string]: string } = {
+                      'American Mobile': 'american-mobile',
+                      'Travel Nurse Across America (TNAA)': 'tnaa',
+                      'Trustaff': 'trustaff',
+                      'AB Staffing Solutions': 'ab-staffing',
+                      'Advantage Medical Professionals': 'advantage-medical',
+                      'FlexCare': 'flexcare',
+                      'Host Healthcare': 'host-healthcare',
+                      'Medical Solutions': 'medical-solutions',
+                      'Tripod Partners USA': 'tripod-partners'
+                    }
+                    return slugMap[name] || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+                  }
+                  
+                  const sponsorSlug = getSponsorSlug(sponsor.name)
+                  
+                  // Only Platinum and Executive sponsors are clickable
+                  const isClickable = tier.tier === 'Platinum Sponsors' || tier.tier === 'Executive Sponsors'
+                  
+                  const CardWrapper = isClickable ? motion.a : motion.div
+                  
+                  const wrapperProps = isClickable ? {
+                    href: `/agency-profile/${sponsorSlug}`,
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                    onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+                      const target = e.target as HTMLElement
+                      if (target.closest('button') || target.tagName === 'BUTTON') {
+                        e.preventDefault()
+                        e.stopPropagation()
+                      }
+                    }
+                  } : {}
+                  
+                  return (
+                  <CardWrapper
                     key={index}
+                    {...wrapperProps}
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
@@ -562,7 +742,7 @@ export default function SponsorsPage() {
                       tier.tier === 'Standard Sponsors' || tier.tier === 'Premium Sponsors'
                         ? 'shadow-md hover:shadow-lg hover:border-primary-200'
                         : 'shadow-md hover:shadow-lg hover:border-primary-200'
-                    }`}
+                    } ${isClickable ? 'cursor-pointer' : ''}`}
                     style={tier.tier === 'Standard Sponsors' || tier.tier === 'Premium Sponsors' ? {
                       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), inset 0 0 20px rgba(236, 72, 153, 0.15), inset 0 0 40px rgba(236, 72, 153, 0.1)'
                     } : undefined}
@@ -671,13 +851,14 @@ export default function SponsorsPage() {
                         )}
                       </div>
                     )}
-                  </motion.div>
-                ))}
+                  </CardWrapper>
+                  )
+                })}
               </div>
             </div>
           </section>
         )
-      ))}
+      })}
 
       {/* Contact Information Section */}
       <section id="contact-information" className="pt-4 pb-8 md:pt-6 md:pb-10 bg-white relative overflow-hidden">

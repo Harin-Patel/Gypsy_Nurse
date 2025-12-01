@@ -58,7 +58,7 @@ export default function MobileBottomNav() {
 
   // Resources items from hamburger menu
   const resourcesItems: NavItem[] = [
-    { id: 'blog', label: 'Blog', icon: BookOpen, href: '#resources' },
+    { id: 'blog', label: 'Blog', icon: BookOpen, href: '/articles' },
     { id: 'compact-license', label: 'Compact License', icon: BookOpen, href: '#resources' },
     { id: 'continuing-education', label: 'Continuing Education', icon: BookOpen, href: '#resources' },
     { id: 'discounts', label: 'Discounts', icon: BookOpen, href: '#resources' },

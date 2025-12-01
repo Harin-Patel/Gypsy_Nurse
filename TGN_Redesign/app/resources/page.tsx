@@ -127,9 +127,13 @@ export default function ResourcesPage() {
   const isMobile = useIsMobile()
 
   const handleResourceClick = (resourceId: string) => {
-    // Handle resource item click - can navigate to specific resource page
-    console.log('Clicked resource:', resourceId)
-    // For now, just scroll or navigate as needed
+    // Handle resource item click - navigate to specific resource page
+    if (resourceId === 'blog') {
+      window.location.href = '/articles'
+    } else {
+      // Handle other resources as needed
+      console.log('Clicked resource:', resourceId)
+    }
   }
 
   return (

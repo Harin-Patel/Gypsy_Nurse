@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { ArrowLeft, Mail, Phone, MapPin, Globe, FileText, Camera, MessageSquare, ImageIcon, Briefcase, ExternalLink, Users } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, MapPin, Globe, FileText, Camera, MessageSquare, ImageIcon, Briefcase, ExternalLink, Users, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
@@ -1021,6 +1021,11 @@ const agencyData: { [key: string]: any } = {
         description: 'I am our Resident Social Media-holic. I connect with travelers on Facebook and LinkedIn, and I will post OneStaff updates on my personal Instagram story. Any social media news, job posts, or \'tea\' that you see travel industry or otherwise, I would love to discuss and help out. Give me a shout on any of my social media links and let\'s get you on the OneStaff Medical Team',
         overview: 'I am our Resident Social Media-holic. I connect with travelers on Facebook and LinkedIn, and I will post OneStaff updates on my personal Instagram story.',
         about: 'I am our Resident Social Media-holic. I connect with travelers on Facebook and LinkedIn, and I will post OneStaff updates on my personal Instagram story.',
+        socialMedia: {
+          facebook: 'https://www.facebook.com/payton.parks',
+          linkedin: 'https://www.linkedin.com/in/payton-parks',
+          instagram: 'https://www.instagram.com/paytonparks',
+        },
         albums: [],
         jobs: []
       },
@@ -1533,6 +1538,7 @@ export default function RecruiterProfilePage() {
           address: (recruiterFromAgency.address && recruiterFromAgency.address.trim() !== '') ? recruiterFromAgency.address : (agency.address || ''),
           website: (recruiterFromAgency.website && recruiterFromAgency.website.trim() !== '') ? recruiterFromAgency.website : (agency.website || ''),
           profileUrl: recruiterFromAgency.profileUrl || '',
+          socialMedia: recruiterFromAgency.socialMedia || agency.socialMedia || null,
           albums: recruiterFromAgency.albums || [],
           jobs: recruiterFromAgency.jobs || []
         }
@@ -1620,6 +1626,67 @@ export default function RecruiterProfilePage() {
                     </div>
                   )}
                 </div>
+
+                {/* Social Media Links */}
+                {recruiter.socialMedia && (
+                  <div className="mt-4">
+                    <div className="text-xs text-gray-500 mb-2 font-semibold">Connect With Me</div>
+                    <div className="flex flex-wrap gap-2">
+                      {recruiter.socialMedia.facebook && (
+                        <motion.a
+                          href={recruiter.socialMedia.facebook}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          whileHover={{ scale: 1.1, y: -2 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="w-9 h-9 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-blue-600 hover:text-white hover:border-blue-500 transition-all"
+                          aria-label="Facebook"
+                        >
+                          <Facebook className="w-4 h-4" />
+                        </motion.a>
+                      )}
+                      {recruiter.socialMedia.twitter && (
+                        <motion.a
+                          href={recruiter.socialMedia.twitter}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          whileHover={{ scale: 1.1, y: -2 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="w-9 h-9 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-black hover:text-white hover:border-black transition-all"
+                          aria-label="Twitter"
+                        >
+                          <Twitter className="w-4 h-4" />
+                        </motion.a>
+                      )}
+                      {recruiter.socialMedia.linkedin && (
+                        <motion.a
+                          href={recruiter.socialMedia.linkedin}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          whileHover={{ scale: 1.1, y: -2 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="w-9 h-9 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-blue-700 hover:text-white hover:border-blue-600 transition-all"
+                          aria-label="LinkedIn"
+                        >
+                          <Linkedin className="w-4 h-4" />
+                        </motion.a>
+                      )}
+                      {recruiter.socialMedia.instagram && (
+                        <motion.a
+                          href={recruiter.socialMedia.instagram}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          whileHover={{ scale: 1.1, y: -2 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="w-9 h-9 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-gradient-to-br hover:from-purple-600 hover:via-pink-600 hover:to-orange-500 hover:text-white hover:border-transparent transition-all"
+                          aria-label="Instagram"
+                        >
+                          <Instagram className="w-4 h-4" />
+                        </motion.a>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

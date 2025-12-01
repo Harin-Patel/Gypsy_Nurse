@@ -18,7 +18,6 @@ export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [showLoginDropdown, setShowLoginDropdown] = useState(false)
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [isProfileHovered, setIsProfileHovered] = useState(false)
@@ -80,6 +79,23 @@ export default function Navigation() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      // Close dropdowns if clicking outside navigation items
+      if (!target.closest('.nav-dropdown-container')) {
+        setActiveDropdown(null)
+        setShowLoginDropdown(false)
+      }
+    }
+    
+    if (activeDropdown || showLoginDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [activeDropdown, showLoginDropdown])
 
   const navItems = [
     { 
@@ -366,119 +382,54 @@ export default function Navigation() {
               {navItems.map((item) => (
                 <div
                   key={item.name}
-                  className="relative py-1"
-                  onMouseEnter={() => {
-                    item.dropdown && setActiveDropdown(item.name)
-                    setHoveredItem(item.name)
-                  }}
-                  onMouseLeave={() => {
-                    setActiveDropdown(null)
-                    setHoveredItem(null)
-                  }}
+                  className="relative py-1 nav-dropdown-container"
                 >
                   {item.href.startsWith('/') ? (
                     <Link href={item.href}>
-                      <motion.div
+                      <div
                         className="relative text-gray-700 hover:text-primary-600 font-semibold transition-colors duration-300 flex items-center space-x-1 px-4 py-2.5 group cursor-pointer"
-                        whileHover={{ y: -2 }}
-                        whileTap={{ scale: 0.98 }}
                       >
                         <span className="relative z-10">{item.name}</span>
                         {item.dropdown && (
-                          <motion.div
-                            animate={{ rotate: activeDropdown === item.name ? 180 : 0 }}
-                            transition={{ duration: 0.3 }}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              setActiveDropdown(activeDropdown === item.name ? null : item.name)
+                            }}
+                            className="relative z-10"
+                            style={{ 
+                              transform: activeDropdown === item.name ? 'rotate(180deg)' : 'rotate(0deg)',
+                              transition: 'transform 0.3s ease'
+                            }}
                           >
-                            <ChevronDown size={16} className="relative z-10" />
-                          </motion.div>
+                            <ChevronDown size={16} />
+                          </button>
                         )}
-                        
-                        {/* Glass Hover Effect */}
-                        <motion.div
-                          className="absolute -inset-1 bg-white/70 backdrop-blur-xl rounded-xl border border-primary-200/50 shadow-lg -z-10 overflow-hidden"
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ 
-                            opacity: hoveredItem === item.name ? 1 : 0,
-                            scale: hoveredItem === item.name ? 1 : 0.9
-                          }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          {/* Shine Effect */}
-                          {hoveredItem === item.name && (
-                            <motion.div
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                              initial={{ x: '-100%' }}
-                              animate={{ x: '100%' }}
-                              transition={{
-                                duration: 0.6,
-                                ease: "easeInOut"
-                              }}
-                            />
-                          )}
-                        </motion.div>
-                        
-                        {/* Subtle Gradient Overlay */}
-                        <motion.div
-                          className="absolute -inset-1 bg-gradient-to-br from-primary-100/50 via-primary-50/30 to-transparent rounded-xl -z-10"
-                          initial={{ opacity: 0 }}
-                          animate={{ 
-                            opacity: hoveredItem === item.name ? 1 : 0
-                          }}
-                          transition={{ duration: 0.3 }}
-                        />
-                      </motion.div>
+                      </div>
                     </Link>
                   ) : (
-                  <motion.button
-                      onClick={() => handleNavClick(item.href, item.href.startsWith('/'))}
+                  <button
+                      onClick={() => {
+                        if (item.dropdown) {
+                          setActiveDropdown(activeDropdown === item.name ? null : item.name)
+                        } else {
+                          handleNavClick(item.href, item.href.startsWith('/'))
+                        }
+                      }}
                     className="relative text-gray-700 hover:text-primary-600 font-semibold transition-colors duration-300 flex items-center space-x-1 px-4 py-2.5 group"
-                    whileHover={{ y: -2 }}
-                    whileTap={{ scale: 0.98 }}
                   >
                     <span className="relative z-10">{item.name}</span>
                     {item.dropdown && (
-                      <motion.div
-                        animate={{ rotate: activeDropdown === item.name ? 180 : 0 }}
-                        transition={{ duration: 0.3 }}
+                      <div
+                        style={{ 
+                          transform: activeDropdown === item.name ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.3s ease'
+                        }}
                       >
                         <ChevronDown size={16} className="relative z-10" />
-                      </motion.div>
+                      </div>
                     )}
-                    
-                    {/* Glass Hover Effect */}
-                    <motion.div
-                      className="absolute -inset-1 bg-white/70 backdrop-blur-xl rounded-xl border border-primary-200/50 shadow-lg -z-10 overflow-hidden"
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ 
-                        opacity: hoveredItem === item.name ? 1 : 0,
-                        scale: hoveredItem === item.name ? 1 : 0.9
-                      }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {/* Shine Effect */}
-                      {hoveredItem === item.name && (
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                          initial={{ x: '-100%' }}
-                          animate={{ x: '100%' }}
-                          transition={{
-                            duration: 0.6,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      )}
-                    </motion.div>
-                    
-                    {/* Subtle Gradient Overlay */}
-                    <motion.div
-                      className="absolute -inset-1 bg-gradient-to-br from-primary-100/50 via-primary-50/30 to-transparent rounded-xl -z-10"
-                      initial={{ opacity: 0 }}
-                      animate={{ 
-                        opacity: hoveredItem === item.name ? 1 : 0
-                      }}
-                      transition={{ duration: 0.3 }}
-                    />
-                  </motion.button>
+                  </button>
                   )}
                   
                   {/* Enhanced Dropdown Menu */}
@@ -495,7 +446,9 @@ export default function Navigation() {
                         <div className="p-2">
                           {item.dropdown.map((subItem, idx) => {
                             let href = '#'
-                            if (subItem === 'Advertise With Us') {
+                            if (subItem === 'Blog') {
+                              href = '/articles'
+                            } else if (subItem === 'Advertise With Us') {
                               href = '/advertise-with-us'
                             } else if (subItem === 'Benefits') {
                               href = '/benefits'
@@ -516,6 +469,7 @@ export default function Navigation() {
                               <motion.a
                                 key={subItem}
                                 href={href}
+                                onClick={() => setActiveDropdown(null)}
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: idx * 0.03 }}
@@ -754,11 +708,10 @@ export default function Navigation() {
                 <>
               {/* Log in Dropdown with Glass Effect */}
               <div 
-                className="relative"
-                onMouseEnter={() => setShowLoginDropdown(true)}
-                onMouseLeave={() => setShowLoginDropdown(false)}
+                className="relative nav-dropdown-container"
               >
                 <motion.button
+                  onClick={() => setShowLoginDropdown(!showLoginDropdown)}
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                   className="relative px-6 py-2.5 text-gray-700 font-semibold transition-all duration-200 flex items-center space-x-2 rounded-xl border-2 border-gray-200 bg-white group overflow-hidden hover:text-primary-600"
@@ -817,7 +770,7 @@ export default function Navigation() {
                       style={{ zIndex: 101 }}
                     >
                       <div className="p-2">
-                        <Link href="/login">
+                        <Link href="/login" onClick={() => setShowLoginDropdown(false)}>
                           <motion.div
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -837,7 +790,7 @@ export default function Navigation() {
                             </span>
                           </motion.div>
                         </Link>
-                        <Link href="/agency-login">
+                        <Link href="/agency-login" onClick={() => setShowLoginDropdown(false)}>
                           <motion.div
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -857,7 +810,7 @@ export default function Navigation() {
                             </span>
                           </motion.div>
                         </Link>
-                        <Link href="/recruiter-login">
+                        <Link href="/recruiter-login" onClick={() => setShowLoginDropdown(false)}>
                           <motion.div
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -877,7 +830,7 @@ export default function Navigation() {
                             </span>
                           </motion.div>
                         </Link>
-                        <Link href="/admin-login">
+                        <Link href="/admin-login" onClick={() => setShowLoginDropdown(false)}>
                           <motion.div
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}

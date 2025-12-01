@@ -238,8 +238,8 @@ export default function SponsorsPage() {
       bgColor: 'from-gray-50 to-gray-100/50',
       borderColor: 'border-gray-200',
       sponsors: [
-        { name: 'Ario Healthcare', description: '', logo: '/ario-healthcare.png' },
-        { name: 'Health Advocates Network', description: '', logo: '/health-advocates-network.png' },
+        { name: 'Ario Healthcare', description: '', logo: 'https://static.thegypsynurse.com/2025/07/Ario-Logo.png.webp' },
+        { name: 'Health Advocates Network', description: '', logo: 'https://static.thegypsynurse.com/2025/11/logo-han.jpg.webp' },
         { name: 'Rapid Temps by DocGo', description: '', logo: 'https://static.thegypsynurse.com/2023/01/rapidtemps.jpg.webp' },
         { name: 'SambaTraveler', description: '', logo: 'https://static.thegypsynurse.com/2025/02/sambastaffing.png.webp' },
         { name: 'Trusted Health', description: '', logo: 'https://static.thegypsynurse.com/2023/07/Trusted_Symbol_CMYK_Fresh-Mint_Black-Small.jpg.webp' }
@@ -742,7 +742,9 @@ export default function SponsorsPage() {
                   
                   const wrapperProps = isClickable ? {
                     href: `/agency-profile/${sponsorSlug}`,
-                    onClick: handleClick
+                    onClick: handleClick,
+                    target: '_blank',
+                    rel: 'noopener noreferrer'
                   } : {}
                   
                   return (

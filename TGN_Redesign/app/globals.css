@@ -174,3 +174,51 @@
   scroll-snap-stop: normal;
 }
 
+/* Pagination styling to match reference site */
+.navigation.pagination {
+  @apply text-center;
+}
+
+.navigation.pagination .nav-links {
+  @apply flex justify-center items-center gap-1 flex-wrap;
+}
+
+.navigation.pagination .page-numbers {
+  @apply inline-block px-3 py-2 text-sm font-medium text-gray-700 no-underline;
+  @apply border border-gray-300 rounded transition-colors;
+  @apply hover:bg-primary-50 hover:border-primary-300 hover:text-primary-600;
+  min-width: 2.5rem;
+  text-align: center;
+}
+
+.navigation.pagination .page-numbers.current {
+  @apply bg-primary-600 text-white border-primary-600;
+  @apply hover:bg-primary-600 hover:text-white hover:border-primary-600;
+  @apply cursor-default;
+}
+
+.navigation.pagination .page-numbers.dots {
+  @apply border-transparent bg-transparent;
+  @apply hover:bg-transparent hover:border-transparent;
+  @apply cursor-default;
+  min-width: auto;
+  padding: 0.5rem 0.25rem;
+}
+
+.navigation.pagination .page-numbers.next,
+.navigation.pagination .page-numbers.prev {
+  @apply font-semibold;
+}
+
+.navigation.pagination .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+

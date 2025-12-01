@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
-import { Camera, Globe, Phone, MapPin, Mail, Star, Building2, ExternalLink, FileText, Users, MessageSquare, Briefcase, ImageIcon, X, ChevronLeft, ChevronRight, Calendar, Sun, Bookmark, ThumbsUp, ThumbsDown, AlertCircle } from 'lucide-react'
+import { Camera, Globe, Phone, MapPin, Mail, Star, Building2, ExternalLink, FileText, Users, MessageSquare, Briefcase, ImageIcon, X, ChevronLeft, ChevronRight, Calendar, Sun, Bookmark, ThumbsUp, ThumbsDown, AlertCircle, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
@@ -134,6 +134,12 @@ const agencyData: { [key: string]: any } = {
     address: '5020 North Shore Dr. , Suite 2, North Little Rock, AR, 72118',
     jobApplicationEmail: 'leads@tnaa.com',
     logo: 'https://static.thegypsynurse.com/2023/12/TNAA-red-logo-jpeg-002-200x200.jpg',
+    socialMedia: {
+      facebook: 'https://www.facebook.com/TNAAHealthcare',
+      twitter: 'https://twitter.com/TNAAHealthcare',
+      linkedin: 'https://www.linkedin.com/company/tnaa',
+      instagram: 'https://www.instagram.com/tnaahealthcare/',
+    },
     overview: 'Travel Nurse Across America Setting the Standard in Service! At Travel Nurse Across America, we take pride in doing things differently. We place our nurses on high-paying jobs in exciting locations across the country, but it\'s our service before, during and after your assignment that sets us apart. Our dedicated, supportive staff understands how stressful preparing for a travel nursing job can be, and that\'s why we put our experience to work for you to remove the headaches and send you smoothly on your way. Across our recruiting, clinical, quality assurance, payroll and housing teams, we promise to go out of our way to offer you an exceptional customer service experience. Let Us Show You the Difference Our Service Can Make!',
     aboutUs: 'Travel Nurse Across America Setting the Standard in Service! At Travel Nurse Across America, we take pride in doing things differently. We place our nurses on high-paying jobs in exciting locations across the country, but it\'s our service before, during and after your assignment that sets us apart. Our dedicated, supportive staff understands how stressful preparing for a travel nursing job can be, and that\'s why we put our experience to work for you to remove the headaches and send you smoothly on your way. Across our recruiting, clinical, quality assurance, payroll and housing teams, we promise to go out of our way to offer you an exceptional customer service experience. Let Us Show You the Difference Our Service Can Make!',
     benefits: [
@@ -243,6 +249,12 @@ const agencyData: { [key: string]: any } = {
     address: '4675 Cornell Rd, Suite 100, Cincinnati, Ohio, 45241',
     jobApplicationEmail: 'processednursingleads@trustaff.com',
     logo: 'https://static.thegypsynurse.com/2023/01/trusrtaff-200x200.png',
+    socialMedia: {
+      facebook: 'https://www.facebook.com/Trustaff',
+      twitter: 'https://twitter.com/Trustaff',
+      linkedin: 'https://www.linkedin.com/company/trustaff',
+      instagram: 'https://www.instagram.com/trustaff/',
+    },
     overview: 'Since 2002, Trustaff has been a leading force in healthcare staffing. We build lasting relationships with both the talented professionals looking for their next job and the companies that need their skills to succeed, offering the best travel nurse assignments all across the country. Trustaff is about more than just great jobs—it\'s about great people.',
     aboutUs: 'Since 2002, Trustaff has been a leading force in healthcare staffing. We build lasting relationships with both the talented professionals looking for their next job and the companies that need their skills to succeed, offering the best travel nurse assignments all across the country. Trustaff is about more than just great jobs—it\'s about great people.',
     benefits: [
@@ -291,6 +303,10 @@ const agencyData: { [key: string]: any } = {
     address: '3451 Mercy Rd. #102, Gilbert, AZ, 85297',
     jobApplicationEmail: 'vmiddlebooks@abstaffing.com',
     logo: 'https://static.thegypsynurse.com/2023/01/AB-Staffing.png.webp',
+    socialMedia: {
+      facebook: 'https://www.facebook.com/ABStaffingSolutions',
+      linkedin: 'https://www.linkedin.com/company/ab-staffing-solutions',
+    },
     overview: 'AB Staffing Solutions LLC is a nationwide leader in travel nurse and Healthcare Staffing. ABSS is accredited and certified by The Joint Commission and has been providing strategic healthcare solutions since 2002. Our clients rely upon our innovative solutions to meet their Healthcare Staffing needs. As a team, we create a positive experience for our Healthcare Providers while focusing on improving the quality of patient care in the Healthcare Facilities we work with Nationwide. We strive to be the leading provider of healthcare personnel at government and commercial medical facilities across the country. Creating a customized experience for each provider and understanding how to create solutions for our clients is at the heart of what we do.',
     aboutUs: 'AB Staffing Solutions LLC is a nationwide leader in travel nurse and Healthcare Staffing. ABSS is accredited and certified by The Joint Commission and has been providing strategic healthcare solutions since 2002. Our clients rely upon our innovative solutions to meet their Healthcare Staffing needs. As a team, we create a positive experience for our Healthcare Providers while focusing on improving the quality of patient care in the Healthcare Facilities we work with Nationwide. We strive to be the leading provider of healthcare personnel at government and commercial medical facilities across the country. Creating a customized experience for each provider and understanding how to create solutions for our clients is at the heart of what we do.',
     benefits: [
@@ -1795,6 +1811,11 @@ const agencyData: { [key: string]: any } = {
         description: 'I am our Resident Social Media-holic. I connect with travelers on Facebook and LinkedIn, and I will post OneStaff updates on my personal Instagram story. Any social media news, job posts, or \'tea\' that you see travel industry or otherwise, I would love to discuss and help out. Give me a shout on any of my social media links and let\'s get you on the OneStaff Medical Team',
         overview: 'I am our Resident Social Media-holic. I connect with travelers on Facebook and LinkedIn, and I will post OneStaff updates on my personal Instagram story.',
         about: 'I am our Resident Social Media-holic. I connect with travelers on Facebook and LinkedIn, and I will post OneStaff updates on my personal Instagram story.',
+        socialMedia: {
+          facebook: 'https://www.facebook.com/payton.parks',
+          linkedin: 'https://www.linkedin.com/in/payton-parks',
+          instagram: 'https://www.instagram.com/paytonparks',
+        },
         albums: [],
         jobs: []
       },
@@ -2866,6 +2887,72 @@ export default function AgencyProfilePage() {
                         </motion.a>
                       )}
                     </motion.div>
+
+                    {/* Social Media Links */}
+                    {agency.socialMedia && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6 }}
+                        className="mt-6"
+                      >
+                        <div className="text-xs text-white/70 mb-3 font-semibold">Follow Us</div>
+                        <div className="flex flex-wrap gap-3">
+                          {agency.socialMedia.facebook && (
+                            <motion.a
+                              href={agency.socialMedia.facebook}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              whileHover={{ scale: 1.1, y: -2 }}
+                              whileTap={{ scale: 0.9 }}
+                              className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 flex items-center justify-center text-white hover:bg-blue-600 hover:border-blue-500 transition-all"
+                              aria-label="Facebook"
+                            >
+                              <Facebook className="w-5 h-5" />
+                            </motion.a>
+                          )}
+                          {agency.socialMedia.twitter && (
+                            <motion.a
+                              href={agency.socialMedia.twitter}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              whileHover={{ scale: 1.1, y: -2 }}
+                              whileTap={{ scale: 0.9 }}
+                              className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 flex items-center justify-center text-white hover:bg-black hover:border-black transition-all"
+                              aria-label="Twitter"
+                            >
+                              <Twitter className="w-5 h-5" />
+                            </motion.a>
+                          )}
+                          {agency.socialMedia.linkedin && (
+                            <motion.a
+                              href={agency.socialMedia.linkedin}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              whileHover={{ scale: 1.1, y: -2 }}
+                              whileTap={{ scale: 0.9 }}
+                              className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 flex items-center justify-center text-white hover:bg-blue-700 hover:border-blue-600 transition-all"
+                              aria-label="LinkedIn"
+                            >
+                              <Linkedin className="w-5 h-5" />
+                            </motion.a>
+                          )}
+                          {agency.socialMedia.instagram && (
+                            <motion.a
+                              href={agency.socialMedia.instagram}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              whileHover={{ scale: 1.1, y: -2 }}
+                              whileTap={{ scale: 0.9 }}
+                              className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 flex items-center justify-center text-white hover:bg-gradient-to-br hover:from-purple-600 hover:via-pink-600 hover:to-orange-500 hover:border-transparent transition-all"
+                              aria-label="Instagram"
+                            >
+                              <Instagram className="w-5 h-5" />
+                            </motion.a>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
                   </div>
                 </div>
               </div>

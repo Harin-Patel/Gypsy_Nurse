@@ -47,7 +47,7 @@ export default function SponsorsPage() {
   }
 
   const scrollToSection = (section: string) => {
-    let ref: React.RefObject<HTMLDivElement> | null = null
+    let ref: React.RefObject<HTMLDivElement | null> | null = null
     switch (section) {
       case 'platinum':
         ref = platinumRef
@@ -158,18 +158,18 @@ export default function SponsorsPage() {
           logo: 'https://static.thegypsynurse.com/2025/08/FlexCare-Logo-300x300.png.webp'
         },
         {
-          name: 'Host Healthcare',
-          description: 'As the nation\'s third-largest travel nurse staffing company, we believe all nurses deserve the same quality, human-first service they give their patients. Our expert recruiters work to ensure you great pay and unlimited bonuses, industry-leading benefits, plus the freedom and flexibility to choose from tons of jobs in all 50 states, Washington, D.C, and Guam.',
-          logo: 'https://static.thegypsynurse.com/2023/11/titan.webp'
-        },
-        {
           name: 'Medical Solutions',
-          description: 'Your best interest is our best interest. We offer our clients the best in traveling medical professionals. The only way we can attract and maintain a good relationship with those professionals is to keep their best interests in mind. After all, our success relies on your success. That\'s why we always put your best interests in mind—from superior placements to finding great living accommodations and negotiating a fair price to providing the tools you need for success.',
+          description: 'Medical Solutions is one of the nation\'s largest healthcare talent ecosystems. We connect nurses and allied health clinicians with hospitals and healthcare systems across the country. Since our beginning in 2001, Medical Solutions has grown organically, diversified our service offerings, and brought like-minded companies into our fold. In 2018, we acquired PPR Travel Nursing. Our 2019 purchase of C&A Industries was the largest acquisition in the history of the healthcare staffing industry, which expended our footprint into the allied health market. In 2022, we acquired Matchwell, to connect more clinicians and clients with local contract and per diem positions and HOST Healthcare, and in 2023, Worldwide HealthStaff Solutions. Our continued growth and expansion are supported by our partnership with Centerbridge Partners and CDPQ. Headquartered in Omaha, Nebraska, Medical Solutions now spans office locations across the U.S, coast to coast. We\'re an industry frontrunner, the third largest for healthcare staffing in the country (second largest in travel nursing and fourth largest in allied health). We\'re people who care connecting people who care, and we\'re not shy in saying we are the very best at what we do.',
           logo: 'https://static.thegypsynurse.com/2023/01/medi.png.webp'
         },
         {
+          name: 'Titan Medical Group',
+          description: 'Your best interest is our best interest. We offer our clients the best in traveling medical professionals. The only way we can attract and maintain a good relationship with those professionals is to keep their best interests in mind. After all, our success relies on your success. That\'s why we always put your best interests in mind—from superior placements to finding great living accommodations and negotiating a fair price to providing the tools you need for success. In 2001, Brian Wilke founded Titan Medical in Omaha, Nebraska. Since then, we\'ve become one of the top healthcare staffing agencies in the Midwest because of our uncompromising values and our dedication to filling positions with the best healthcare professionals available.',
+          logo: 'https://static.thegypsynurse.com/2023/11/titan.webp'
+        },
+        {
           name: 'Tripod Partners USA',
-          description: 'Your Career. Your Freedom. Your Partner. At Tripod Partners USA, we specialize in connecting travel healthcare providers, direct hires, and per diem professionals with top healthcare facilities across the States. Our mission is simple: to empower healthcare professionals to explore new opportunities, earn competitive pay, and enjoy the flexibility they deserve. With a nationwide network, transparent pay packages, and 24/7 recruiter support, we make your travel nursing journey stress-free and rewarding. Whether you\'re looking for adventure, financial growth, or career stability, Tripod Partners USA is your trusted partner every step of the way.',
+          description: 'Tripod Partners USA – Your Career. Your Freedom. Your Partner. At Tripod Partners USA, we specialize in connecting travel healthcare providers, direct hires, and per diem professionals with top healthcare facilities across the States. Our mission is simple: to empower healthcare professionals to explore new opportunities, earn competitive pay, and enjoy the flexibility they deserve. With a nationwide network, transparent pay packages, and 24/7 recruiter support, we make your travel nursing journey stress-free and rewarding. Whether you\'re looking for adventure, financial growth, or career stability, Tripod Partners USA is your trusted partner every step of the way. Why Nurses Choose Us: ✔ Travel Nursing Expertise – Top assignments nationwide ✔ Flexible Options – Travel, Direct Hire, and Per Diem ✔ Transparent Pay & Benefits – No surprises, just rewards ✔ Personalized Support – Recruiters who care about your success Ready to start your next adventure? Your next assignment is just a Tripod away.',
           logo: 'https://static.thegypsynurse.com/2025/07/tripod-logo.jpg.webp'
         }
       ]
@@ -182,52 +182,52 @@ export default function SponsorsPage() {
       sponsors: [
         {
           name: 'A.T. Staffing Medical Careers',
-          description: '',
+          description: 'Over fifty years ago, the first A.T. Staffing office opened its doors in Tyler, Texas with a strong focus on innovation, dedication, integrity, and know-how. Over five decades later, we have multiple branch locations to serve our local communities and surrounding states. These branches also serve our rapidly growing travel nursing and allied health teams across the US. We employ and hire hundreds of medical professionals every year with a unique and personal approach to help you achieve your career and financial goals. We offer a comprehensive benefits plan and have hundreds of job openings in the medical areas of Specialty Nursing, Acute, Post Acute, Long-Term Care, Psychiatric, Rehabilitation, Radiology, Pharmacy, and Therapy.',
           logo: 'https://static.thegypsynurse.com/2025/05/2025-LOGO-Medcial-Careers-200x200.png'
         },
         {
           name: 'Core Medical Group',
-          description: '',
+          description: 'Why Choose CoreMedical For Travel Nursing & Travel Therapy With all the travel nursing and travel therapy companies out there, it is important that you choose the right medical staffing agency to advance your career. The best travel nursing companies and allied health recruiters will save you time and help you negotiate the best contract. Your healthcare recruiter will make the process of finding a travel contract simple and stress-free. Whether you are a travel nurse, travel physical therapist, travel occupational therapist, or travel speech language pathologist, CoreMedical Group is ready to assist you. What Makes CoreMedical Group Different? Our mission to Connect People, Improve Lives, and Give Back is a key part of everything we do at CoreMedical Group. Here, we put you first and treat you like family. That\'s why you will receive the same benefits available to our internal staff. From a healthcare reimbursement account to 401K matching, we offer some of the best benefits to our travelers. Plus, many of our benefits are made available to you on day one of your new travel contract. You are a part of our team as much as our internal employees! We value our travel nurses and travel therapists\' commitment to working with CoreMedical Group. Our traveling physical therapists and nurses have the opportunity to earn an all-inclusive trip to the Caribbean each year through our Club CoreMed loyalty program. You can earn points for the trip simply by working or providing referrals, and you can earn enough to bring a friend too! We have thousands of travel nursing jobs for RNs and LPNs and travel therapy jobs for PTs, OTs, and SLPs in locations like California, Texas, Hawaii, and more . In fact, we have travel nursing opportunities in all 50 states. When you travel with CoreMedical Group, we\'ll help you navigate licensing and credentialing, reimburse you for all medical services required for your assignment, and make sure you\'re set up for success from day one! Our dedicated staff will help you through the entire job placement process, from finding travel nursing and travel therapy opportunities to starting in new locations. You will always receive personalized service from your healthcare recruiter, credentialing specialist, and licensing coordinator, whether you are on your first or fiftieth medical travel assignment. We\'ll assist with your application, licensing, housing, and even set you up with a few places to visit at your new destination. CoreMedical Group has been placing travel nurses in new positions for over 25 years, and we have extensive knowledge and experience in the travel nursing and allied industries. Joint Commission Certified since 2007, we follow national standards to provide highly-qualified RNs, LPNs, PTs, OTs, SLPs and more to facilities throughout the U.S. We have continually been named one of the Largest Healthcare Staffing Firms in the U.S. by Staffing Industry Analysts. Last, but certainly not least, we\'re with you every step of the way. We will provide guidance and assistance throughout your traveling job placement processes, from your first interview to your facility orientation. Your healthcare recruiter will check-in periodically to make sure you are happy with your assignment, and you can contact us at any time throughout your travel nursing or travel therapy contract with questions or concerns. Create a profile or contact our experienced travel nurse or travel therapy healthcare recruiters at 800-995-2673 to join our travel nursing and allied family. We can\'t wait to find your ideal travel assignment!',
           logo: 'https://static.thegypsynurse.com/2024/12/core.jpg.webp'
         },
         {
           name: 'Fastaff Travel Nursing',
-          description: '',
+          description: 'We take great care to ensure that our travel nurses enjoy the freedom to work when they want, where they want, while maintaining the lifestyle they want, in addition to enjoying the excitement of travel nursing and the challenge of new experiences.',
           logo: 'https://static.thegypsynurse.com/2022/03/logo-200x200.png.webp'
         },
         {
           name: 'Fusion Medical Staffing',
-          description: '',
+          description: 'Fusion Medical Staffing provides career opportunities to healthcare professionals by helping medical facilities fill their staffing needs. Fusion staffs a variety of specialties within the nursing and allied healthcare fields. We offer competitive pay packages and benefits that travelers deserve. We pride ourselves on our communication skills, accurate job transparency and traveler first mentality. At Fusion, you can actually choose your own adventure! Fusion\'s purpose is to ensure that everyone we touch has a better life. We strive to be humble, driven and positive in all our actions!',
           logo: 'https://static.thegypsynurse.com/2023/10/Fusion-200-x-200.png.webp'
         },
         {
           name: 'HealthTrust Workforce Solutions',
-          description: '',
-          logo: 'https://static.thegypsynurse.com/2024/01/Logo-Resize.png.webp'
+          description: 'At HealthTrust Workforce Solutions, healthcare is not just about the four walls of a facility but about the people who provide and receive care. Our focus is empowering healthcare professionals to deliver exceptional patient experiences by providing them with the necessary skills, tools, and support. We partner with healthcare facilities nationwide to ensure the right professionals are in the right roles. We prioritize our clinicians by giving them a voice and access to opportunities to fulfill their mission of improving lives by providing quality patient care. We are committed to our core values of Trust, Innovation, adaptability, courage, and accountability. We are dedicated to positively impacting the healthcare industry by providing first-priority access to more than 200,000 jobs nationwide to our healthcare professionals. Join us and be part of the HealthTrust family, where you can make a difference every day.',
+          logo: 'https://static.thegypsynurse.com/2025/06/HWS-Logo.png.webp'
         },
         {
           name: 'Nomad Health',
-          description: '',
+          description: 'At Nomad Health, we\'re redefining the travel healthcare experience by removing obstacles between clinicians and the bedside—so you can get where you want to go, faster. Whether you\'re chasing adventure, career growth, or a higher paycheck, your reason for traveling is yours—we\'re just here to help you get there. With transparent job listings, a seamless app experience, and a recruiter-free model that passes savings directly to you, Nomad empowers you to make informed, confident choices. Once you\'re on board, our team of expert Nomad Navigators supports you every step of the way—from credentialing to clinical questions—so you can focus on what matters most: your journey, your impact, and your next great assignment.',
           logo: 'https://static.thegypsynurse.com/2025/06/nomad_health_logo.jpg.webp'
         },
         {
           name: 'OneStaff Medical',
-          description: '',
+          description: 'YOUR ONESTAFF MEDICAL RESOURCES You deserve a partner that is working for you. Be bold and let us do just that. We\'ll take care of you while you are away from your own "home base" in every way we can, and ideally do more than you expect. If we don\'t, we want to hear your feedback (click here) so we constantly adjust how we are working with our clients. Your team at OneStaff is dedicated to finding the perfect assignments (for you), negotiate the best rates and handles any issues that may arise while you are on assignment. We take great pride in building relationships with our traveling professionals and we enjoy hearing about your experiences. Whatever the need, we are here to help along the journey. Our recruiters have decades of experience in the healthcare industry,as well as mucho \'people skills\' to ensure two goals; 1) getting you placed in your current dream assignment and 2) we all have fun doing it. By understanding what you need, and what you like, we help find the ideal facility for you. We won\'t stop until we are sure we\'re providing our healthcare professionals the most personal and professional service available. We understand you are the heart and soul of what we are. Whether it is housing, payroll, travel, benefits, or just a friendly voice to talk to, we are there every step of the way. The company you choose is the most important decision you will make in your traveling career. We get that, so we\'re committed to you 24 hours-a-day, 7 days-a-week. We\'re your "one" solution in travel assignments and here to assist whether helping with accelerating your trajectory towards your career goals or meeting your travel requirements. We guarantee to make every effort to ensure your experience with us is enjoyable, as well as personally fulfilling. If we make you happy, we are happy. We welcome you to the OneStaff team!',
           logo: 'https://static.thegypsynurse.com/2019/12/onestaff.png.webp'
         },
         {
           name: 'Seven Healthcare',
-          description: '',
-          logo: 'https://static.thegypsynurse.com/2025/10/Seven-Healthcare-200-x-200%402x-150x150.png'
+          description: 'Seven Healthcare is proud to be Joint Commission–certified, demonstrating our commitment to quality, safety, and excellence in healthcare staffing. If you are seeking an exciting new chapter in your healthcare career, our multi-award-winning team is here to help. With more than ten years of experience placing exceptional staff with employers across the USA, we have also built a strong track record of helping healthcare professionals from Canada secure rewarding travel contracts in the United States. From Travel Nurses, LPNs, LVNs, and CNAs to Allied Health professionals such as CT Technologists, Radiologic Technologists, MRI Technologists, Physical Therapists, and many more, we can help you take the next step in your career.',
+          logo: 'https://static.thegypsynurse.com/2025/10/Seven-Healthcare-200-x-200@2x.png'
         },
         {
           name: 'Triage Staffing',
-          description: '',
-          logo: 'https://static.thegypsynurse.com/2020/01/logo-7.jpg.webp'
+          description: 'At Triage, we believe sweet jobs don\'t need sugarcoating. And since even the best positions aren\'t 100% flawless, we\'re perfectly honest about what isn\'t perfect. Management consultants call it "setting expectations." We call it giving a damn—something we will always choose to do. When you take an assignment with Triage you can expect custom, competitive pay packages, a reliable recruiter and team who always has your back, and day one nationwide insurance benefits. Yeah, you read that right—benefits that benefit you day one on the job. Because we\'re not just here for a signature on the dotted line. We\'re here for the long haul and to get you exactly what you want out of your nursing career.',
+          logo: 'https://static.thegypsynurse.com/2021/02/1to1_Ratio-002.png.webp'
         },
         {
-          name: 'Vibra Healthcare',
-          description: '',
+          name: 'Vibra Travels',
+          description: 'Regardless of the placement you\'re seeking, you\'ll experience the same great benefits when choosing Vibra Travels for your next contract. White-glove service, every step of the way: At Vibra Travels, we believe in providing top-notch service to our travel nurses. From the moment you first contact us, you\'ll experience a level of support and care that sets us apart from the rest. Your recruiter, your partner: Unlike other travel nursing agencies, we believe in building one-on-one relationships with our clinicians. Your dedicated recruiter will be your advocate, guiding you through the entire process and ensuring your needs are met. Clinical support at your fingertips: We understand that being a traveler can sometimes be challenging. That\'s why we have a dedicated clinical support team available to answer any questions or concerns you may have during your assignments. Nationwide placements, endless opportunities: With Vibra Travels, you\'ll have access to placements across the nation. Whether you\'re looking for an acute care, rehabilitation, critical care, or behavioral health hospital, we have opportunities waiting for you in every corner of the country. Join us today and experience traveling done different!',
           logo: 'https://static.thegypsynurse.com/2024/01/vibra-square.jpg.webp'
         }
       ]
@@ -238,11 +238,11 @@ export default function SponsorsPage() {
       bgColor: 'from-gray-50 to-gray-100/50',
       borderColor: 'border-gray-200',
       sponsors: [
-        { name: 'Ario Healthcare', description: '', logo: 'https://ariohealthcare.com/wp-content/uploads/2024/11/Ario-Website_logo.png' },
-        { name: 'Health Advocates Network', description: '', logo: 'https://staffinghub.com/wp-content/uploads/2024/12/health-advocates-network-logo.jpeg' },
-        { name: 'Rapid Temps', description: '', logo: 'https://www.rapidtemps.com/wp-content/uploads/2023/05/Rapid-Temps-Long-Blue-Logo.png' },
-        { name: 'SambaTraveler', description: '', logo: 'https://scontent.fstv8-3.fna.fbcdn.net/v/t39.30808-6/470669180_2006975499716235_961297870068712149_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=9t0bpxnbnjEQ7kNvwGnOXmo&_nc_oc=AdnvykjjJeE2RiV4sj9djZfKsjtq750SIziyfWqdmKZ29jCRdrF3QMdsiaMmiWwVYOcoKbxIdL-1bnhJi-ZW4CRQ&_nc_zt=23&_nc_ht=scontent.fstv8-3.fna&_nc_gid=wRO5tgrIRDPLymr4uG9nbQ&oh=00_AfjA-HFCRUp1kq8JLo-VbckviGmPF2SzYuLh3O1E8mApXQ&oe=692DE873' },
-        { name: 'Trusted Health', description: '', logo: 'https://cdn.prod.website-files.com/6154ac78893abf1d1530f251/6154ac78893abf46c430f2b1_trusted.webp' }
+        { name: 'Ario Healthcare', description: '', logo: '/ario-healthcare.png' },
+        { name: 'Health Advocates Network', description: '', logo: '/health-advocates-network.png' },
+        { name: 'Rapid Temps by DocGo', description: '', logo: 'https://static.thegypsynurse.com/2023/01/rapidtemps.jpg.webp' },
+        { name: 'SambaTraveler', description: '', logo: 'https://static.thegypsynurse.com/2025/02/sambastaffing.png.webp' },
+        { name: 'Trusted Health', description: '', logo: 'https://static.thegypsynurse.com/2023/07/Trusted_Symbol_CMYK_Fresh-Mint_Black-Small.jpg.webp' }
       ]
     }
   ]
@@ -694,45 +694,61 @@ export default function SponsorsPage() {
                   : 'md:grid-cols-2 lg:grid-cols-3'
               } gap-6`}>
                 {tier.sponsors.map((sponsor, index) => {
-                  const getSponsorSlug = (name: string) => {
-                    const slugMap: { [key: string]: string } = {
-                      'American Mobile': 'american-mobile',
-                      'Travel Nurse Across America (TNAA)': 'tnaa',
-                      'Trustaff': 'trustaff',
-                      'AB Staffing Solutions': 'ab-staffing',
-                      'Advantage Medical Professionals': 'advantage-medical',
-                      'FlexCare': 'flexcare',
-                      'Host Healthcare': 'host-healthcare',
-                      'Medical Solutions': 'medical-solutions',
-                      'Tripod Partners USA': 'tripod-partners'
+                  const slugMap: { [key: string]: string } = {
+                    'American Mobile': 'american-mobile',
+                    'Travel Nurse Across America (TNAA)': 'tnaa',
+                    'Trustaff': 'trustaff',
+                    'AB Staffing Solutions': 'ab-staffing',
+                    'Advantage Medical Professionals': 'advantage-medical',
+                    'FlexCare': 'flexcare',
+                    'Titan Medical Group': 'titan-medical-group',
+                    'Medical Solutions': 'medical-solutions',
+                      'Tripod Partners USA': 'tripod-partners',
+                      'A.T. Staffing Medical Careers': 'at-staffing',
+                      'Core Medical Group': 'core-medical-group',
+                      'Fastaff Travel Nursing': 'fastaff',
+                      'Fusion Medical Staffing': 'fusion-medical-staffing',
+                      'HealthTrust Workforce Solutions': 'healthtrust-workforce-solutions',
+                      'Nomad Health': 'nomad-health',
+                      'OneStaff Medical': 'onestaff-medical',
+                      'Seven Healthcare': 'seven-healthcare',
+                      'Triage Staffing': 'triage-staffing',
+                      'Vibra Travels': 'vibra-travels',
+                      'Ario Healthcare': 'ario-healthcare',
+                      'Health Advocates Network': 'health-advocates-network',
+                      'Rapid Temps by DocGo': 'rapid-temps',
+                      'SambaTraveler': 'samba-traveler',
+                      'Trusted Health': 'trusted-health'
                     }
+                  
+                  const getSponsorSlug = (name: string) => {
                     return slugMap[name] || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
                   }
                   
                   const sponsorSlug = getSponsorSlug(sponsor.name)
                   
-                  // Only Platinum and Executive sponsors are clickable
-                  const isClickable = tier.tier === 'Platinum Sponsors' || tier.tier === 'Executive Sponsors'
+                  // Platinum, Executive, Premium, and Standard sponsors are clickable (if they have a slug mapping)
+                  const isClickable = (tier.tier === 'Platinum Sponsors' || tier.tier === 'Executive Sponsors' || tier.tier === 'Premium Sponsors' || tier.tier === 'Standard Sponsors') && sponsorSlug && slugMap[sponsor.name] !== undefined
                   
                   const CardWrapper = isClickable ? motion.a : motion.div
                   
+                  const handleClick = (e: React.MouseEvent<HTMLElement>) => {
+                    const target = e.target as HTMLElement
+                    if (target.closest('button') || target.tagName === 'BUTTON') {
+                      e.preventDefault()
+                      e.stopPropagation()
+                    }
+                  }
+                  
                   const wrapperProps = isClickable ? {
                     href: `/agency-profile/${sponsorSlug}`,
-                    target: '_blank',
-                    rel: 'noopener noreferrer',
-                    onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
-                      const target = e.target as HTMLElement
-                      if (target.closest('button') || target.tagName === 'BUTTON') {
-                        e.preventDefault()
-                        e.stopPropagation()
-                      }
-                    }
+                    onClick: handleClick
                   } : {}
                   
                   return (
                   <CardWrapper
                     key={index}
-                    {...wrapperProps}
+                    {...(wrapperProps as any)}
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
@@ -758,12 +774,17 @@ export default function SponsorsPage() {
                               <img 
                                 src={sponsor.logo} 
                                 alt={sponsor.name}
-                                className={`max-w-[90%] object-contain transition-transform duration-300 group-hover:scale-110 ${
-                                  tier.tier === 'Premium Sponsors' ? 'max-h-28' : 'max-h-28'
+                                className={`object-contain transition-transform duration-300 group-hover:scale-110 ${
+                                  sponsor.name === 'SambaTraveler' 
+                                    ? 'w-full max-w-full scale-110' 
+                                    : 'max-w-[90%] max-h-28'
                                 }`}
                                 style={{
-                                  height: sponsor.name === 'SambaTraveler' ? '112px' : 'auto',
-                                  filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))'
+                                  height: sponsor.name === 'SambaTraveler' ? '120px' : 'auto',
+                                  maxHeight: sponsor.name === 'SambaTraveler' ? '120px' : '112px',
+                                  width: sponsor.name === 'SambaTraveler' ? 'auto' : 'auto',
+                                  filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))',
+                                  transform: sponsor.name === 'SambaTraveler' ? 'scale(1.15)' : 'none'
                                 }}
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement

@@ -1570,13 +1570,13 @@ export default function RecruiterProfilePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div>
             {/* Back Button */}
-            <button
-              onClick={() => router.back()}
+            <Link
+              href={`/agency-profile/${agencyId}`}
               className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium transition-colors mb-6"
             >
               <ArrowLeft className="w-5 h-5" />
               <span>Back</span>
-            </button>
+            </Link>
             
             {/* Recruiter Image and Info */}
             <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
@@ -1629,6 +1629,11 @@ export default function RecruiterProfilePage() {
 
                 {/* Social Media Links */}
                 {recruiter.socialMedia && (
+                  recruiter.socialMedia.facebook || 
+                  recruiter.socialMedia.twitter || 
+                  recruiter.socialMedia.linkedin || 
+                  recruiter.socialMedia.instagram
+                ) && (
                   <div className="mt-4">
                     <div className="text-xs text-gray-500 mb-2 font-semibold">Connect With Me</div>
                     <div className="flex flex-wrap gap-2">
@@ -1653,9 +1658,11 @@ export default function RecruiterProfilePage() {
                           whileHover={{ scale: 1.1, y: -2 }}
                           whileTap={{ scale: 0.9 }}
                           className="w-9 h-9 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-black hover:text-white hover:border-black transition-all"
-                          aria-label="Twitter"
+                          aria-label="X (Twitter)"
                         >
-                          <Twitter className="w-4 h-4" />
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                          </svg>
                         </motion.a>
                       )}
                       {recruiter.socialMedia.linkedin && (
@@ -1694,14 +1701,14 @@ export default function RecruiterProfilePage() {
       </section>
 
       {/* Tab Navigation */}
-      <section className="relative bg-gradient-to-br from-gray-50 via-white to-primary-50/30 border-b border-gray-200/50 overflow-x-hidden overflow-y-visible">
+      <section className="relative bg-gradient-to-br from-gray-50 via-white to-primary-50/30 border-b border-gray-200/50 overflow-hidden">
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-0 left-0 w-64 h-64 bg-primary-200/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent-200/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
         </div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-4 pl-1">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-4 pl-1 overflow-y-hidden">
             {tabs.map((tab, index) => {
               const Icon = tab.icon
               const isActive = activeTab === tab.id
@@ -1721,7 +1728,7 @@ export default function RecruiterProfilePage() {
                   }}
                   className="relative group flex-shrink-0"
                 >
-                  <div className={`relative px-5 py-3 rounded-xl font-semibold text-sm whitespace-nowrap transition-all duration-300 flex items-center gap-2 overflow-visible ${
+                  <div className={`relative px-5 py-3 rounded-xl font-semibold text-sm whitespace-nowrap transition-all duration-300 flex items-center gap-2 ${
                     isActive
                       ? 'text-white'
                       : 'text-gray-700 hover:text-primary-600'
@@ -1811,15 +1818,20 @@ export default function RecruiterProfilePage() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4">
-                    <Link 
-                      href={`/agency-profile/${agencyId}/recruiter/${recruiterId}/photos`}
-                      className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold text-sm transition-colors"
-                    >
-                      See all albums
-                      <ExternalLink className="w-4 h-4" />
-                    </Link>
-                  </div>
+                  {/* Only show "See all albums" button if albums have photos */}
+                  {recruiter.albums.some((album: any) => 
+                    (album.photos && album.photos.length > 0) || (album.photoCount && album.photoCount > 0)
+                  ) && (
+                    <div className="mt-4">
+                      <Link 
+                        href={`/agency-profile/${agencyId}/recruiter/${recruiterId}/photos`}
+                        className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold text-sm transition-colors"
+                      >
+                        See all albums
+                        <ExternalLink className="w-4 h-4" />
+                      </Link>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div>
@@ -1827,13 +1839,6 @@ export default function RecruiterProfilePage() {
                     Recent albums from {recruiter.name}
                   </h4>
                   <p className="text-gray-600 text-sm md:text-base mb-4">No photo albums have been created yet.</p>
-                  <Link 
-                    href={`/agency-profile/${agencyId}/recruiter/${recruiterId}/photos`}
-                    className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold text-sm transition-colors"
-                  >
-                    See all albums
-                    <ExternalLink className="w-4 h-4" />
-                  </Link>
                 </div>
               )}
 
@@ -1903,46 +1908,6 @@ export default function RecruiterProfilePage() {
               <div>
                 <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-3">Reviews</h4>
                 <p className="text-gray-600 text-sm md:text-base mb-4">No reviews available yet.</p>
-                
-                <div className="mb-6 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                  <p className="text-sm text-gray-700 mb-2">
-                    You must be logged in to submit a review.
-                  </p>
-                  <a href="#" className="text-primary-600 hover:text-primary-700 font-semibold text-sm">
-                    Click to login or register.
-                  </a>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-3">My Blog Posts</h4>
-                <div className="flex items-center justify-between">
-                  <p className="text-gray-600 text-sm md:text-base">Sorry, {recruiter.name} has not made any blog posts yet.</p>
-                  <button
-                    onClick={() => router.back()}
-                    className="text-primary-600 hover:text-primary-700 font-semibold text-sm"
-                  >
-                    Go Back
-                  </button>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-3">My Video Chat Rooms</h4>
-                <p className="text-gray-600 text-sm md:text-base mb-3">You don't have any active video chat room.</p>
-                <button className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors font-semibold text-sm">
-                  Create a video chat room.
-                </button>
-              </div>
-              
-              <div>
-                <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-3">My Invites</h4>
-                <p className="text-gray-600 text-sm md:text-base">You don't have any active video chat room invites.</p>
-              </div>
-              
-              <div>
-                <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-3">Articles for You</h4>
-                <p className="text-gray-600 text-sm md:text-base">No articles available at this time.</p>
               </div>
             </div>
           )}

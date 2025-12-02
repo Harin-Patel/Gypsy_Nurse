@@ -7,6 +7,7 @@ export interface FilterPreset {
     city: string
     zipCode: string
     states: string[]
+    agency: string
     facility: string
     certification: string
     specialty: string

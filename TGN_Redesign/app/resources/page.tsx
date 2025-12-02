@@ -130,6 +130,8 @@ export default function ResourcesPage() {
     // Handle resource item click - navigate to specific resource page
     if (resourceId === 'blog') {
       window.location.href = '/articles'
+    } else if (resourceId === 'compact-license') {
+      window.location.href = '/resources/compact-license'
     } else {
       // Handle other resources as needed
       console.log('Clicked resource:', resourceId)

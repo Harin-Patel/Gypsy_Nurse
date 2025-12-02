@@ -10,6 +10,7 @@ import {
   DollarSign, 
   Calendar,
   Briefcase,
+  Building2,
   Bookmark,
   ChevronRight,
   ChevronDown,
@@ -93,7 +94,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$58',
     postedDate: 'Nov 7, 2025',
     facilityAvailable: false,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'TNAA - Travel Nurse Across America',
     tags: ['Day Shift', 'Emergency Room', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Sanford Medical Center',
@@ -113,7 +114,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$68',
     postedDate: 'Nov 6, 2025',
     facilityAvailable: false,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'AMN Healthcare',
     tags: ['Day Shift', 'Emergency Room', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Marin General Hospital',
@@ -133,7 +134,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$48',
     postedDate: 'Oct 11, 2025',
     facilityAvailable: true,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'Aya Healthcare',
     tags: ['Strike', 'Clinical Lab Scientist', '8 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Gila Regional Medical Center',
@@ -153,7 +154,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$65',
     postedDate: 'Nov 10, 2025',
     facilityAvailable: true,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'Cross Country Nurses',
     tags: ['Night Shift', 'ICU', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Banner University Medical Center',
@@ -173,7 +174,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$72',
     postedDate: 'Nov 12, 2025',
     facilityAvailable: true,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'Medical Solutions',
     tags: ['Day Shift', 'Cardiac Cath Lab', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Massachusetts General Hospital',
@@ -193,7 +194,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$70',
     postedDate: 'Nov 11, 2025',
     facilityAvailable: true,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'Trusted Health',
     tags: ['Night Shift', 'NICU', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Seattle Children\'s Hospital',
@@ -213,7 +214,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$62',
     postedDate: 'Nov 13, 2025',
     facilityAvailable: true,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'Fastaff Travel Nursing',
     tags: ['Day Shift', 'Medical-Surgical', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Houston Methodist Hospital',
@@ -233,7 +234,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$75',
     postedDate: 'Nov 14, 2025',
     facilityAvailable: false,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'Host Healthcare',
     tags: ['Day Shift', 'Operating Room', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Jackson Memorial Hospital',
@@ -253,7 +254,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$80',
     postedDate: 'Nov 15, 2025',
     facilityAvailable: true,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'Supplemental Health Care',
     tags: ['Night Shift', 'Labor and Delivery', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Mount Sinai Hospital',
@@ -273,7 +274,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$66',
     postedDate: 'Nov 9, 2025',
     facilityAvailable: true,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'TotalMed Staffing',
     tags: ['Day Shift', 'Oncology', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'University of Colorado Hospital',
@@ -293,7 +294,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$64',
     postedDate: 'Nov 8, 2025',
     facilityAvailable: true,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'FlexCare Medical Staffing',
     tags: ['Night Shift', 'Pediatric ICU', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Atrium Health Levine Children\'s Hospital',
@@ -313,7 +314,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$60',
     postedDate: 'Nov 5, 2025',
     facilityAvailable: false,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'RNnetwork',
     tags: ['Day Shift', 'Telemetry', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Emory University Hospital',
@@ -333,7 +334,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$68',
     postedDate: 'Nov 4, 2025',
     facilityAvailable: true,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'American Mobile Healthcare',
     tags: ['Evening Shift', 'Emergency Department', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Northwestern Memorial Hospital',
@@ -353,7 +354,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$70',
     postedDate: 'Nov 3, 2025',
     facilityAvailable: true,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'GHR Travel Nursing',
     tags: ['Day Shift', 'PACU', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Penn Presbyterian Medical Center',
@@ -373,7 +374,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$65',
     postedDate: 'Nov 2, 2025',
     facilityAvailable: true,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'Advantis Medical',
     tags: ['Night Shift', 'PCU', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Oregon Health & Science University Hospital',
@@ -393,7 +394,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$67',
     postedDate: 'Nov 1, 2025',
     facilityAvailable: false,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'Health Advocates Network',
     tags: ['Day Shift', 'Cardiac Step-Down', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'University Medical Center of Southern Nevada',
@@ -413,7 +414,7 @@ export const SAMPLE_JOBS: Job[] = [
     salary: '$58',
     postedDate: 'Oct 30, 2025',
     facilityAvailable: true,
-    staffingCompany: 'AB Staffing Solutions',
+    staffingCompany: 'Nurse First',
     tags: ['Day Shift', 'Orthopedic', 'Registered Nurse', '13 Weeks'],
     facilityImage: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=800&h=600&fit=crop',
     facilityName: 'Vanderbilt University Medical Center',
@@ -479,6 +480,10 @@ function JobsPageContent() {
   const [pendingJobs, setPendingJobs] = useState<string[]>([])
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [showQuickAccessDropdown, setShowQuickAccessDropdown] = useState(false)
+  const [showAgencyDropdown, setShowAgencyDropdown] = useState(false)
+  const [showStatesDropdown, setShowStatesDropdown] = useState(false)
+  const [showShiftDropdown, setShowShiftDropdown] = useState(false)
+  const [showDurationDropdown, setShowDurationDropdown] = useState(false)
 
   // Load job status from localStorage on mount
   useEffect(() => {
@@ -526,6 +531,7 @@ function JobsPageContent() {
   const [filterCity, setFilterCity] = useState('')
   const [filterZipCode, setFilterZipCode] = useState('')
   const [filterStates, setFilterStates] = useState<string[]>([])
+  const [filterAgency, setFilterAgency] = useState('')
   const [filterFacility, setFilterFacility] = useState('')
   const [filterCertification, setFilterCertification] = useState('')
   const [filterSpecialty, setFilterSpecialty] = useState('')
@@ -534,6 +540,19 @@ function JobsPageContent() {
   const [filterShift, setFilterShift] = useState('all')
   const [filterDuration, setFilterDuration] = useState('all')
   const [filterFeaturedOnly, setFilterFeaturedOnly] = useState(false)
+  
+  // Get unique agencies from jobs
+  const uniqueAgencies = Array.from(new Set(SAMPLE_JOBS.map(job => job.staffingCompany))).sort()
+  
+  // US States list
+  const usStates = [
+    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware',
+    'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky',
+    'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri',
+    'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina',
+    'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+    'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
+  ]
   
   // Applied filters for display
   const [appliedFilters, setAppliedFilters] = useState<Array<{id: string, type: string, label: string, value: string}>>([])
@@ -572,6 +591,7 @@ function JobsPageContent() {
           setFilterCity(filter.filters.city || '')
           setFilterZipCode(filter.filters.zipCode || '')
           setFilterStates(filter.filters.states || [])
+          setFilterAgency(filter.filters.agency || '')
           setFilterFacility(filter.filters.facility || '')
           setFilterCertification(filter.filters.certification || '')
           setFilterSpecialty(filter.filters.specialty || '')
@@ -738,6 +758,19 @@ function JobsPageContent() {
       })
     }
 
+    // Agency filter
+    if (filterAgency.trim()) {
+      filtered = filtered.filter(job => 
+        job.staffingCompany.toLowerCase() === filterAgency.toLowerCase()
+      )
+      newAppliedFilters.push({
+        id: 'agency',
+        type: 'agency',
+        label: 'Agency',
+        value: filterAgency
+      })
+    }
+
     // Facility filter
     if (filterFacility.trim()) {
       filtered = filtered.filter(job => 
@@ -873,7 +906,7 @@ function JobsPageContent() {
 
     setFilteredJobs(sorted)
     setAppliedFilters(newAppliedFilters)
-  }, [searchQuery, sortBy, filterCity, filterZipCode, filterStates, filterFacility, filterCertification, filterSpecialty, filterMinSalary, filterMaxSalary, filterShift, filterDuration, filterFeaturedOnly])
+  }, [searchQuery, sortBy, filterCity, filterZipCode, filterStates, filterAgency, filterFacility, filterCertification, filterSpecialty, filterMinSalary, filterMaxSalary, filterShift, filterDuration, filterFeaturedOnly])
 
   // Apply filters only when search query or sort changes (not when filter values change in advanced panel)
   // Advanced filters are only applied after saving
@@ -910,7 +943,7 @@ function JobsPageContent() {
     applyFilters()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterCity, filterZipCode, filterStates, filterFacility, filterCertification, filterSpecialty, filterMinSalary, filterMaxSalary, filterShift, filterDuration, filterFeaturedOnly, showFilters])
+  }, [filterCity, filterZipCode, filterStates, filterAgency, filterFacility, filterCertification, filterSpecialty, filterMinSalary, filterMaxSalary, filterShift, filterDuration, filterFeaturedOnly, showFilters])
 
   const handleApplyFilters = () => {
     // If we're in edit mode, handle differently
@@ -924,7 +957,7 @@ function JobsPageContent() {
     
     // Check if there are any active filters
     const hasActiveFilters = filterCity || filterZipCode || filterStates.length > 0 || 
-                            filterFacility || filterCertification || filterSpecialty || 
+                            filterAgency || filterFacility || filterCertification || filterSpecialty || 
                             filterMinSalary || filterMaxSalary || filterShift !== 'all' || 
                             filterDuration !== 'all' || filterFeaturedOnly
     
@@ -955,6 +988,7 @@ function JobsPageContent() {
         city: filterCity,
         zipCode: filterZipCode,
         states: filterStates,
+        agency: filterAgency,
         facility: filterFacility,
         certification: filterCertification,
         specialty: filterSpecialty,
@@ -1013,6 +1047,9 @@ function JobsPageContent() {
         break
       case 'state':
         setFilterStates(prev => prev.filter(s => s !== filter.value))
+        break
+      case 'agency':
+        setFilterAgency('')
         break
       case 'facility':
         setFilterFacility('')
@@ -1082,6 +1119,7 @@ function JobsPageContent() {
         city: filterCity,
         zipCode: filterZipCode,
         states: filterStates,
+        agency: filterAgency,
         facility: filterFacility,
         certification: filterCertification,
         specialty: filterSpecialty,
@@ -1136,6 +1174,7 @@ function JobsPageContent() {
       const cityFilter = appliedFilters.find(f => f.type === 'city')
       const zipFilter = appliedFilters.find(f => f.type === 'zipcode')
       const stateFilters = appliedFilters.filter(f => f.type === 'state')
+      const agencyFilter = appliedFilters.find(f => f.type === 'agency')
       const facilityFilter = appliedFilters.find(f => f.type === 'facility')
       const certFilter = appliedFilters.find(f => f.type === 'certification')
       const specialtyFilter = appliedFilters.find(f => f.type === 'specialty')
@@ -1148,6 +1187,7 @@ function JobsPageContent() {
       setFilterCity(cityFilter?.value || '')
       setFilterZipCode(zipFilter?.value || '')
       setFilterStates(stateFilters.map(f => f.value))
+      setFilterAgency(agencyFilter?.value || '')
       setFilterFacility(facilityFilter?.value || '')
       setFilterCertification(certFilter?.value || '')
       setFilterSpecialty(specialtyFilter?.value || '')
@@ -1176,6 +1216,7 @@ function JobsPageContent() {
     const cityMatch = (!preset.filters.city && !filterCity) || preset.filters.city === filterCity
     const zipMatch = (!preset.filters.zipCode && !filterZipCode) || preset.filters.zipCode === filterZipCode
     const statesMatch = JSON.stringify([...preset.filters.states].sort()) === JSON.stringify([...filterStates].sort())
+    const agencyMatch = (!preset.filters.agency && !filterAgency) || preset.filters.agency === filterAgency
     const facilityMatch = (!preset.filters.facility && !filterFacility) || preset.filters.facility === filterFacility
     const certMatch = (!preset.filters.certification && !filterCertification) || preset.filters.certification === filterCertification
     const specialtyMatch = (!preset.filters.specialty && !filterSpecialty) || preset.filters.specialty === filterSpecialty
@@ -1185,7 +1226,7 @@ function JobsPageContent() {
     const durationMatch = preset.filters.duration === filterDuration
     const featuredMatch = preset.filters.featuredOnly === filterFeaturedOnly
     
-    return cityMatch && zipMatch && statesMatch && facilityMatch && certMatch && 
+    return cityMatch && zipMatch && statesMatch && agencyMatch && facilityMatch && certMatch && 
            specialtyMatch && minSalaryMatch && maxSalaryMatch && shiftMatch && 
            durationMatch && featuredMatch
   }
@@ -1195,6 +1236,7 @@ function JobsPageContent() {
     setFilterCity(preset.filters.city)
     setFilterZipCode(preset.filters.zipCode)
     setFilterStates(preset.filters.states)
+    setFilterAgency(preset.filters.agency || '')
     setFilterFacility(preset.filters.facility)
     setFilterCertification(preset.filters.certification)
     setFilterSpecialty(preset.filters.specialty)
@@ -1226,6 +1268,7 @@ function JobsPageContent() {
     setFilterCity(preset.filters.city)
     setFilterZipCode(preset.filters.zipCode)
     setFilterStates(preset.filters.states)
+    setFilterAgency(preset.filters.agency || '')
     setFilterFacility(preset.filters.facility)
     setFilterCertification(preset.filters.certification)
     setFilterSpecialty(preset.filters.specialty)
@@ -1245,6 +1288,7 @@ function JobsPageContent() {
       setFilterCity(filterToEdit.filters.city)
       setFilterZipCode(filterToEdit.filters.zipCode)
       setFilterStates(filterToEdit.filters.states)
+      setFilterAgency(filterToEdit.filters.agency || '')
       setFilterFacility(filterToEdit.filters.facility)
       setFilterCertification(filterToEdit.filters.certification)
       setFilterSpecialty(filterToEdit.filters.specialty)
@@ -1289,6 +1333,7 @@ function JobsPageContent() {
       setFilterCity('')
       setFilterZipCode('')
       setFilterStates([])
+      setFilterAgency('')
       setFilterFacility('')
       setFilterCertification('')
       setFilterSpecialty('')
@@ -1326,6 +1371,7 @@ function JobsPageContent() {
     setFilterCity('')
     setFilterZipCode('')
     setFilterStates([])
+    setFilterAgency('')
     setFilterFacility('')
     setFilterCertification('')
     setFilterSpecialty('')
@@ -1473,29 +1519,100 @@ function JobsPageContent() {
                         
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">States</label>
-                          <motion.div
-                            whileHover={{ scale: 1.01 }}
-                            transition={{ type: "spring", stiffness: 400 }}
-                            className="relative"
-                          >
-                            <select
-                              value=""
-                              onChange={(e) => {
-                                if (e.target.value && !filterStates.includes(e.target.value)) {
-                                  setFilterStates([...filterStates, e.target.value])
-                                }
-                              }}
-                              className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer appearance-none text-gray-400"
+                          <div className="relative">
+                            {/* Custom Dropdown Button */}
+                            <motion.button
+                              type="button"
+                              onClick={() => setShowStatesDropdown(!showStatesDropdown)}
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                              className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-primary-300 min-h-[42px] relative flex items-center"
                             >
-                              <option value="" disabled className="text-gray-400">Search and select states...</option>
-                              <option value="California">California</option>
-                              <option value="Texas">Texas</option>
-                              <option value="Florida">Florida</option>
-                              <option value="New York">New York</option>
-                              <option value="Illinois">Illinois</option>
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                          </motion.div>
+                              <span className={`flex-1 text-left truncate leading-normal ${filterStates.length > 0 ? "text-gray-900" : "text-gray-400"}`}>
+                                {filterStates.length > 0 
+                                  ? `${filterStates.length} ${filterStates.length === 1 ? 'State' : 'States'} selected`
+                                  : "Search and select states..."}
+                              </span>
+                              <motion.div
+                                animate={{ rotate: showStatesDropdown ? 180 : 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute right-3 pointer-events-none flex items-center"
+                                style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                              >
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                              </motion.div>
+                            </motion.button>
+
+                            {/* Custom Dropdown Menu */}
+                            <AnimatePresence>
+                              {showStatesDropdown && (
+                                <>
+                                  {/* Backdrop to close on outside click */}
+                                  <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setShowStatesDropdown(false)}
+                                  />
+                                  
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50 max-h-64 overflow-y-auto"
+                                  >
+                                    <div className="p-2">
+                                      {/* State Options */}
+                                      {usStates.map((state, idx) => {
+                                        const isSelected = filterStates.includes(state)
+                                        return (
+                                          <motion.button
+                                            key={state}
+                                            type="button"
+                                            onClick={() => {
+                                              if (isSelected) {
+                                                setFilterStates(filterStates.filter(s => s !== state))
+                                              } else {
+                                                setFilterStates([...filterStates, state])
+                                              }
+                                            }}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.01 }}
+                                            whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                              isSelected
+                                                ? 'bg-primary-50 text-primary-700 font-semibold'
+                                                : 'text-gray-700 hover:bg-gray-50'
+                                            }`}
+                                          >
+                                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                              isSelected
+                                                ? 'border-primary-600 bg-primary-600'
+                                                : 'border-gray-300'
+                                            }`}>
+                                              {isSelected && (
+                                                <motion.svg
+                                                  initial={{ scale: 0 }}
+                                                  animate={{ scale: 1 }}
+                                                  className="w-3 h-3 text-white"
+                                                  fill="none"
+                                                  viewBox="0 0 24 24"
+                                                  stroke="currentColor"
+                                                >
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                </motion.svg>
+                                              )}
+                                            </div>
+                                            <span className="truncate">{state}</span>
+                                          </motion.button>
+                                        )
+                                      })}
+                                    </div>
+                                  </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
+                          </div>
                           {filterStates.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-2">
                               {filterStates.map((state) => (
@@ -1516,6 +1633,147 @@ function JobsPageContent() {
                               ))}
                             </div>
                           )}
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Agency Section */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.15 }}
+                      className="pt-6 border-t border-gray-200"
+                    >
+                      <div className="flex items-center gap-2 mb-4">
+                        <Award className="w-5 h-5 text-primary-600" />
+                        <h3 className="text-lg font-bold text-gray-900">Agency</h3>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Staffing Agency</label>
+                        <div className="relative">
+                          {/* Custom Dropdown Button */}
+                          <motion.button
+                            type="button"
+                            onClick={() => setShowAgencyDropdown(!showAgencyDropdown)}
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
+                            className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-primary-300 min-h-[42px] relative flex items-center"
+                          >
+                            <span className={`flex-1 text-left truncate leading-normal ${filterAgency ? "text-gray-900" : "text-gray-500"}`}>
+                              {filterAgency || "All Agencies"}
+                            </span>
+                            <motion.div
+                              animate={{ rotate: showAgencyDropdown ? 180 : 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="absolute right-3 pointer-events-none flex items-center"
+                              style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                            >
+                              <ChevronDown className="w-5 h-5 text-gray-400" />
+                            </motion.div>
+                          </motion.button>
+
+                          {/* Custom Dropdown Menu */}
+                          <AnimatePresence>
+                            {showAgencyDropdown && (
+                              <>
+                                {/* Backdrop to close on outside click */}
+                                <div 
+                                  className="fixed inset-0 z-40" 
+                                  onClick={() => setShowAgencyDropdown(false)}
+                                />
+                                
+                                <motion.div
+                                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  transition={{ duration: 0.2, ease: "easeOut" }}
+                                  className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50 max-h-64 overflow-y-auto"
+                                >
+                                  <div className="p-2">
+                                    {/* All Agencies Option */}
+                                    <motion.button
+                                      type="button"
+                                      onClick={() => {
+                                        setFilterAgency('')
+                                        setShowAgencyDropdown(false)
+                                      }}
+                                      whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                        !filterAgency
+                                          ? 'bg-primary-50 text-primary-700 font-semibold'
+                                          : 'text-gray-700 hover:bg-gray-50'
+                                      }`}
+                                    >
+                                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                        !filterAgency
+                                          ? 'border-primary-600 bg-primary-600'
+                                          : 'border-gray-300'
+                                      }`}>
+                                        {!filterAgency && (
+                                          <motion.svg
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="w-3 h-3 text-white"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                          >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                          </motion.svg>
+                                        )}
+                                      </div>
+                                      <span>All Agencies</span>
+                                    </motion.button>
+
+                                    {/* Divider */}
+                                    <div className="h-px bg-gray-200 my-2" />
+
+                                    {/* Agency Options */}
+                                    {uniqueAgencies.map((agency, idx) => (
+                                      <motion.button
+                                        key={agency}
+                                        type="button"
+                                        onClick={() => {
+                                          setFilterAgency(agency)
+                                          setShowAgencyDropdown(false)
+                                        }}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: idx * 0.02 }}
+                                        whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                          filterAgency === agency
+                                            ? 'bg-primary-50 text-primary-700 font-semibold'
+                                            : 'text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                      >
+                                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                          filterAgency === agency
+                                            ? 'border-primary-600 bg-primary-600'
+                                            : 'border-gray-300'
+                                        }`}>
+                                          {filterAgency === agency && (
+                                            <motion.svg
+                                              initial={{ scale: 0 }}
+                                              animate={{ scale: 1 }}
+                                              className="w-3 h-3 text-white"
+                                              fill="none"
+                                              viewBox="0 0 24 24"
+                                              stroke="currentColor"
+                                            >
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                            </motion.svg>
+                                          )}
+                                        </div>
+                                        <span className="truncate">{agency}</span>
+                                      </motion.button>
+                                    ))}
+                                  </div>
+                                </motion.div>
+                              </>
+                            )}
+                          </AnimatePresence>
                         </div>
                       </div>
                     </motion.div>
@@ -1641,47 +1899,195 @@ function JobsPageContent() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Shift</label>
-                          <motion.div
-                            whileHover={{ scale: 1.01 }}
-                            transition={{ type: "spring", stiffness: 400 }}
-                            className="relative"
-                          >
-                            <select
-                              value={filterShift}
-                              onChange={(e) => setFilterShift(e.target.value)}
-                              className={`w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer appearance-none ${
-                                filterShift === 'all' ? 'text-gray-400' : 'text-gray-900'
-                              }`}
+                          <div className="relative">
+                            {/* Custom Dropdown Button */}
+                            <motion.button
+                              type="button"
+                              onClick={() => setShowShiftDropdown(!showShiftDropdown)}
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                              className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-primary-300 min-h-[42px] relative flex items-center"
                             >
-                              <option value="all" className="text-gray-400">All Shifts</option>
-                              <option value="day">Day Shift</option>
-                              <option value="night">Night Shift</option>
-                              <option value="evening">Evening Shift</option>
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                          </motion.div>
+                              <span className={`flex-1 text-left truncate leading-normal ${filterShift === 'all' ? "text-gray-400" : "text-gray-900"}`}>
+                                {filterShift === 'all' ? 'All Shifts' : 
+                                 filterShift === 'day' ? 'Day Shift' :
+                                 filterShift === 'night' ? 'Night Shift' :
+                                 filterShift === 'evening' ? 'Evening Shift' : 'All Shifts'}
+                              </span>
+                              <motion.div
+                                animate={{ rotate: showShiftDropdown ? 180 : 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute right-3 pointer-events-none flex items-center"
+                                style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                              >
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                              </motion.div>
+                            </motion.button>
+
+                            {/* Custom Dropdown Menu */}
+                            <AnimatePresence>
+                              {showShiftDropdown && (
+                                <>
+                                  {/* Backdrop to close on outside click */}
+                                  <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setShowShiftDropdown(false)}
+                                  />
+                                  
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50"
+                                  >
+                                    <div className="p-2">
+                                      {[
+                                        { value: 'all', label: 'All Shifts' },
+                                        { value: 'day', label: 'Day Shift' },
+                                        { value: 'night', label: 'Night Shift' },
+                                        { value: 'evening', label: 'Evening Shift' }
+                                      ].map((option, idx) => (
+                                        <motion.button
+                                          key={option.value}
+                                          type="button"
+                                          onClick={() => {
+                                            setFilterShift(option.value)
+                                            setShowShiftDropdown(false)
+                                          }}
+                                          initial={{ opacity: 0, x: -10 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          transition={{ delay: idx * 0.02 }}
+                                          whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                            filterShift === option.value
+                                              ? 'bg-primary-50 text-primary-700 font-semibold'
+                                              : 'text-gray-700 hover:bg-gray-50'
+                                          }`}
+                                        >
+                                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                            filterShift === option.value
+                                              ? 'border-primary-600 bg-primary-600'
+                                              : 'border-gray-300'
+                                          }`}>
+                                            {filterShift === option.value && (
+                                              <motion.svg
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                className="w-3 h-3 text-white"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                              >
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                              </motion.svg>
+                                            )}
+                                          </div>
+                                          <span>{option.label}</span>
+                                        </motion.button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Duration</label>
-                          <motion.div
-                            whileHover={{ scale: 1.01 }}
-                            transition={{ type: "spring", stiffness: 400 }}
-                            className="relative"
-                          >
-                            <select
-                              value={filterDuration}
-                              onChange={(e) => setFilterDuration(e.target.value)}
-                              className={`w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer appearance-none ${
-                                filterDuration === 'all' ? 'text-gray-400' : 'text-gray-900'
-                              }`}
+                          <div className="relative">
+                            {/* Custom Dropdown Button */}
+                            <motion.button
+                              type="button"
+                              onClick={() => setShowDurationDropdown(!showDurationDropdown)}
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                              className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-primary-300 min-h-[42px] relative flex items-center"
                             >
-                              <option value="all" className="text-gray-400">All Durations</option>
-                              <option value="8">8 Hours</option>
-                              <option value="10">10 Hours</option>
-                              <option value="12">12 Hours</option>
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                          </motion.div>
+                              <span className={`flex-1 text-left truncate leading-normal ${filterDuration === 'all' ? "text-gray-400" : "text-gray-900"}`}>
+                                {filterDuration === 'all' ? 'All Durations' : 
+                                 filterDuration === '8' ? '8 Hours' :
+                                 filterDuration === '10' ? '10 Hours' :
+                                 filterDuration === '12' ? '12 Hours' : 'All Durations'}
+                              </span>
+                              <motion.div
+                                animate={{ rotate: showDurationDropdown ? 180 : 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute right-3 pointer-events-none flex items-center"
+                                style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                              >
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                              </motion.div>
+                            </motion.button>
+
+                            {/* Custom Dropdown Menu */}
+                            <AnimatePresence>
+                              {showDurationDropdown && (
+                                <>
+                                  {/* Backdrop to close on outside click */}
+                                  <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setShowDurationDropdown(false)}
+                                  />
+                                  
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50"
+                                  >
+                                    <div className="p-2">
+                                      {[
+                                        { value: 'all', label: 'All Durations' },
+                                        { value: '8', label: '8 Hours' },
+                                        { value: '10', label: '10 Hours' },
+                                        { value: '12', label: '12 Hours' }
+                                      ].map((option, idx) => (
+                                        <motion.button
+                                          key={option.value}
+                                          type="button"
+                                          onClick={() => {
+                                            setFilterDuration(option.value)
+                                            setShowDurationDropdown(false)
+                                          }}
+                                          initial={{ opacity: 0, x: -10 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          transition={{ delay: idx * 0.02 }}
+                                          whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                            filterDuration === option.value
+                                              ? 'bg-primary-50 text-primary-700 font-semibold'
+                                              : 'text-gray-700 hover:bg-gray-50'
+                                          }`}
+                                        >
+                                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                            filterDuration === option.value
+                                              ? 'border-primary-600 bg-primary-600'
+                                              : 'border-gray-300'
+                                          }`}>
+                                            {filterDuration === option.value && (
+                                              <motion.svg
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                className="w-3 h-3 text-white"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                              >
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                              </motion.svg>
+                                            )}
+                                          </div>
+                                          <span>{option.label}</span>
+                                        </motion.button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </div>
                       </div>
                     </motion.div>
@@ -2433,6 +2839,12 @@ function JobsPageContent() {
                                         <span className="text-gray-900">{preset.filters.states.join(', ')}</span>
                                       </div>
                                     )}
+                                    {preset.filters.agency && (
+                                      <div className="flex items-center gap-2 text-sm">
+                                        <span className="text-gray-500 font-medium min-w-[60px]">Agency:</span>
+                                        <span className="text-gray-900">{preset.filters.agency}</span>
+                                      </div>
+                                    )}
                                     {preset.filters.facility && (
                                       <div className="flex items-center gap-2 text-sm">
                                         <span className="text-gray-500 font-medium min-w-[60px]">Facility:</span>
@@ -2749,12 +3161,12 @@ function JobsPageContent() {
                     </div>
                   </div>
 
-                  {/* Facility Name */}
+                  {/* Agency/Staffing Company */}
                   <div className="flex items-center gap-2">
-                    <Briefcase className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                    <Building2 className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
                     <div>
-                      <p className="text-xs text-gray-500">Facility</p>
-                      <p className="text-xs font-semibold text-gray-900">{job.facilityName}</p>
+                      <p className="text-xs text-gray-500">Agency</p>
+                      <p className="text-xs font-semibold text-gray-900">{job.staffingCompany}</p>
                     </div>
                   </div>
                 </div>

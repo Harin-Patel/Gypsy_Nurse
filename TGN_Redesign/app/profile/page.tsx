@@ -10,7 +10,7 @@ import {
   Mail, MapPin, Calendar, Shield, Award, Briefcase, 
   GraduationCap, Users, Edit, Download, Upload,
   Plus, Trash2, Clock, ArrowUpRight, FileX, Inbox, X,
-  Camera, Image as ImageIcon
+  Camera, Image as ImageIcon, ChevronDown
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useDisableBodyScroll } from '@/utils/useDisableBodyScroll'
@@ -49,6 +49,10 @@ export default function ProfilePage() {
   const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  
+  // State Dropdown
+  const [selectedState, setSelectedState] = useState('MD - Maryland')
+  const [showStateDropdown, setShowStateDropdown] = useState(false)
   
   // Disable body scroll when any modal is open
   useDisableBodyScroll(showEditModal)
@@ -1958,22 +1962,95 @@ export default function ProfilePage() {
                         State
                         <span className="text-red-500">*</span>
                       </label>
-                      <div className="relative group">
-                        <select
-                          defaultValue="MD - Maryland"
-                          className="w-full pl-4 pr-12 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 appearance-none cursor-pointer hover:border-gray-300 font-medium text-gray-700"
+                      <div className="relative">
+                        {/* Custom Dropdown Button */}
+                        <motion.button
+                          type="button"
+                          onClick={() => setShowStateDropdown(!showStateDropdown)}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          className="w-full pl-4 pr-12 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 cursor-pointer text-left hover:border-gray-300 font-medium text-gray-700 relative flex items-center"
                         >
-                          <option>MD - Maryland</option>
-                          <option>CA - California</option>
-                          <option>NY - New York</option>
-                          <option>TX - Texas</option>
-                        </select>
-                        {/* Custom dropdown arrow */}
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
+                          <span className="flex-1 text-left truncate leading-normal">
+                            {selectedState}
+                          </span>
+                          <motion.div
+                            animate={{ rotate: showStateDropdown ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute right-4 pointer-events-none flex items-center"
+                            style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                          >
+                            <ChevronDown className="w-5 h-5 text-gray-400" />
+                          </motion.div>
+                        </motion.button>
+
+                        {/* Custom Dropdown Menu */}
+                        <AnimatePresence>
+                          {showStateDropdown && (
+                            <>
+                              {/* Backdrop to close on outside click */}
+                              <div 
+                                className="fixed inset-0 z-40" 
+                                onClick={() => setShowStateDropdown(false)}
+                              />
+                              
+                              <motion.div
+                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                transition={{ duration: 0.2, ease: "easeOut" }}
+                                className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50"
+                              >
+                                <div className="p-2">
+                                  {[
+                                    'MD - Maryland',
+                                    'CA - California',
+                                    'NY - New York',
+                                    'TX - Texas'
+                                  ].map((state, idx) => (
+                                    <motion.button
+                                      key={state}
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedState(state)
+                                        setShowStateDropdown(false)
+                                      }}
+                                      initial={{ opacity: 0, x: -10 }}
+                                      animate={{ opacity: 1, x: 0 }}
+                                      transition={{ delay: idx * 0.02 }}
+                                      whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                        selectedState === state
+                                          ? 'bg-primary-50 text-primary-700 font-semibold'
+                                          : 'text-gray-700 hover:bg-gray-50'
+                                      }`}
+                                    >
+                                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                        selectedState === state
+                                          ? 'border-primary-600 bg-primary-600'
+                                          : 'border-gray-300'
+                                      }`}>
+                                        {selectedState === state && (
+                                          <motion.svg
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="w-3 h-3 text-white"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                          >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                          </motion.svg>
+                                        )}
+                                      </div>
+                                      <span>{state}</span>
+                                    </motion.button>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            </>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </motion.div>
                   </div>

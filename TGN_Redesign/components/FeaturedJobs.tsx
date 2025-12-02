@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { MapPin, DollarSign, ArrowRight, Bookmark, ThumbsUp, ThumbsDown, Star, AlertCircle, Calendar, Briefcase, Sun } from 'lucide-react'
+import { MapPin, DollarSign, ArrowRight, Bookmark, ThumbsUp, ThumbsDown, Star, AlertCircle, Calendar, Briefcase, Sun, Building2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import Link from 'next/link'
@@ -399,12 +399,12 @@ export default function FeaturedJobs() {
                       </div>
                     </div>
 
-                    {/* Facility Name */}
+                    {/* Agency/Staffing Company */}
                     <div className="flex items-center gap-2">
-                      <Briefcase className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                      <Building2 className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
                       <div>
-                        <p className="text-xs text-gray-500">Facility</p>
-                        <p className="text-xs font-semibold text-gray-900">{job.facilityName}</p>
+                        <p className="text-xs text-gray-500">Agency</p>
+                        <p className="text-xs font-semibold text-gray-900">{job.staffingCompany}</p>
                       </div>
                     </div>
                   </div>

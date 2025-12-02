@@ -355,14 +355,16 @@ export default function BookmarksPage() {
                             </div>
                           )}
 
-                          {/* Facility Name */}
-                          <div className="flex items-center gap-2">
-                            <Briefcase className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
-                            <div>
-                              <p className="text-xs text-gray-500">Facility</p>
-                              <p className="text-xs font-semibold text-gray-900">{job.facilityName || job.facility}</p>
+                          {/* Agency/Staffing Company */}
+                          {job.staffingCompany && (
+                            <div className="flex items-center gap-2">
+                              <Building2 className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs text-gray-500">Agency</p>
+                                <p className="text-xs font-semibold text-gray-900">{job.staffingCompany}</p>
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </div>
 
                         {/* Pay - Simple Display */}

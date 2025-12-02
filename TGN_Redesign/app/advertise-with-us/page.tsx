@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Megaphone,
   TrendingUp,
@@ -36,7 +36,8 @@ import {
   Quote,
   ThumbsUp,
   Eye,
-  MousePointerClick
+  MousePointerClick,
+  ChevronDown
 } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
@@ -45,6 +46,7 @@ export default function AdvertiseWithUsPage() {
   const router = useRouter()
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
+  const [showFacilityTypeDropdown, setShowFacilityTypeDropdown] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -1267,20 +1269,105 @@ export default function AdvertiseWithUsPage() {
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Facility Type <span className="text-red-500">*</span></label>
-                    <select
-                      required
-                      value={formData.facilityType}
-                      onChange={(e) => setFormData({ ...formData, facilityType: e.target.value })}
-                      className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none focus:bg-white transition-all"
-                    >
-                      <option value="">Select facility type</option>
-                      <option value="hospital">Hospital</option>
-                      <option value="clinic">Clinic</option>
-                      <option value="staffing-agency">Staffing Agency</option>
-                      <option value="long-term-care">Long-Term Care Facility</option>
-                      <option value="home-health">Home Health</option>
-                      <option value="other">Other</option>
-                    </select>
+                    <div className="relative">
+                      {/* Custom Dropdown Button */}
+                      <motion.button
+                        type="button"
+                        onClick={() => setShowFacilityTypeDropdown(!showFacilityTypeDropdown)}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none focus:bg-white transition-all cursor-pointer text-left relative flex items-center"
+                      >
+                        <span className={`flex-1 text-left truncate leading-normal ${formData.facilityType ? "text-gray-900" : "text-gray-400"}`}>
+                          {formData.facilityType 
+                            ? formData.facilityType.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+                            : "Select facility type"}
+                        </span>
+                        <motion.div
+                          animate={{ rotate: showFacilityTypeDropdown ? 180 : 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute right-4 pointer-events-none flex items-center"
+                          style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                        >
+                          <ChevronDown className="w-5 h-5 text-gray-400" />
+                        </motion.div>
+                      </motion.button>
+
+                      {/* Custom Dropdown Menu */}
+                      <AnimatePresence>
+                        {showFacilityTypeDropdown && (
+                          <>
+                            {/* Backdrop to close on outside click */}
+                            <div 
+                              className="fixed inset-0 z-40" 
+                              onClick={() => setShowFacilityTypeDropdown(false)}
+                            />
+                            
+                            <motion.div
+                              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                              transition={{ duration: 0.2, ease: "easeOut" }}
+                              className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50"
+                            >
+                              <div className="p-2">
+                                {[
+                                  { value: '', label: 'Select facility type' },
+                                  { value: 'hospital', label: 'Hospital' },
+                                  { value: 'clinic', label: 'Clinic' },
+                                  { value: 'staffing-agency', label: 'Staffing Agency' },
+                                  { value: 'long-term-care', label: 'Long-Term Care Facility' },
+                                  { value: 'home-health', label: 'Home Health' },
+                                  { value: 'other', label: 'Other' }
+                                ].map((option, idx) => (
+                                  <motion.button
+                                    key={option.value || 'empty'}
+                                    type="button"
+                                    onClick={() => {
+                                      setFormData({ ...formData, facilityType: option.value })
+                                      setShowFacilityTypeDropdown(false)
+                                    }}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: idx * 0.02 }}
+                                    whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                      formData.facilityType === option.value
+                                        ? 'bg-primary-50 text-primary-700 font-semibold'
+                                        : option.value === '' 
+                                        ? 'text-gray-400'
+                                        : 'text-gray-700 hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    {option.value !== '' && (
+                                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                        formData.facilityType === option.value
+                                          ? 'border-primary-600 bg-primary-600'
+                                          : 'border-gray-300'
+                                      }`}>
+                                        {formData.facilityType === option.value && (
+                                          <motion.svg
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="w-3 h-3 text-white"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                          >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                          </motion.svg>
+                                        )}
+                                      </div>
+                                    )}
+                                    <span>{option.label}</span>
+                                  </motion.button>
+                                ))}
+                              </div>
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
                   
                   <div>

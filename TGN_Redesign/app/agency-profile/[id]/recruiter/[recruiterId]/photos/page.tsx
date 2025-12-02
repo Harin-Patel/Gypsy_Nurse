@@ -1,93 +1,64 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
-import { Camera, X, ChevronLeft, ChevronRight, ExternalLink, ArrowLeft } from 'lucide-react'
+import { Camera, X, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import Link from 'next/link'
 
-// Mock data - in production this would come from an API
+// Import the same data structure from the recruiter page
+// In production, this would come from an API
 const agencyData: { [key: string]: any } = {
-  'american-mobile': {
-    id: 'american-mobile',
-    name: 'AMN Healthcare Nurse',
-    logo: 'https://static.thegypsynurse.com/2022/12/logo-resizing-4.png.webp',
-    albums: [
-      { 
-        id: 'guatemala',
-        name: 'Guatemala', 
-        photoCount: 8,
-        image: 'https://static.thegypsynurse.com/2023/05/Guatemala7.jpg.webp',
-        photos: [
-          'https://static.thegypsynurse.com/2023/05/Guatemala1.jpg',
-          'https://static.thegypsynurse.com/2023/05/Guatemala2.jpg',
-          'https://static.thegypsynurse.com/2023/05/Guatemala3.jpg',
-          'https://static.thegypsynurse.com/2023/05/Guatemala4.jpg',
-          'https://static.thegypsynurse.com/2023/05/Guatemala5.jpg',
-          'https://static.thegypsynurse.com/2023/05/Guatemala6.jpg',
-          'https://static.thegypsynurse.com/2023/05/Guatemala7.jpg',
-          'https://static.thegypsynurse.com/2023/05/Guatemala8.jpg'
-        ]
-      },
-      { 
-        id: 'amn-nurses',
-        name: 'AMN Nurses', 
-        photoCount: 15,
-        image: 'https://static.thegypsynurse.com/2023/05/UGC8.jpg.webp',
-        photos: [
-          'https://static.thegypsynurse.com/2023/05/UGC4.jpg',
-          'https://static.thegypsynurse.com/2023/05/UGC12.jpg',
-          'https://static.thegypsynurse.com/2023/05/UGC14.jpg',
-          'https://static.thegypsynurse.com/2023/05/UGC11.jpg',
-          'https://static.thegypsynurse.com/2023/05/UGC10.jpg',
-          'https://static.thegypsynurse.com/2023/05/UGC1.jpg',
-          'https://static.thegypsynurse.com/2023/05/UGC8.jpg',
-          'https://static.thegypsynurse.com/2023/05/UGC13.jpg',
-          'https://static.thegypsynurse.com/2023/05/UGC5.jpg',
-          'https://static.thegypsynurse.com/2023/05/UGC3.jpeg',
-          'https://static.thegypsynurse.com/2023/05/UGC6.jpg',
-          'https://static.thegypsynurse.com/2023/05/UGC15.jpg',
-          'https://static.thegypsynurse.com/2023/05/UGC9.jpeg',
-          'https://static.thegypsynurse.com/2023/05/UGC7.jpg',
-          'https://static.thegypsynurse.com/2023/05/UGC2.jpeg'
-        ]
-      },
-      { 
-        id: 'dallas-pride',
-        name: 'Dallas Pride 2022', 
-        photoCount: 13,
-        image: 'https://static.thegypsynurse.com/2023/05/amn-pride-parade-2022-35.jpg.webp',
-        photos: [
-          'https://static.thegypsynurse.com/2023/05/amn-pride-parade-2022-292.jpg',
-          'https://static.thegypsynurse.com/2023/05/amn-pride-parade-2022-37-1.jpg',
-          'https://static.thegypsynurse.com/2023/05/amn-pride-parade-2022-35.jpg',
-          'https://static.thegypsynurse.com/2023/05/amn-pride-parade-2022-39.jpg',
-          'https://static.thegypsynurse.com/2023/05/amn-pride-parade-2022-25.jpg',
-          'https://static.thegypsynurse.com/2023/05/amn-pride-parade-2022-38.jpg',
-          'https://static.thegypsynurse.com/2023/05/amn-pride-parade-2022-182.jpg',
-          'https://static.thegypsynurse.com/2023/05/amn-pride-parade-2022-13.jpg',
-          'https://static.thegypsynurse.com/2023/05/amn-pride-parade-2022-250.jpg',
-          'https://static.thegypsynurse.com/2023/05/amn-pride-parade-2022-10.jpg',
-          'https://static.thegypsynurse.com/2023/05/amn-pride-parade-2022-159.jpg',
-          'https://static.thegypsynurse.com/2023/05/amn-pride-parade-2022-20.jpg',
-          'https://static.thegypsynurse.com/2023/05/amn-pride-parade-2022-160.jpg'
-        ]
-      }
-    ]
-  }
+  // This would need to match the structure from the recruiter page
+  // For now, we'll handle it dynamically
 }
 
-export default function AgencyPhotosPage() {
+const recruiterData: { [key: string]: any } = {
+  // This would need to match the structure from the recruiter page
+  // For now, we'll handle it dynamically
+}
+
+export default function RecruiterPhotosPage() {
   const params = useParams()
   const router = useRouter()
   const [selectedAlbum, setSelectedAlbum] = useState<string | null>(null)
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0)
   
   const agencyId = params?.id as string
-  const agency = agencyData[agencyId]
-  const selectedAlbumData = selectedAlbum && agency?.albums ? agency.albums.find((a: any) => a.id === selectedAlbum) : null
+  const recruiterId = params?.recruiterId as string
+
+  // Get recruiter data - similar logic to recruiter page
+  const recruiter = useMemo(() => {
+    // Try to find recruiter in agency data first
+    if (agencyId && agencyData[agencyId]) {
+      const agency = agencyData[agencyId]
+      if (agency.recruiters) {
+        const recruiterFromAgency = agency.recruiters.find((r: any) => r.id === recruiterId)
+        if (recruiterFromAgency) {
+          return {
+            ...recruiterFromAgency,
+            agency: agency.name,
+            agencyId: agency.id,
+            albums: recruiterFromAgency.albums || []
+          }
+        }
+      }
+    }
+    // Fallback to standalone recruiter data
+    const fallbackRecruiter = recruiterData[recruiterId]
+    if (fallbackRecruiter) {
+      return {
+        ...fallbackRecruiter,
+        albums: fallbackRecruiter.albums || []
+      }
+    }
+    return null
+  }, [agencyId, recruiterId])
+
+  const selectedAlbumData = selectedAlbum && recruiter?.albums ? recruiter.albums.find((a: any) => a.id === selectedAlbum) : null
 
   const openAlbum = (albumId: string) => {
     setSelectedAlbum(albumId)
@@ -127,7 +98,7 @@ export default function AgencyPhotosPage() {
   React.useEffect(() => {
     if (!selectedAlbum || !selectedAlbumData) return
     
-    const thumbnailStrip = document.getElementById('thumbnail-strip-photos')
+    const thumbnailStrip = document.getElementById('thumbnail-strip-recruiter')
     if (thumbnailStrip) {
       const thumbnail = thumbnailStrip.children[selectedPhotoIndex] as HTMLElement
       if (thumbnail) {
@@ -140,6 +111,32 @@ export default function AgencyPhotosPage() {
     }
   }, [selectedPhotoIndex, selectedAlbum, selectedAlbumData])
 
+  if (!recruiter) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Navigation />
+        <section className="bg-white border-b border-gray-200 pt-32 pb-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center py-12">
+              <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 text-lg">
+                Recruiter photos page is not available at this time.
+              </p>
+              <Link
+                href={`/agency-profile/${agencyId}/recruiter/${recruiterId}`}
+                className="mt-4 inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span>Go back</span>
+              </Link>
+            </div>
+          </div>
+        </section>
+        <Footer />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Navigation />
@@ -151,18 +148,19 @@ export default function AgencyPhotosPage() {
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
               Photos
             </h1>
-            {agency && (
-              <p className="text-gray-600 mb-4">
-                by {agency.name}
-              </p>
-            )}
-            <button
-              onClick={() => router.back()}
+            <p className="text-gray-600 mb-4">
+              by {recruiter.name}
+              {recruiter.agency && (
+                <span className="text-gray-500"> • {recruiter.agency}</span>
+              )}
+            </p>
+            <Link
+              href={`/agency-profile/${agencyId}/recruiter/${recruiterId}`}
               className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               <span>Back</span>
-            </button>
+            </Link>
           </div>
         </div>
       </section>
@@ -170,17 +168,17 @@ export default function AgencyPhotosPage() {
       {/* Albums Grid */}
       <section className="py-8 md:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {agency && agency.albums && agency.albums.length > 0 ? (
+          {recruiter.albums && recruiter.albums.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {agency.albums.map((album: any, index: number) => (
+              {recruiter.albums.map((album: any, index: number) => (
                 <motion.div
-                  key={album.id}
+                  key={album.id || index}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   whileHover={{ y: -4, scale: 1.02 }}
                   className="group cursor-pointer"
-                  onClick={() => openAlbum(album.id)}
+                  onClick={() => album.id && album.photos && album.photos.length > 0 && openAlbum(album.id)}
                 >
                   <div className="bg-white rounded-xl border-2 border-gray-200 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 h-full flex flex-col">
                     <div className="aspect-video relative overflow-hidden bg-gray-100">
@@ -207,7 +205,7 @@ export default function AgencyPhotosPage() {
                       <div className="flex items-center gap-2 mt-auto">
                         <Camera className="w-4 h-4 text-gray-400" />
                         <span className="text-sm text-gray-600 font-medium">
-                          {album.photoCount} {album.photoCount === 1 ? 'Photo' : 'Photos'}
+                          {album.photoCount || (album.photos ? album.photos.length : 0)} {(album.photoCount || (album.photos ? album.photos.length : 0)) === 1 ? 'Photo' : 'Photos'}
                         </span>
                       </div>
                     </div>
@@ -219,17 +217,8 @@ export default function AgencyPhotosPage() {
             <div className="text-center py-12">
               <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 text-lg">
-                {agency ? 'No albums available at this time.' : 'Photos page not available for this agency.'}
+                No albums available at this time.
               </p>
-              {!agency && (
-                <button
-                  onClick={() => router.back()}
-                  className="mt-4 inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  <span>Go back</span>
-                </button>
-              )}
             </div>
           )}
         </div>
@@ -237,7 +226,7 @@ export default function AgencyPhotosPage() {
 
       {/* Photo Modal/Lightbox */}
       <AnimatePresence>
-        {selectedAlbum && selectedAlbumData && (
+        {selectedAlbum && selectedAlbumData && selectedAlbumData.photos && (
           <>
             {/* Backdrop */}
             <motion.div
@@ -311,7 +300,7 @@ export default function AgencyPhotosPage() {
                 {selectedAlbumData.photos.length > 1 && (
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                     <div 
-                      id="thumbnail-strip-photos"
+                      id="thumbnail-strip-recruiter"
                       className="flex gap-2 overflow-x-auto scroll-smooth"
                       style={{
                         scrollbarWidth: 'thin',
@@ -322,7 +311,7 @@ export default function AgencyPhotosPage() {
                       {selectedAlbumData.photos.map((photo: string, index: number) => (
                         <button
                           key={index}
-                          id={`thumbnail-photos-${index}`}
+                          id={`thumbnail-recruiter-${index}`}
                           onClick={() => setSelectedPhotoIndex(index)}
                           className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
                             index === selectedPhotoIndex

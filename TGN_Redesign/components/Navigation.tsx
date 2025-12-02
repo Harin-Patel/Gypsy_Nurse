@@ -448,6 +448,8 @@ export default function Navigation() {
                             let href = '#'
                             if (subItem === 'Blog') {
                               href = '/articles'
+                            } else if (subItem === 'Compact License') {
+                              href = '/resources/compact-license'
                             } else if (subItem === 'Advertise With Us') {
                               href = '/advertise-with-us'
                             } else if (subItem === 'Benefits') {
@@ -971,7 +973,11 @@ export default function Navigation() {
                         <div className="ml-4 mt-2 space-y-2">
                           {item.dropdown.map((subItem) => {
                             let href = '#'
-                            if (subItem === 'Advertise With Us') {
+                            if (subItem === 'Blog') {
+                              href = '/articles'
+                            } else if (subItem === 'Compact License') {
+                              href = '/resources/compact-license'
+                            } else if (subItem === 'Advertise With Us') {
                               href = '/advertise-with-us'
                             } else if (subItem === 'Benefits') {
                               href = '/benefits'

@@ -60,7 +60,8 @@ export function jobToApplication(job: any, appliedDate?: string): any {
     startDate: job.startDate,
     postedDate: job.postedDate,
     daysAgo: diffDays,
-    featured: job.featured
+    featured: job.featured,
+    staffingCompany: job.staffingCompany
   }
 }
 

@@ -239,7 +239,25 @@ const agencyData: { [key: string]: any } = {
       { title: 'RN LD - Travel Nurse', specialty: 'Labor & Delivery', location: 'Pratt, KS', startDate: 'Starts: ASAP', endDate: '' },
       { title: 'RN OR - Travel Nurse', specialty: 'Operating Room', location: 'Weston, WV', startDate: 'Starts: ASAP', endDate: '' }
     ],
-    albums: []
+    albums: [],
+    blogs: [
+      {
+        id: 'blog-1',
+        title: 'Top 5 Travel Nursing Destinations for 2025',
+        excerpt: 'Discover the most sought-after travel nursing destinations this year, from sunny California beaches to bustling East Coast cities.',
+        date: 'January 15, 2025',
+        author: 'TNAA Team',
+        url: 'https://www.tnaa.com/blog/top-5-travel-nursing-destinations-2025'
+      },
+      {
+        id: 'blog-2',
+        title: 'How to Prepare for Your First Travel Nursing Assignment',
+        excerpt: 'Essential tips and checklist for new travel nurses to ensure a smooth transition to their first assignment.',
+        date: 'December 20, 2024',
+        author: 'TNAA Team',
+        url: 'https://www.tnaa.com/blog/prepare-first-travel-nursing-assignment'
+      }
+    ]
   },
   'trustaff': {
     id: 'trustaff',
@@ -2919,9 +2937,11 @@ export default function AgencyProfilePage() {
                               whileHover={{ scale: 1.1, y: -2 }}
                               whileTap={{ scale: 0.9 }}
                               className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 flex items-center justify-center text-white hover:bg-black hover:border-black transition-all"
-                              aria-label="Twitter"
+                              aria-label="X (Twitter)"
                             >
-                              <Twitter className="w-5 h-5" />
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                              </svg>
                             </motion.a>
                           )}
                           {agency.socialMedia.linkedin && (
@@ -3136,13 +3156,13 @@ export default function AgencyProfilePage() {
                     ))}
                   </div>
                   <div className="mt-4">
-                    <a 
+                    <Link 
                       href={`/agency-profile/${agencyId}/photos`}
                       className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold text-sm transition-colors"
                     >
                       View all albums
                       <ExternalLink className="w-4 h-4" />
-                    </a>
+                    </Link>
                   </div>
                 </div>
               )}
@@ -3290,15 +3310,52 @@ export default function AgencyProfilePage() {
               </div>
               <div>
                 <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-3">My Blog Posts</h4>
-                <div className="flex items-center justify-between">
+                {agency.blogs && agency.blogs.length > 0 ? (
+                  <div className="space-y-4">
+                    {agency.blogs.map((blog: any, index: number) => (
+                      <motion.div
+                        key={blog.id || index}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="bg-white rounded-xl border-2 border-gray-200 p-5 hover:border-primary-200 hover:shadow-md transition-all focus:outline-none"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <h5 className="font-semibold text-gray-900 mb-2 text-lg hover:text-primary-600 transition-colors">
+                              {blog.title}
+                            </h5>
+                            {blog.excerpt && (
+                              <p className="text-gray-600 text-sm md:text-base mb-3 line-clamp-2">
+                                {blog.excerpt}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                              {blog.date && (
+                                <span>{blog.date}</span>
+                              )}
+                              {blog.author && (
+                                <span>By {blog.author}</span>
+                              )}
+                            </div>
+                          </div>
+                          {blog.url && (
+                            <a
+                              href={blog.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-shrink-0 text-primary-600 hover:text-primary-700 font-semibold text-sm transition-colors focus:outline-none focus-visible:outline-none"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
                   <p className="text-gray-600 text-sm md:text-base">Sorry, {agency.name} has not made any blog posts yet.</p>
-                  <button
-                    onClick={() => router.back()}
-                    className="text-primary-600 hover:text-primary-700 font-semibold text-sm"
-                  >
-                    Go Back
-                  </button>
-                </div>
+                )}
               </div>
               <div>
                 <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-3">My Video Chat Rooms</h4>

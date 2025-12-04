@@ -5,7 +5,6 @@ import { motion } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, Briefcase, Phone, Globe, MapPin, Sparkles, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
-import Footer from '@/components/Footer'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import toast from 'react-hot-toast'
 
@@ -707,8 +706,6 @@ export default function AgencyRegisterPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <Footer />
     </div>
   )
 }

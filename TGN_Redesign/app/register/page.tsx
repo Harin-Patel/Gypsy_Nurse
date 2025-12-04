@@ -6,7 +6,6 @@ import { Mail, Lock, Eye, EyeOff, User, Phone, Briefcase, MapPin, ArrowRight, Sp
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Navigation from '@/components/Navigation'
-import Footer from '@/components/Footer'
 import { useAuth } from '@/contexts/AuthContext'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import toast from 'react-hot-toast'
@@ -771,8 +770,6 @@ export default function RegisterPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <Footer />
     </div>
   )
 }

@@ -5,7 +5,6 @@ import { motion } from 'framer-motion'
 import { Mail, ArrowLeft, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
-import Footer from '@/components/Footer'
 import toast from 'react-hot-toast'
 
 export default function ForgotPasswordPage() {
@@ -398,8 +397,6 @@ export default function ForgotPasswordPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <Footer />
     </div>
   )
 }

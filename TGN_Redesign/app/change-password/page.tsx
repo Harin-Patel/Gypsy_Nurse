@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Lock, Eye, EyeOff, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
-import Footer from '@/components/Footer'
 import toast from 'react-hot-toast'
 
 export default function ChangePasswordPage() {
@@ -590,7 +589,6 @@ export default function ChangePasswordPage() {
         )}
       </AnimatePresence>
 
-      <Footer />
     </div>
   )
 }

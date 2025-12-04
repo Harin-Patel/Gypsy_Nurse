@@ -6,7 +6,6 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, Heart, Star, Briefcase, 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Navigation from '@/components/Navigation'
-import Footer from '@/components/Footer'
 import { useAuth } from '@/contexts/AuthContext'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import toast from 'react-hot-toast'
@@ -1058,8 +1057,6 @@ export default function LoginPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <Footer />
     </div>
   )
 }

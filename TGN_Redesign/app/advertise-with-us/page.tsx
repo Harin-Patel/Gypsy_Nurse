@@ -354,7 +354,7 @@ export default function AdvertiseWithUsPage() {
                 </p>
                  <p className="text-base text-white/70">
                    The Gypsy Nurse is dedicated to providing powerful tools, information, and social connectivity to our 675,000+ travel nurses and travel healthcare professionals.
-                 </p>
+                </p>
               </motion.div>
 
               {/* Key Stats - Horizontal */}
@@ -518,13 +518,13 @@ export default function AdvertiseWithUsPage() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
             className="text-center mb-10"
-          >
+            >
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -565,7 +565,7 @@ export default function AdvertiseWithUsPage() {
                     <p className="text-base text-gray-700 leading-relaxed">
                       With a community of over <span className="font-semibold text-primary-600">675,000 followers and members</span> across our digital platforms, <span className="font-semibold text-primary-600">23,000+ website visitors per month</span>, and over <span className="font-semibold text-primary-600">503,000 page views per month</span> to our website, The Gypsy Nurse is the <span className="font-semibold text-primary-600">#1 destination</span> for the travel healthcare community.
                     </p>
-                  </div>
+                    </div>
                   <div className="space-y-3 pt-4 border-t border-gray-200">
                     <div className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" />
@@ -574,7 +574,7 @@ export default function AdvertiseWithUsPage() {
                     <div className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" />
                       <p className="text-sm text-gray-600 leading-relaxed">Active community forums and networking platforms</p>
-                    </div>
+                  </div>
                     <div className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" />
                       <p className="text-sm text-gray-600 leading-relaxed">Educational resources and career development tools</p>
@@ -599,7 +599,7 @@ export default function AdvertiseWithUsPage() {
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Award className="w-6 h-6 text-white" />
-                </div>
+          </div>
                 <div className="flex-1 space-y-4">
                   <div>
                     <h3 className="text-lg font-bold text-gray-900 mb-3">TravCon Acquisition</h3>
@@ -699,8 +699,8 @@ export default function AdvertiseWithUsPage() {
               <span className="px-4 py-2 bg-primary-100 text-primary-600 rounded-full text-sm font-semibold">
                 Testimonials
               </span>
-            </motion.div>
-            
+          </motion.div>
+
             <h2 className="text-4xl md:text-5xl font-bold mb-3">
               Client <span className="gradient-text">Testimonials</span>
             </h2>
@@ -769,11 +769,11 @@ export default function AdvertiseWithUsPage() {
                               <div className="hidden items-center justify-center">
                                 <div className="text-center">
                                   <div className="text-lg font-bold text-gray-900">{testimonial.company}</div>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                        </div>
+                                  </div>
+                                </div>
                       </div>
                     </div>
                   </div>
@@ -836,13 +836,13 @@ export default function AdvertiseWithUsPage() {
           <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-10 opacity-40"></div>
           
           {/* Section Header */}
-          <motion.div
+            <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+              viewport={{ once: true }}
             transition={{ duration: 0.6 }}
             className="text-center mb-10"
-          >
+            >
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -862,9 +862,9 @@ export default function AdvertiseWithUsPage() {
               Discover new travel nurse jobs, subscribe to customized job alerts and unlock unlimited resources for FREE
             </p>
           </motion.div>
-
+                  
           {/* Card with Image and Content */}
-          <motion.div
+                  <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -889,7 +889,7 @@ export default function AdvertiseWithUsPage() {
                   }}
                   loading="eager"
                   decoding="sync"
-                />
+                  />
                 {/* Floating Badge */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
@@ -929,18 +929,18 @@ export default function AdvertiseWithUsPage() {
 
                   {/* Join Now Button */}
                   <div className="flex justify-end">
-                    <motion.button
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      whileTap={{ scale: 0.98 }}
+                  <motion.button
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
                       className="inline-flex px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all items-center justify-center gap-2 group"
                       onClick={() => router.push('/register')}
                     >
                       <span>Join Now - It's Free</span>
                       <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </motion.button>
-                  </div>
+                  </motion.button>
                 </div>
               </div>
+          </div>
             </div>
           </motion.div>
         </div>
@@ -993,21 +993,21 @@ export default function AdvertiseWithUsPage() {
             className="max-w-6xl mx-auto bg-white rounded-2xl p-6 md:p-8 border-2 border-gray-100 shadow-md hover:shadow-lg transition-all"
           >
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {specialties.map((specialty, index) => (
-                <motion.div
-                  key={specialty}
+                  {specialties.map((specialty, index) => (
+                    <motion.div
+                      key={specialty}
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.05 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.05 }}
                   className="flex items-center gap-3"
-                >
+                    >
                   <div className="w-2 h-2 bg-primary-600 rounded-full flex-shrink-0"></div>
                   <span className="text-gray-800 font-medium text-sm">
-                    {specialty}
+                      {specialty}
                   </span>
-                </motion.div>
-              ))}
+                    </motion.div>
+                  ))}
             </div>
           </motion.div>
         </div>
@@ -1062,22 +1062,22 @@ export default function AdvertiseWithUsPage() {
                 transition={{ delay: index * 0.1 }}
                 className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-md hover:shadow-lg transition-all h-full flex flex-col"
               >
-                <Quote className="w-8 h-8 text-primary-500/50 mb-4" />
-                <div className="flex gap-1 mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
+                    <Quote className="w-8 h-8 text-primary-500/50 mb-4" />
+                    <div className="flex gap-1 mb-4">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                      ))}
+                    </div>
                 <p className="text-gray-700 mb-6 italic flex-1">"{testimonial.content}"</p>
                 <div className="border-t border-gray-200 pt-4">
-                  <p className="font-semibold text-gray-900">{testimonial.name}</p>
-                  <p className="text-sm text-gray-600">{testimonial.role}</p>
-                  <p className="text-sm text-primary-600 font-medium">{testimonial.company}</p>
-                </div>
+                      <p className="font-semibold text-gray-900">{testimonial.name}</p>
+                      <p className="text-sm text-gray-600">{testimonial.role}</p>
+                      <p className="text-sm text-primary-600 font-medium">{testimonial.company}</p>
+                    </div>
               </motion.div>
             ))}
-          </div>
-        </div>
+                  </div>
+                </div>
       </section>
 
 
@@ -1109,7 +1109,7 @@ export default function AdvertiseWithUsPage() {
               <span className="px-4 py-2 bg-primary-100 text-primary-600 rounded-full text-sm font-semibold">
                 Get In Touch
               </span>
-            </motion.div>
+              </motion.div>
             
             <h2 className="text-4xl md:text-5xl font-bold mb-3">
               Ready to <span className="gradient-text">Advertise with Us?</span>
@@ -1161,8 +1161,8 @@ export default function AdvertiseWithUsPage() {
                       <div className="text-2xl font-bold text-primary-600">{stat.value}</div>
                       <div className="text-xs text-gray-600 mt-1">{stat.label}</div>
                     </div>
-                  ))}
-                </div>
+            ))}
+          </div>
               </div>
             </div>
           </motion.div>
@@ -1181,13 +1181,13 @@ export default function AdvertiseWithUsPage() {
           <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-10 opacity-40"></div>
           
           {/* Section Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
             className="text-center mb-10"
-          >
+              >
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -1204,9 +1204,9 @@ export default function AdvertiseWithUsPage() {
               <span className="gradient-text">Contact Us</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Fill out the form below and our team will contact you to discuss your advertising opportunities and partnership options
-            </p>
-          </motion.div>
+                  Fill out the form below and our team will contact you to discuss your advertising opportunities and partnership options
+                </p>
+              </motion.div>
 
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -1277,7 +1277,7 @@ export default function AdvertiseWithUsPage() {
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
                         className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none focus:bg-white transition-all cursor-pointer text-left relative flex items-center"
-                      >
+                    >
                         <span className={`flex-1 text-left truncate leading-normal ${formData.facilityType ? "text-gray-900" : "text-gray-400"}`}>
                           {formData.facilityType 
                             ? formData.facilityType.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
@@ -1383,19 +1383,19 @@ export default function AdvertiseWithUsPage() {
                   </div>
                   
                   <div className="flex justify-end">
-                    <motion.button
-                      type="submit"
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      whileTap={{ scale: 0.98 }}
+                  <motion.button
+                    type="submit"
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
                       className="px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 group"
-                    >
-                      <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      <span>Submit Request</span>
-                    </motion.button>
+                  >
+                    <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    <span>Submit Request</span>
+                  </motion.button>
                   </div>
                 </form>
-            </div>
-          </motion.div>
+              </div>
+            </motion.div>
         </div>
       </section>
 

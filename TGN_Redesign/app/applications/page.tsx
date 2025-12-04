@@ -520,9 +520,9 @@ export default function ApplicationsPage() {
 
                           {/* Agency/Staffing Company */}
                           {job.staffingCompany && (
-                            <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2">
                               <Building2 className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
-                              <div>
+                            <div>
                                 <p className="text-xs text-gray-500">Agency</p>
                                 <p className="text-xs font-semibold text-gray-900">{job.staffingCompany}</p>
                               </div>

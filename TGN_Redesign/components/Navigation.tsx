@@ -251,10 +251,10 @@ export default function Navigation() {
       <nav
         className={`fixed top-0 left-0 right-0 w-full z-[100] transition-all duration-300 ${
           isMobile
-            ? 'bg-white border-b border-gray-200 shadow-sm py-3'
+            ? 'bg-white border-b border-gray-200 shadow-sm py-1.5'
             : isScrolled 
-              ? 'bg-white/80 backdrop-blur-2xl shadow-2xl py-3' 
-              : 'bg-white/90 backdrop-blur-xl shadow-lg py-4'
+              ? 'bg-white/80 backdrop-blur-2xl shadow-2xl py-1.5' 
+              : 'bg-white/90 backdrop-blur-xl shadow-lg py-2'
         }`}
         style={!isMobile ? {
           backdropFilter: 'saturate(180%) blur(20px)',
@@ -264,7 +264,7 @@ export default function Navigation() {
         <div className={`max-w-7xl mx-auto ${isMobile ? 'px-4' : 'px-4 sm:px-6 lg:px-8'}`}>
           {isMobile ? (
             /* Mobile App Standard Navigation */
-            <div className="flex items-center justify-between h-14">
+            <div className="flex items-center justify-between h-12">
               {/* Left Side - Back Button or Logo */}
               {pathname?.startsWith('/login') || pathname?.startsWith('/register') || pathname?.startsWith('/agency-register') || pathname?.startsWith('/agency-login') || pathname?.startsWith('/recruiter-login') || pathname?.startsWith('/admin-login') || pathname?.startsWith('/forgot-password') || pathname?.startsWith('/change-password') ? (
                 <button
@@ -285,7 +285,7 @@ export default function Navigation() {
                   <img 
                     src="/logo.svg" 
                     alt="The Gypsy Nurse Logo" 
-                    className="h-10 w-auto"
+                    className="h-16 w-auto"
                   />
                 </Link>
               )}
@@ -371,7 +371,7 @@ export default function Navigation() {
                   src="/logo.svg" 
                   alt="The Gypsy Nurse Logo" 
                   className={`relative z-10 transition-all duration-300 ${
-                    isScrolled ? 'h-10' : 'h-12'
+                    isScrolled ? 'h-16' : 'h-20'
                   } w-auto`}
                 />
               </motion.div>
@@ -937,7 +937,7 @@ export default function Navigation() {
                     <img 
                       src="/logo.svg" 
                       alt="The Gypsy Nurse Logo" 
-                      className="h-8 w-auto"
+                      className="h-16 w-auto"
                     />
                     <span className="text-lg font-bold text-gray-900">Menu</span>
                   </div>

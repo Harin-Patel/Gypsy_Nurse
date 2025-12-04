@@ -3337,7 +3337,7 @@ export default function AgencyProfilePage() {
                               {blog.author && (
                                 <span>By {blog.author}</span>
                               )}
-                            </div>
+                </div>
                           </div>
                           {blog.url && (
                             <a

@@ -8,9 +8,9 @@ export interface FilterPreset {
     zipCode: string
     states: string[]
     agency: string
-    facility: string
-    certification: string
-    specialty: string
+    facility: string[]
+    certification: string[]
+    specialty: string[]
     minSalary: string
     maxSalary: string
     shift: string

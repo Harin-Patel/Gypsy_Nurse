@@ -481,6 +481,9 @@ function JobsPageContent() {
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [showQuickAccessDropdown, setShowQuickAccessDropdown] = useState(false)
   const [showAgencyDropdown, setShowAgencyDropdown] = useState(false)
+  const [showFacilityDropdown, setShowFacilityDropdown] = useState(false)
+  const [showCertificationDropdown, setShowCertificationDropdown] = useState(false)
+  const [showSpecialtyDropdown, setShowSpecialtyDropdown] = useState(false)
   const [showStatesDropdown, setShowStatesDropdown] = useState(false)
   const [showShiftDropdown, setShowShiftDropdown] = useState(false)
   const [showDurationDropdown, setShowDurationDropdown] = useState(false)
@@ -532,9 +535,9 @@ function JobsPageContent() {
   const [filterZipCode, setFilterZipCode] = useState('')
   const [filterStates, setFilterStates] = useState<string[]>([])
   const [filterAgency, setFilterAgency] = useState('')
-  const [filterFacility, setFilterFacility] = useState('')
-  const [filterCertification, setFilterCertification] = useState('')
-  const [filterSpecialty, setFilterSpecialty] = useState('')
+  const [filterFacility, setFilterFacility] = useState<string[]>([])
+  const [filterCertification, setFilterCertification] = useState<string[]>([])
+  const [filterSpecialty, setFilterSpecialty] = useState<string[]>([])
   const [filterMinSalary, setFilterMinSalary] = useState('')
   const [filterMaxSalary, setFilterMaxSalary] = useState('')
   const [filterShift, setFilterShift] = useState('all')
@@ -543,6 +546,27 @@ function JobsPageContent() {
   
   // Get unique agencies from jobs
   const uniqueAgencies = Array.from(new Set(SAMPLE_JOBS.map(job => job.staffingCompany))).sort()
+  
+  // Get unique facility names from jobs
+  const uniqueFacilities = Array.from(new Set(SAMPLE_JOBS.map(job => job.facilityName))).sort()
+  
+  // Get unique certifications (profession types) from jobs
+  const uniqueCertifications = Array.from(new Set(
+    SAMPLE_JOBS.map(job => {
+      // Extract profession type (e.g., "RN", "CLS") from licenseSpecialty
+      const parts = job.licenseSpecialty.split(' - ')
+      return parts[0] || job.licenseSpecialty
+    })
+  )).sort()
+  
+  // Get unique specialties from jobs
+  const uniqueSpecialties = Array.from(new Set(
+    SAMPLE_JOBS.map(job => {
+      // Extract specialty part (after " - ") from licenseSpecialty
+      const parts = job.licenseSpecialty.split(' - ')
+      return parts.length > 1 ? parts.slice(1).join(' - ') : ''
+    }).filter(s => s.trim() !== '')
+  )).sort()
   
   // US States list
   const usStates = [
@@ -772,41 +796,57 @@ function JobsPageContent() {
     }
 
     // Facility filter
-    if (filterFacility.trim()) {
+    if (filterFacility.length > 0) {
       filtered = filtered.filter(job => 
-        job.facilityName.toLowerCase().includes(filterFacility.toLowerCase())
+        filterFacility.some(facility => 
+          job.facilityName.toLowerCase().includes(facility.toLowerCase())
       )
+      )
+      filterFacility.forEach(facility => {
       newAppliedFilters.push({
-        id: 'facility',
+          id: `facility-${facility}`,
         type: 'facility',
         label: 'Facility',
-        value: filterFacility
+          value: facility
+        })
       })
     }
 
     // Certification filter
-    if (filterCertification.trim()) {
+    if (filterCertification.length > 0) {
       filtered = filtered.filter(job => 
-        job.licenseSpecialty.toLowerCase().includes(filterCertification.toLowerCase())
+        filterCertification.some(cert => {
+          const parts = job.licenseSpecialty.split(' - ')
+          const jobCert = parts[0] || job.licenseSpecialty
+          return jobCert.toLowerCase().includes(cert.toLowerCase())
+        })
       )
+      filterCertification.forEach(cert => {
       newAppliedFilters.push({
-        id: 'certification',
+          id: `certification-${cert}`,
         type: 'certification',
         label: 'Certification',
-        value: filterCertification
+          value: cert
+        })
       })
     }
 
     // Specialty filter
-    if (filterSpecialty.trim()) {
+    if (filterSpecialty.length > 0) {
       filtered = filtered.filter(job => 
-        job.licenseSpecialty.toLowerCase().includes(filterSpecialty.toLowerCase())
+        filterSpecialty.some(specialty => {
+          const parts = job.licenseSpecialty.split(' - ')
+          const jobSpecialty = parts.length > 1 ? parts.slice(1).join(' - ') : ''
+          return jobSpecialty.toLowerCase().includes(specialty.toLowerCase())
+        })
       )
+      filterSpecialty.forEach(specialty => {
       newAppliedFilters.push({
-        id: 'specialty',
+          id: `specialty-${specialty}`,
         type: 'specialty',
         label: 'Specialty',
-        value: filterSpecialty
+          value: specialty
+        })
       })
     }
 
@@ -957,7 +997,7 @@ function JobsPageContent() {
     
     // Check if there are any active filters
     const hasActiveFilters = filterCity || filterZipCode || filterStates.length > 0 || 
-                            filterAgency || filterFacility || filterCertification || filterSpecialty || 
+                            filterAgency || filterFacility.length > 0 || filterCertification.length > 0 || filterSpecialty.length > 0 || 
                             filterMinSalary || filterMaxSalary || filterShift !== 'all' || 
                             filterDuration !== 'all' || filterFeaturedOnly
     
@@ -1175,9 +1215,9 @@ function JobsPageContent() {
       const zipFilter = appliedFilters.find(f => f.type === 'zipcode')
       const stateFilters = appliedFilters.filter(f => f.type === 'state')
       const agencyFilter = appliedFilters.find(f => f.type === 'agency')
-      const facilityFilter = appliedFilters.find(f => f.type === 'facility')
-      const certFilter = appliedFilters.find(f => f.type === 'certification')
-      const specialtyFilter = appliedFilters.find(f => f.type === 'specialty')
+      const facilityFilters = appliedFilters.filter(f => f.type === 'facility')
+      const certFilters = appliedFilters.filter(f => f.type === 'certification')
+      const specialtyFilters = appliedFilters.filter(f => f.type === 'specialty')
       const minSalaryFilter = appliedFilters.find(f => f.type === 'minsalary')
       const maxSalaryFilter = appliedFilters.find(f => f.type === 'maxsalary')
       const shiftFilter = appliedFilters.find(f => f.type === 'shift')
@@ -1188,9 +1228,9 @@ function JobsPageContent() {
       setFilterZipCode(zipFilter?.value || '')
       setFilterStates(stateFilters.map(f => f.value))
       setFilterAgency(agencyFilter?.value || '')
-      setFilterFacility(facilityFilter?.value || '')
-      setFilterCertification(certFilter?.value || '')
-      setFilterSpecialty(specialtyFilter?.value || '')
+      setFilterFacility(facilityFilters.map(f => f.value))
+      setFilterCertification(certFilters.map(f => f.value))
+      setFilterSpecialty(specialtyFilters.map(f => f.value))
       // Min/Max salary stored as "$1234", need to remove $ and parse
       setFilterMinSalary(minSalaryFilter?.value ? minSalaryFilter.value.replace(/[^0-9.]/g, '') : '')
       setFilterMaxSalary(maxSalaryFilter?.value ? maxSalaryFilter.value.replace(/[^0-9.]/g, '') : '')
@@ -1217,9 +1257,15 @@ function JobsPageContent() {
     const zipMatch = (!preset.filters.zipCode && !filterZipCode) || preset.filters.zipCode === filterZipCode
     const statesMatch = JSON.stringify([...preset.filters.states].sort()) === JSON.stringify([...filterStates].sort())
     const agencyMatch = (!preset.filters.agency && !filterAgency) || preset.filters.agency === filterAgency
-    const facilityMatch = (!preset.filters.facility && !filterFacility) || preset.filters.facility === filterFacility
-    const certMatch = (!preset.filters.certification && !filterCertification) || preset.filters.certification === filterCertification
-    const specialtyMatch = (!preset.filters.specialty && !filterSpecialty) || preset.filters.specialty === filterSpecialty
+    const facilityMatch = (preset.filters.facility.length === 0 && filterFacility.length === 0) || 
+                          (preset.filters.facility.length === filterFacility.length && 
+                           preset.filters.facility.every(f => filterFacility.includes(f)))
+    const certMatch = (preset.filters.certification.length === 0 && filterCertification.length === 0) || 
+                      (preset.filters.certification.length === filterCertification.length && 
+                       preset.filters.certification.every(c => filterCertification.includes(c)))
+    const specialtyMatch = (preset.filters.specialty.length === 0 && filterSpecialty.length === 0) || 
+                           (preset.filters.specialty.length === filterSpecialty.length && 
+                            preset.filters.specialty.every(s => filterSpecialty.includes(s)))
     const minSalaryMatch = (!preset.filters.minSalary && !filterMinSalary) || preset.filters.minSalary === filterMinSalary
     const maxSalaryMatch = (!preset.filters.maxSalary && !filterMaxSalary) || preset.filters.maxSalary === filterMaxSalary
     const shiftMatch = preset.filters.shift === filterShift
@@ -1235,11 +1281,11 @@ function JobsPageContent() {
   const applySavedFilter = (preset: FilterPreset) => {
     setFilterCity(preset.filters.city)
     setFilterZipCode(preset.filters.zipCode)
-    setFilterStates(preset.filters.states)
+    setFilterStates(preset.filters.states || [])
     setFilterAgency(preset.filters.agency || '')
-    setFilterFacility(preset.filters.facility)
-    setFilterCertification(preset.filters.certification)
-    setFilterSpecialty(preset.filters.specialty)
+    setFilterFacility(preset.filters.facility || [])
+    setFilterCertification(preset.filters.certification || [])
+    setFilterSpecialty(preset.filters.specialty || [])
     setFilterMinSalary(preset.filters.minSalary)
     setFilterMaxSalary(preset.filters.maxSalary)
     setFilterShift(preset.filters.shift)
@@ -1330,13 +1376,13 @@ function JobsPageContent() {
     // If the deleted filter was currently applied, clear all filters and refresh job listing
     if (isCurrentlyApplied) {
       // Clear all filter values
-      setFilterCity('')
-      setFilterZipCode('')
-      setFilterStates([])
+    setFilterCity('')
+    setFilterZipCode('')
+    setFilterStates([])
       setFilterAgency('')
-      setFilterFacility('')
-      setFilterCertification('')
-      setFilterSpecialty('')
+    setFilterFacility('')
+    setFilterCertification('')
+    setFilterSpecialty('')
       setFilterMinSalary('')
       setFilterMaxSalary('')
       setFilterShift('all')
@@ -1372,9 +1418,9 @@ function JobsPageContent() {
     setFilterZipCode('')
     setFilterStates([])
     setFilterAgency('')
-    setFilterFacility('')
-    setFilterCertification('')
-    setFilterSpecialty('')
+    setFilterFacility([])
+    setFilterCertification([])
+    setFilterSpecialty([])
     setFilterMinSalary('')
     setFilterMaxSalary('')
     setFilterShift('all')
@@ -1524,7 +1570,7 @@ function JobsPageContent() {
                             <motion.button
                               type="button"
                               onClick={() => setShowStatesDropdown(!showStatesDropdown)}
-                              whileHover={{ scale: 1.01 }}
+                            whileHover={{ scale: 1.01 }}
                               whileTap={{ scale: 0.99 }}
                               className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-primary-300 min-h-[42px] relative flex items-center"
                             >
@@ -1560,7 +1606,7 @@ function JobsPageContent() {
                                     transition={{ duration: 0.2, ease: "easeOut" }}
                                     className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50 max-h-64 overflow-y-auto"
                                   >
-                                    <div className="p-2">
+                                    <div className="p-2 space-y-1">
                                       {/* State Options */}
                                       {usStates.map((state, idx) => {
                                         const isSelected = filterStates.includes(state)
@@ -1585,7 +1631,7 @@ function JobsPageContent() {
                                                 : 'text-gray-700 hover:bg-gray-50'
                                             }`}
                                           >
-                                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                            <div className={`w-4 h-4 min-w-[16px] min-h-[16px] rounded border-2 flex items-center justify-center flex-shrink-0 ${
                                               isSelected
                                                 ? 'border-primary-600 bg-primary-600'
                                                 : 'border-gray-300'
@@ -1594,12 +1640,13 @@ function JobsPageContent() {
                                                 <motion.svg
                                                   initial={{ scale: 0 }}
                                                   animate={{ scale: 1 }}
-                                                  className="w-3 h-3 text-white"
+                                                  className="w-3 h-3 min-w-[12px] min-h-[12px] text-white"
                                                   fill="none"
                                                   viewBox="0 0 24 24"
                                                   stroke="currentColor"
+                                                  strokeWidth={3}
                                                 >
-                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                                 </motion.svg>
                                               )}
                                             </div>
@@ -1608,7 +1655,7 @@ function JobsPageContent() {
                                         )
                                       })}
                                     </div>
-                                  </motion.div>
+                          </motion.div>
                                 </>
                               )}
                             </AnimatePresence>
@@ -1618,16 +1665,21 @@ function JobsPageContent() {
                               {filterStates.map((state) => (
                                 <motion.span
                                   key={state}
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  className="inline-flex items-center gap-1 px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium"
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 border border-primary-200 text-primary-700 rounded-lg text-sm font-medium shadow-sm hover:bg-primary-100 transition-colors"
                                 >
-                                  {state}
+                                  <span className="truncate max-w-[200px]">{state}</span>
                                   <button
-                                    onClick={() => setFilterStates(filterStates.filter(s => s !== state))}
-                                    className="hover:bg-primary-200 rounded-full p-0.5 transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setFilterStates(filterStates.filter(s => s !== state))
+                                    }}
+                                    className="hover:bg-primary-200 rounded-full p-0.5 transition-colors flex-shrink-0"
+                                    aria-label={`Remove ${state}`}
                                   >
-                                    <X className="w-3 h-3" />
+                                    <X className="w-3.5 h-3.5" />
                                   </button>
                                 </motion.span>
                               ))}
@@ -1705,7 +1757,7 @@ function JobsPageContent() {
                                           : 'text-gray-700 hover:bg-gray-50'
                                       }`}
                                     >
-                                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                      <div className={`w-4 h-4 min-w-[16px] min-h-[16px] rounded border-2 flex items-center justify-center flex-shrink-0 ${
                                         !filterAgency
                                           ? 'border-primary-600 bg-primary-600'
                                           : 'border-gray-300'
@@ -1714,12 +1766,13 @@ function JobsPageContent() {
                                           <motion.svg
                                             initial={{ scale: 0 }}
                                             animate={{ scale: 1 }}
-                                            className="w-3 h-3 text-white"
+                                            className="w-3 h-3 min-w-[12px] min-h-[12px] text-white"
                                             fill="none"
                                             viewBox="0 0 24 24"
                                             stroke="currentColor"
+                                            strokeWidth={3}
                                           >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                           </motion.svg>
                                         )}
                                       </div>
@@ -1748,7 +1801,7 @@ function JobsPageContent() {
                                             : 'text-gray-700 hover:bg-gray-50'
                                         }`}
                                       >
-                                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                        <div className={`w-4 h-4 min-w-[16px] min-h-[16px] rounded border-2 flex items-center justify-center flex-shrink-0 ${
                                           filterAgency === agency
                                             ? 'border-primary-600 bg-primary-600'
                                             : 'border-gray-300'
@@ -1757,12 +1810,13 @@ function JobsPageContent() {
                                             <motion.svg
                                               initial={{ scale: 0 }}
                                               animate={{ scale: 1 }}
-                                              className="w-3 h-3 text-white"
+                                              className="w-3 h-3 min-w-[12px] min-h-[12px] text-white"
                                               fill="none"
                                               viewBox="0 0 24 24"
                                               stroke="currentColor"
+                                              strokeWidth={3}
                                             >
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                             </motion.svg>
                                           )}
                                         </div>
@@ -1791,52 +1845,370 @@ function JobsPageContent() {
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Facility Name Dropdown */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Facility Name</label>
-                          <motion.div
+                          <div className="relative">
+                            {/* Custom Dropdown Button */}
+                            <motion.button
+                              type="button"
+                              onClick={() => setShowFacilityDropdown(!showFacilityDropdown)}
                             whileHover={{ scale: 1.01 }}
-                            transition={{ type: "spring", stiffness: 400 }}
+                              whileTap={{ scale: 0.99 }}
+                              className="w-full px-4 py-2.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-gray-300 font-medium text-gray-700 relative flex items-center min-h-[42px]"
                           >
-                            <input
-                              type="text"
-                              value={filterFacility}
-                              onChange={(e) => setFilterFacility(e.target.value)}
-                              placeholder="Enter facility name"
-                              className="w-full px-4 py-2.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50"
-                            />
+                              <span className={`flex-1 text-left truncate leading-normal ${filterFacility.length > 0 ? "text-gray-900" : "text-gray-400"}`}>
+                                {filterFacility.length > 0 ? `${filterFacility.length} selected` : "Select facility name"}
+                              </span>
+                              <motion.div
+                                animate={{ rotate: showFacilityDropdown ? 180 : 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute right-3 pointer-events-none flex items-center"
+                                style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                              >
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                              </motion.div>
+                            </motion.button>
+
+                            {/* Custom Dropdown Menu */}
+                            <AnimatePresence>
+                              {showFacilityDropdown && (
+                                <>
+                                  {/* Backdrop to close on outside click */}
+                                  <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setShowFacilityDropdown(false)}
+                                  />
+                                  
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50 max-h-64 overflow-y-auto"
+                                  >
+                                    <div className="p-2 space-y-1">
+                                      {uniqueFacilities.map((facility, idx) => {
+                                        const isSelected = filterFacility.includes(facility)
+                                        return (
+                                          <motion.button
+                                            key={facility}
+                                            type="button"
+                                            onClick={() => {
+                                              if (isSelected) {
+                                                setFilterFacility(filterFacility.filter(f => f !== facility))
+                                              } else {
+                                                setFilterFacility([...filterFacility, facility])
+                                              }
+                                            }}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.01 }}
+                                            whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                              isSelected
+                                                ? 'bg-primary-50 text-primary-700 font-semibold'
+                                                : 'text-gray-700 hover:bg-gray-50'
+                                            }`}
+                                          >
+                                            <div className={`w-4 h-4 min-w-[16px] min-h-[16px] rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                              isSelected
+                                                ? 'border-primary-600 bg-primary-600'
+                                                : 'border-gray-300'
+                                            }`}>
+                                              {isSelected && (
+                                                <motion.svg
+                                                  initial={{ scale: 0 }}
+                                                  animate={{ scale: 1 }}
+                                                  className="w-3 h-3 min-w-[12px] min-h-[12px] text-white"
+                                                  fill="none"
+                                                  viewBox="0 0 24 24"
+                                                  stroke="currentColor"
+                                                  strokeWidth={3}
+                                                >
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </motion.svg>
+                                              )}
+                                            </div>
+                                            <span className="truncate">{facility}</span>
+                                          </motion.button>
+                                        )
+                                      })}
+                                    </div>
                           </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                          {filterFacility.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {filterFacility.map((facility) => (
+                                <motion.span
+                                  key={facility}
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 border border-primary-200 text-primary-700 rounded-lg text-sm font-medium shadow-sm hover:bg-primary-100 transition-colors"
+                                >
+                                  <span className="truncate max-w-[200px]">{facility}</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setFilterFacility(filterFacility.filter(f => f !== facility))
+                                    }}
+                                    className="hover:bg-primary-200 rounded-full p-0.5 transition-colors flex-shrink-0"
+                                    aria-label={`Remove ${facility}`}
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </motion.span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         
+                        {/* Certification Dropdown */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Certification</label>
-                          <motion.div
+                          <div className="relative">
+                            {/* Custom Dropdown Button */}
+                            <motion.button
+                              type="button"
+                              onClick={() => setShowCertificationDropdown(!showCertificationDropdown)}
                             whileHover={{ scale: 1.01 }}
-                            transition={{ type: "spring", stiffness: 400 }}
-                          >
-                            <input
-                              type="text"
-                              value={filterCertification}
-                              onChange={(e) => setFilterCertification(e.target.value)}
-                              placeholder="Enter certification name"
-                              className="w-full px-4 py-2.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50"
-                            />
+                              whileTap={{ scale: 0.99 }}
+                              className="w-full px-4 py-2.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-gray-300 font-medium text-gray-700 relative flex items-center min-h-[42px]"
+                            >
+                              <span className={`flex-1 text-left truncate leading-normal ${filterCertification.length > 0 ? "text-gray-900" : "text-gray-400"}`}>
+                                {filterCertification.length > 0 ? `${filterCertification.length} selected` : "Select certification"}
+                              </span>
+                              <motion.div
+                                animate={{ rotate: showCertificationDropdown ? 180 : 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute right-3 pointer-events-none flex items-center"
+                                style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                              >
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                              </motion.div>
+                            </motion.button>
+
+                            {/* Custom Dropdown Menu */}
+                            <AnimatePresence>
+                              {showCertificationDropdown && (
+                                <>
+                                  {/* Backdrop to close on outside click */}
+                                  <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setShowCertificationDropdown(false)}
+                                  />
+                                  
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50 max-h-64 overflow-y-auto"
+                                  >
+                                    <div className="p-2 space-y-1">
+                                      {uniqueCertifications.map((cert, idx) => {
+                                        const isSelected = filterCertification.includes(cert)
+                                        return (
+                                          <motion.button
+                                            key={cert}
+                                            type="button"
+                                            onClick={() => {
+                                              if (isSelected) {
+                                                setFilterCertification(filterCertification.filter(c => c !== cert))
+                                              } else {
+                                                setFilterCertification([...filterCertification, cert])
+                                              }
+                                            }}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.01 }}
+                                            whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                              isSelected
+                                                ? 'bg-primary-50 text-primary-700 font-semibold'
+                                                : 'text-gray-700 hover:bg-gray-50'
+                                            }`}
+                                          >
+                                            <div className={`w-4 h-4 min-w-[16px] min-h-[16px] rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                              isSelected
+                                                ? 'border-primary-600 bg-primary-600'
+                                                : 'border-gray-300'
+                                            }`}>
+                                              {isSelected && (
+                                                <motion.svg
+                                                  initial={{ scale: 0 }}
+                                                  animate={{ scale: 1 }}
+                                                  className="w-3 h-3 min-w-[12px] min-h-[12px] text-white"
+                                                  fill="none"
+                                                  viewBox="0 0 24 24"
+                                                  stroke="currentColor"
+                                                  strokeWidth={3}
+                                                >
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </motion.svg>
+                                              )}
+                                            </div>
+                                            <span className="truncate">{cert}</span>
+                                          </motion.button>
+                                        )
+                                      })}
+                                    </div>
                           </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                          {filterCertification.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {filterCertification.map((cert) => (
+                                <motion.span
+                                  key={cert}
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 border border-primary-200 text-primary-700 rounded-lg text-sm font-medium shadow-sm hover:bg-primary-100 transition-colors"
+                                >
+                                  <span className="truncate max-w-[200px]">{cert}</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setFilterCertification(filterCertification.filter(c => c !== cert))
+                                    }}
+                                    className="hover:bg-primary-200 rounded-full p-0.5 transition-colors flex-shrink-0"
+                                    aria-label={`Remove ${cert}`}
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </motion.span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         
+                        {/* Specialty Dropdown */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Specialty</label>
-                          <motion.div
+                          <div className="relative">
+                            {/* Custom Dropdown Button */}
+                            <motion.button
+                              type="button"
+                              onClick={() => setShowSpecialtyDropdown(!showSpecialtyDropdown)}
                             whileHover={{ scale: 1.01 }}
-                            transition={{ type: "spring", stiffness: 400 }}
+                              whileTap={{ scale: 0.99 }}
+                              className="w-full px-4 py-2.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-gray-300 font-medium text-gray-700 relative flex items-center min-h-[42px]"
                           >
-                            <input
-                              type="text"
-                              value={filterSpecialty}
-                              onChange={(e) => setFilterSpecialty(e.target.value)}
-                              placeholder="Enter specialty name"
-                              className="w-full px-4 py-2.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50"
-                            />
+                              <span className={`flex-1 text-left truncate leading-normal ${filterSpecialty.length > 0 ? "text-gray-900" : "text-gray-400"}`}>
+                                {filterSpecialty.length > 0 ? `${filterSpecialty.length} selected` : "Select specialty"}
+                              </span>
+                              <motion.div
+                                animate={{ rotate: showSpecialtyDropdown ? 180 : 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute right-3 pointer-events-none flex items-center"
+                                style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                              >
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                              </motion.div>
+                            </motion.button>
+
+                            {/* Custom Dropdown Menu */}
+                            <AnimatePresence>
+                              {showSpecialtyDropdown && (
+                                <>
+                                  {/* Backdrop to close on outside click */}
+                                  <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setShowSpecialtyDropdown(false)}
+                                  />
+                                  
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50 max-h-64 overflow-y-auto"
+                                  >
+                                    <div className="p-2 space-y-1">
+                                      {uniqueSpecialties.map((specialty, idx) => {
+                                        const isSelected = filterSpecialty.includes(specialty)
+                                        return (
+                                          <motion.button
+                                            key={specialty}
+                                            type="button"
+                                            onClick={() => {
+                                              if (isSelected) {
+                                                setFilterSpecialty(filterSpecialty.filter(s => s !== specialty))
+                                              } else {
+                                                setFilterSpecialty([...filterSpecialty, specialty])
+                                              }
+                                            }}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.01 }}
+                                            whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                              isSelected
+                                                ? 'bg-primary-50 text-primary-700 font-semibold'
+                                                : 'text-gray-700 hover:bg-gray-50'
+                                            }`}
+                                          >
+                                            <div className={`w-4 h-4 min-w-[16px] min-h-[16px] rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                              isSelected
+                                                ? 'border-primary-600 bg-primary-600'
+                                                : 'border-gray-300'
+                                            }`}>
+                                              {isSelected && (
+                                                <motion.svg
+                                                  initial={{ scale: 0 }}
+                                                  animate={{ scale: 1 }}
+                                                  className="w-3 h-3 min-w-[12px] min-h-[12px] text-white"
+                                                  fill="none"
+                                                  viewBox="0 0 24 24"
+                                                  stroke="currentColor"
+                                                  strokeWidth={3}
+                                                >
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </motion.svg>
+                                              )}
+                                            </div>
+                                            <span className="truncate">{specialty}</span>
+                                          </motion.button>
+                                        )
+                                      })}
+                                    </div>
                           </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                          {filterSpecialty.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {filterSpecialty.map((specialty) => (
+                                <motion.span
+                                  key={specialty}
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 border border-primary-200 text-primary-700 rounded-lg text-sm font-medium shadow-sm hover:bg-primary-100 transition-colors"
+                                >
+                                  <span className="truncate max-w-[200px]">{specialty}</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setFilterSpecialty(filterSpecialty.filter(s => s !== specialty))
+                                    }}
+                                    className="hover:bg-primary-200 rounded-full p-0.5 transition-colors flex-shrink-0"
+                                    aria-label={`Remove ${specialty}`}
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </motion.span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </motion.div>
@@ -1904,7 +2276,7 @@ function JobsPageContent() {
                             <motion.button
                               type="button"
                               onClick={() => setShowShiftDropdown(!showShiftDropdown)}
-                              whileHover={{ scale: 1.01 }}
+                            whileHover={{ scale: 1.01 }}
                               whileTap={{ scale: 0.99 }}
                               className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-primary-300 min-h-[42px] relative flex items-center"
                             >
@@ -1921,7 +2293,7 @@ function JobsPageContent() {
                                 style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
                               >
                                 <ChevronDown className="w-5 h-5 text-gray-400" />
-                              </motion.div>
+                          </motion.div>
                             </motion.button>
 
                             {/* Custom Dropdown Menu */}
@@ -2000,7 +2372,7 @@ function JobsPageContent() {
                             <motion.button
                               type="button"
                               onClick={() => setShowDurationDropdown(!showDurationDropdown)}
-                              whileHover={{ scale: 1.01 }}
+                            whileHover={{ scale: 1.01 }}
                               whileTap={{ scale: 0.99 }}
                               className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-primary-300 min-h-[42px] relative flex items-center"
                             >
@@ -2017,7 +2389,7 @@ function JobsPageContent() {
                                 style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
                               >
                                 <ChevronDown className="w-5 h-5 text-gray-400" />
-                              </motion.div>
+                          </motion.div>
                             </motion.button>
 
                             {/* Custom Dropdown Menu */}
@@ -2845,22 +3217,22 @@ function JobsPageContent() {
                                         <span className="text-gray-900">{preset.filters.agency}</span>
                                       </div>
                                     )}
-                                    {preset.filters.facility && (
+                                    {preset.filters.facility && preset.filters.facility.length > 0 && (
                                       <div className="flex items-center gap-2 text-sm">
                                         <span className="text-gray-500 font-medium min-w-[60px]">Facility:</span>
-                                        <span className="text-gray-900">{preset.filters.facility}</span>
+                                        <span className="text-gray-900">{Array.isArray(preset.filters.facility) ? preset.filters.facility.join(', ') : preset.filters.facility}</span>
                                       </div>
                                     )}
-                                    {preset.filters.certification && (
+                                    {preset.filters.certification && preset.filters.certification.length > 0 && (
                                       <div className="flex items-center gap-2 text-sm">
                                         <span className="text-gray-500 font-medium min-w-[60px]">Certification:</span>
-                                        <span className="text-gray-900">{preset.filters.certification}</span>
+                                        <span className="text-gray-900">{Array.isArray(preset.filters.certification) ? preset.filters.certification.join(', ') : preset.filters.certification}</span>
                                       </div>
                                     )}
-                                    {preset.filters.specialty && (
+                                    {preset.filters.specialty && preset.filters.specialty.length > 0 && (
                                       <div className="flex items-center gap-2 text-sm">
                                         <span className="text-gray-500 font-medium min-w-[60px]">Specialty:</span>
-                                        <span className="text-gray-900">{preset.filters.specialty}</span>
+                                        <span className="text-gray-900">{Array.isArray(preset.filters.specialty) ? preset.filters.specialty.join(', ') : preset.filters.specialty}</span>
                                       </div>
                                     )}
                                     {preset.filters.shift !== 'all' && (

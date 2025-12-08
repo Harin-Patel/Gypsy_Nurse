@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, User, ArrowRight, Clock, ChevronLeft, ChevronRight, Tag, Mail, Search } from 'lucide-react'
 import Image from 'next/image'
@@ -124,7 +124,7 @@ const categories = [
   'Travel Healthcare',
 ]
 
-export default function ArticlesPage() {
+function ArticlesPageContent() {
   const isMobile = useIsMobile()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -504,6 +504,18 @@ export default function ArticlesPage() {
       {!isMobile && <Footer />}
       {isMobile && <MobileBottomNav />}
     </div>
+  )
+}
+
+export default function ArticlesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    }>
+      <ArticlesPageContent />
+    </Suspense>
   )
 }
 

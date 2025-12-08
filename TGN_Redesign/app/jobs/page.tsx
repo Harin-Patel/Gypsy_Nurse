@@ -1092,13 +1092,13 @@ function JobsPageContent() {
         setFilterAgency('')
         break
       case 'facility':
-        setFilterFacility('')
+        setFilterFacility([])
         break
       case 'certification':
-        setFilterCertification('')
+        setFilterCertification([])
         break
       case 'specialty':
-        setFilterSpecialty('')
+        setFilterSpecialty([])
         break
       case 'minsalary':
         setFilterMinSalary('')
@@ -1380,9 +1380,9 @@ function JobsPageContent() {
     setFilterZipCode('')
     setFilterStates([])
       setFilterAgency('')
-    setFilterFacility('')
-    setFilterCertification('')
-    setFilterSpecialty('')
+    setFilterFacility([])
+    setFilterCertification([])
+    setFilterSpecialty([])
       setFilterMinSalary('')
       setFilterMaxSalary('')
       setFilterShift('all')

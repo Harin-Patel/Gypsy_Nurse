@@ -13,6 +13,7 @@ import {
   Building2,
   Bookmark,
   ChevronRight,
+  ChevronLeft,
   ChevronDown,
   ArrowUpRight,
   ThumbsUp,
@@ -23,6 +24,7 @@ import {
   Sparkles,
   Filter,
   ArrowRight,
+  ArrowUpDown,
   AlertCircle,
   CheckCircle2,
   Star,
@@ -61,6 +63,7 @@ import {
 } from '@/utils/filterStorage'
 import { getFacilityImageWithFallback } from '@/utils/stateImages'
 import { useDisableBodyScroll } from '@/utils/useDisableBodyScroll'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 export interface Job {
   id: string
@@ -470,6 +473,7 @@ function JobsPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { isAuthenticated } = useAuth()
+  const isMobile = useIsMobile()
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('relevance')
   const [showFilters, setShowFilters] = useState(false)
@@ -1437,89 +1441,1299 @@ function JobsPageContent() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navigation />
+      
+      {/* Mobile Header Wrapper - Sticks with Navigation */}
+      {isMobile && (
+        <div 
+          className="sticky z-[99] bg-white"
+          style={{ 
+            position: 'sticky', 
+            top: '56px', 
+            zIndex: 99,
+            backgroundColor: '#ffffff'
+          }}
+        >
+          {/* Mobile Header Content */}
+          <div className="px-3 pt-3 pb-3">
+            <div className="flex items-center justify-between mb-3">
+              <h1 className="text-xl font-bold text-gray-900">
+                Find Your Next Job
+              </h1>
+              {/* Job Count - Mobile */}
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 bg-primary-600 rounded-full" />
+                <span className="text-xs text-gray-600">
+                  Showing <span className="font-semibold text-gray-900">{filteredJobs.length}</span> jobs
+                  <span className="text-gray-500"> (of {SAMPLE_JOBS.length} total)</span>
+                </span>
+              </div>
+            </div>
+            
+            {/* Mobile Search Bar - Native App Style */}
+            <div className="space-y-2">
+              {/* Search Input - Full Width, Compact */}
+              <div className="relative w-full flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-200 focus-within:bg-white focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-200/50 transition-all">
+                <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      applyFilters()
+                    }
+                  }}
+                  placeholder="Search jobs..."
+                  className="flex-1 bg-transparent border-none outline-none text-sm text-gray-900 placeholder-gray-500"
+                />
+                <AnimatePresence>
+                  {searchQuery && (
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => {
+                        const hadLocationParam = searchParams?.get('location') ? true : false
+                        const currentSearchQuery = searchQuery
+                        
+                        if (typeof window !== 'undefined') {
+                          const newUrl = new URL(window.location.href)
+                          newUrl.searchParams.delete('q')
+                          newUrl.searchParams.delete('location')
+                          window.history.replaceState({}, '', newUrl.toString())
+                        }
+                        
+                        setSearchQuery('')
+                        
+                        if ((hadLocationParam || (filterCity && currentSearchQuery.toLowerCase().includes(filterCity.toLowerCase()))) && filterCity) {
+                          setFilterCity('')
+                        }
+                        
+                        applyFilters()
+                      }}
+                      className="flex-shrink-0 p-1 rounded-full bg-gray-200 active:bg-gray-300 text-gray-500 transition-colors"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Filter Button Row - Native Mobile Style */}
+              <div className="flex items-center gap-2">
+                {/* Filters Button */}
+                <motion.button
+                  onClick={() => setShowFilters(!showFilters)}
+                  whileTap={{ scale: 0.98 }}
+                  className="relative flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 rounded-xl text-sm font-medium text-gray-900 active:bg-gray-100 transition-colors"
+                >
+                  <SlidersHorizontal className="w-4 h-4 text-gray-700" />
+                  <span>Filters</span>
+                  {/* Active Filter Badge - Simple Dot Indicator */}
+                  {(() => {
+                    const hasActiveFilters = [
+                      filterCity,
+                      filterZipCode,
+                      filterStates.length > 0,
+                      filterAgency,
+                      filterFacility.length > 0,
+                      filterCertification.length > 0,
+                      filterSpecialty.length > 0,
+                      filterMinSalary,
+                      filterMaxSalary,
+                      filterShift !== 'all',
+                      filterDuration !== 'all',
+                      filterFeaturedOnly
+                    ].some(Boolean)
+                    
+                    return hasActiveFilters ? (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary-600 rounded-full border-2 border-white shadow-sm" />
+                    ) : null
+                  })()}
+                </motion.button>
+
+                {/* Sort Button */}
+                <motion.button
+                  onClick={() => setShowSortDropdown(!showSortDropdown)}
+                  whileTap={{ scale: 0.98 }}
+                  className="relative flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 rounded-xl text-sm font-medium text-gray-900 active:bg-gray-100 transition-colors"
+                >
+                  <ArrowUpDown className="w-4 h-4 text-gray-700" />
+                  <span>Sort By</span>
+                </motion.button>
+
+                {/* Saved Filters Button */}
+                <motion.button
+                  onClick={() => setShowSavedFilters(!showSavedFilters)}
+                  whileTap={{ scale: 0.98 }}
+                  className="relative flex items-center justify-center px-3 py-3 bg-gray-50 rounded-xl text-sm font-medium text-gray-900 active:bg-gray-100 transition-colors"
+                >
+                  <BookmarkCheck className={`w-4 h-4 ${savedFilterPresets.length > 0 ? 'text-primary-600' : 'text-gray-700'}`} />
+                  {savedFilterPresets.length > 0 && (
+                    <span className={`absolute -top-1 -right-1 flex items-center justify-center h-5 bg-primary-600 text-white text-[10px] font-semibold rounded-full border-2 border-white shadow-sm ${
+                      savedFilterPresets.length > 12 
+                        ? 'px-1.5 min-w-[28px]' 
+                        : 'w-5 px-0'
+                    }`}>
+                      {savedFilterPresets.length}
+                    </span>
+                  )}
+                </motion.button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Advanced Filter Modal */}
       <AnimatePresence>
         {showFilters && (
           <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
-              onClick={() => setShowFilters(false)}
-            >
-              {/* Modal */}
+            {/* Hide bottom nav when filter modal is open on mobile */}
+            {isMobile && (
+              <style jsx global>{`
+                [data-mobile-bottom-nav] {
+                  display: none !important;
+                }
+              `}</style>
+            )}
+            {isMobile ? (
+              /* Mobile Full Screen Filter Page */
               <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-                className="relative w-full max-w-4xl mx-4 sm:mx-0"
-                style={{ maxHeight: '90vh' }}
-                onClick={(e) => e.stopPropagation()}
+                initial={{ opacity: 0, x: '100%' }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: '100%' }}
+                transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+                className="fixed inset-0 bg-white z-[9999] flex flex-col"
+                style={{ 
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  position: 'fixed',
+                  zIndex: 9999
+                }}
               >
-                {/* Glow effect behind modal */}
-                <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
-                
-                {/* Main modal container */}
-                <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
-                  {/* Header Section */}
-                  <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          {/* Animated Icon */}
-                          <motion.div
-                            animate={{ rotate: [0, 10, -10, 0] }}
-                            transition={{ duration: 4, repeat: Infinity, repeatDelay: 2 }}
-                            className="relative"
-                          >
-                            <div className="absolute inset-0 bg-primary-100 rounded-2xl blur-xl opacity-60" />
-                            <div className="relative p-3 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-lg">
-                              <Filter className="w-7 h-7 text-white" />
-                            </div>
-                          </motion.div>
-                          
-                          <div>
-                            <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
-                              {filterToEdit ? 'Edit Filter' : 'Advanced Job Filters'}
-                            </h2>
-                            <p className="text-sm text-gray-600 mt-1">
-                              {filterToEdit ? `Editing: ${filterToEdit.name}` : 'Refine your search to find the perfect job'}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {/* Close Button */}
-                        <motion.button
-                          whileHover={{ scale: 1.1, rotate: 90 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => {
-                            if (filterToEdit) {
-                              handleCancelEditFilter()
-                            } else {
-                              setShowFilters(false)
-                            }
-                          }}
-                          className="p-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
-                        >
-                          <X className="w-5 h-5 text-gray-600" />
-                        </motion.button>
+                {/* Mobile Header */}
+                <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
+                  <div className="flex items-center gap-3">
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        if (filterToEdit) {
+                          handleCancelEditFilter()
+                        } else {
+                          setShowFilters(false)
+                        }
+                      }}
+                      className="p-2 -ml-2 active:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-gray-700" />
+                    </motion.button>
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900">
+                        {filterToEdit ? 'Edit Filter' : 'Filters'}
+                      </h2>
+                      {filterToEdit && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {filterToEdit.name}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      if (filterToEdit) {
+                        handleCancelEditFilter()
+                      } else {
+                        setShowFilters(false)
+                      }
+                    }}
+                    className="p-2 active:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5 text-gray-700" />
+                  </motion.button>
+                </div>
+
+                {/* Mobile Content - Scrollable */}
+                <div className="flex-1 overflow-y-auto px-4 py-4">
+                  <div className="space-y-6 pb-4">
+                    {/* Location Section */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                    >
+                      <div className="flex items-center gap-2 mb-4">
+                        <MapPin className="w-5 h-5 text-primary-600" />
+                        <h3 className="text-lg font-bold text-gray-900">Location</h3>
                       </div>
                       
-                    </div>
+                      <div className="grid grid-cols-1 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                          <motion.div
+                            whileHover={{ scale: 1.01 }}
+                            transition={{ type: "spring", stiffness: 400 }}
+                          >
+                            <input
+                              type="text"
+                              value={filterCity}
+                              onChange={(e) => setFilterCity(e.target.value)}
+                              placeholder="Enter city name"
+                              className="w-full px-4 py-2.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50"
+                            />
+                          </motion.div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Zip Code</label>
+                          <motion.div
+                            whileHover={{ scale: 1.01 }}
+                            transition={{ type: "spring", stiffness: 400 }}
+                          >
+                            <input
+                              type="text"
+                              value={filterZipCode}
+                              onChange={(e) => setFilterZipCode(e.target.value)}
+                              placeholder="Enter zip code"
+                              className="w-full px-4 py-2.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50"
+                            />
+                          </motion.div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">States</label>
+                          <div className="relative">
+                            {/* Custom Dropdown Button */}
+                            <motion.button
+                              type="button"
+                              onClick={() => setShowStatesDropdown(!showStatesDropdown)}
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                              className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left min-h-[42px] relative flex items-center"
+                            >
+                              <span className={`flex-1 text-left truncate leading-normal ${filterStates.length > 0 ? "text-gray-900" : "text-gray-400"}`}>
+                                {filterStates.length > 0 
+                                  ? `${filterStates.length} ${filterStates.length === 1 ? 'State' : 'States'} selected`
+                                  : "Search and select states..."}
+                              </span>
+                              <motion.div
+                                animate={{ rotate: showStatesDropdown ? 180 : 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute right-3 pointer-events-none flex items-center"
+                                style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                              >
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                              </motion.div>
+                            </motion.button>
 
-                    {/* Divider */}
-                    <div className="px-4 sm:px-6 md:px-8">
-                      <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                    </div>
+                            {/* Custom Dropdown Menu */}
+                            <AnimatePresence>
+                              {showStatesDropdown && (
+                                <>
+                                  {/* Backdrop to close on outside click */}
+                                  <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setShowStatesDropdown(false)}
+                                  />
+                                  
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50 max-h-64 overflow-y-auto"
+                                  >
+                                    <div className="p-2 space-y-1">
+                                      {/* State Options */}
+                                      {usStates.map((state, idx) => {
+                                        const isSelected = filterStates.includes(state)
+                                        return (
+                                          <motion.button
+                                            key={state}
+                                            type="button"
+                                            onClick={() => {
+                                              if (isSelected) {
+                                                setFilterStates(filterStates.filter(s => s !== state))
+                                              } else {
+                                                setFilterStates([...filterStates, state])
+                                              }
+                                            }}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.01 }}
+                                            whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                              isSelected
+                                                ? 'bg-primary-50 text-primary-700 font-semibold'
+                                                : 'text-gray-700 hover:bg-gray-50'
+                                            }`}
+                                          >
+                                            <div className={`w-4 h-4 min-w-[16px] min-h-[16px] rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                              isSelected
+                                                ? 'border-primary-600 bg-primary-600'
+                                                : 'border-gray-300'
+                                            }`}>
+                                              {isSelected && (
+                                                <motion.svg
+                                                  initial={{ scale: 0 }}
+                                                  animate={{ scale: 1 }}
+                                                  className="w-3 h-3 min-w-[12px] min-h-[12px] text-white"
+                                                  fill="none"
+                                                  viewBox="0 0 24 24"
+                                                  stroke="currentColor"
+                                                  strokeWidth={3}
+                                                >
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </motion.svg>
+                                              )}
+                                            </div>
+                                            <span className="truncate">{state}</span>
+                                          </motion.button>
+                                        )
+                                      })}
+                                    </div>
+                                  </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                          {filterStates.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {filterStates.map((state) => (
+                                <motion.span
+                                  key={state}
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 border border-primary-200 text-primary-700 rounded-lg text-sm font-medium shadow-sm hover:bg-primary-100 transition-colors"
+                                >
+                                  <span className="truncate max-w-[200px]">{state}</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setFilterStates(filterStates.filter(s => s !== state))
+                                    }}
+                                    className="hover:bg-primary-200 rounded-full p-0.5 transition-colors flex-shrink-0"
+                                    aria-label={`Remove ${state}`}
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </motion.span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
 
-                    {/* Content Area - Scrollable */}
-                    <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-                      <div className="space-y-8">
-                    {/* Location Section */}
+                    {/* Agency Section */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.15 }}
+                      className="pt-6 border-t border-gray-200"
+                    >
+                      <div className="flex items-center gap-2 mb-4">
+                        <Award className="w-5 h-5 text-primary-600" />
+                        <h3 className="text-lg font-bold text-gray-900">Agency</h3>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Staffing Agency</label>
+                        <div className="relative">
+                          {/* Custom Dropdown Button */}
+                          <motion.button
+                            type="button"
+                            onClick={() => setShowAgencyDropdown(!showAgencyDropdown)}
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
+                            className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left min-h-[42px] relative flex items-center"
+                          >
+                            <span className={`flex-1 text-left truncate leading-normal ${filterAgency ? "text-gray-900" : "text-gray-500"}`}>
+                              {filterAgency || "All Agencies"}
+                            </span>
+                            <motion.div
+                              animate={{ rotate: showAgencyDropdown ? 180 : 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="absolute right-3 pointer-events-none flex items-center"
+                              style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                            >
+                              <ChevronDown className="w-5 h-5 text-gray-400" />
+                            </motion.div>
+                          </motion.button>
+
+                          {/* Custom Dropdown Menu */}
+                          <AnimatePresence>
+                            {showAgencyDropdown && (
+                              <>
+                                {/* Backdrop to close on outside click */}
+                                <div 
+                                  className="fixed inset-0 z-40" 
+                                  onClick={() => setShowAgencyDropdown(false)}
+                                />
+                                
+                                <motion.div
+                                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  transition={{ duration: 0.2, ease: "easeOut" }}
+                                  className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50 max-h-64 overflow-y-auto"
+                                >
+                                  <div className="p-2">
+                                    {/* All Agencies Option */}
+                                    <motion.button
+                                      type="button"
+                                      onClick={() => {
+                                        setFilterAgency('')
+                                        setShowAgencyDropdown(false)
+                                      }}
+                                      whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                        !filterAgency
+                                          ? 'bg-primary-50 text-primary-700 font-semibold'
+                                          : 'text-gray-700 hover:bg-gray-50'
+                                      }`}
+                                    >
+                                      <div className={`w-4 h-4 min-w-[16px] min-h-[16px] rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                        !filterAgency
+                                          ? 'border-primary-600 bg-primary-600'
+                                          : 'border-gray-300'
+                                      }`}>
+                                        {!filterAgency && (
+                                          <motion.svg
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="w-3 h-3 min-w-[12px] min-h-[12px] text-white"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            strokeWidth={3}
+                                          >
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                          </motion.svg>
+                                        )}
+                                      </div>
+                                      <span>All Agencies</span>
+                                    </motion.button>
+
+                                    {/* Divider */}
+                                    <div className="h-px bg-gray-200 my-2" />
+
+                                    {/* Agency Options */}
+                                    {uniqueAgencies.map((agency, idx) => (
+                                      <motion.button
+                                        key={agency}
+                                        type="button"
+                                        onClick={() => {
+                                          setFilterAgency(agency)
+                                          setShowAgencyDropdown(false)
+                                        }}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: idx * 0.02 }}
+                                        whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                          filterAgency === agency
+                                            ? 'bg-primary-50 text-primary-700 font-semibold'
+                                            : 'text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                      >
+                                        <div className={`w-4 h-4 min-w-[16px] min-h-[16px] rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                          filterAgency === agency
+                                            ? 'border-primary-600 bg-primary-600'
+                                            : 'border-gray-300'
+                                        }`}>
+                                          {filterAgency === agency && (
+                                            <motion.svg
+                                              initial={{ scale: 0 }}
+                                              animate={{ scale: 1 }}
+                                              className="w-3 h-3 min-w-[12px] min-h-[12px] text-white"
+                                              fill="none"
+                                              viewBox="0 0 24 24"
+                                              stroke="currentColor"
+                                              strokeWidth={3}
+                                            >
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                            </motion.svg>
+                                          )}
+                                        </div>
+                                        <span className="truncate">{agency}</span>
+                                      </motion.button>
+                                    ))}
+                                  </div>
+                                </motion.div>
+                              </>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Job Details Section */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className="pt-6 border-t border-gray-200"
+                    >
+                      <div className="flex items-center gap-2 mb-4">
+                        <Briefcase className="w-5 h-5 text-primary-600" />
+                        <h3 className="text-lg font-bold text-gray-900">Job Details</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-4">
+                        {/* Facility Name Dropdown */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Facility Name</label>
+                          <div className="relative">
+                            {/* Custom Dropdown Button */}
+                            <motion.button
+                              type="button"
+                              onClick={() => setShowFacilityDropdown(!showFacilityDropdown)}
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                              className="w-full px-4 py-2.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-gray-300 font-medium text-gray-700 relative flex items-center min-h-[42px]"
+                            >
+                              <span className={`flex-1 text-left truncate leading-normal ${filterFacility.length > 0 ? "text-gray-900" : "text-gray-400"}`}>
+                                {filterFacility.length > 0 ? `${filterFacility.length} selected` : "Select facility name"}
+                              </span>
+                              <motion.div
+                                animate={{ rotate: showFacilityDropdown ? 180 : 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute right-3 pointer-events-none flex items-center"
+                                style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                              >
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                              </motion.div>
+                            </motion.button>
+
+                            {/* Custom Dropdown Menu */}
+                            <AnimatePresence>
+                              {showFacilityDropdown && (
+                                <>
+                                  {/* Backdrop to close on outside click */}
+                                  <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setShowFacilityDropdown(false)}
+                                  />
+                                  
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50 max-h-64 overflow-y-auto"
+                                  >
+                                    <div className="p-2 space-y-1">
+                                      {uniqueFacilities.map((facility, idx) => {
+                                        const isSelected = filterFacility.includes(facility)
+                                        return (
+                                          <motion.button
+                                            key={facility}
+                                            type="button"
+                                            onClick={() => {
+                                              if (isSelected) {
+                                                setFilterFacility(filterFacility.filter(f => f !== facility))
+                                              } else {
+                                                setFilterFacility([...filterFacility, facility])
+                                              }
+                                            }}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.01 }}
+                                            whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                              isSelected
+                                                ? 'bg-primary-50 text-primary-700 font-semibold'
+                                                : 'text-gray-700 hover:bg-gray-50'
+                                            }`}
+                                          >
+                                            <div className={`w-4 h-4 min-w-[16px] min-h-[16px] rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                              isSelected
+                                                ? 'border-primary-600 bg-primary-600'
+                                                : 'border-gray-300'
+                                            }`}>
+                                              {isSelected && (
+                                                <motion.svg
+                                                  initial={{ scale: 0 }}
+                                                  animate={{ scale: 1 }}
+                                                  className="w-3 h-3 min-w-[12px] min-h-[12px] text-white"
+                                                  fill="none"
+                                                  viewBox="0 0 24 24"
+                                                  stroke="currentColor"
+                                                  strokeWidth={3}
+                                                >
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </motion.svg>
+                                              )}
+                                            </div>
+                                            <span className="truncate">{facility}</span>
+                                          </motion.button>
+                                        )
+                                      })}
+                                    </div>
+                                  </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                          {filterFacility.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {filterFacility.map((facility) => (
+                                <motion.span
+                                  key={facility}
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 border border-primary-200 text-primary-700 rounded-lg text-sm font-medium shadow-sm hover:bg-primary-100 transition-colors"
+                                >
+                                  <span className="truncate max-w-[200px]">{facility}</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setFilterFacility(filterFacility.filter(f => f !== facility))
+                                    }}
+                                    className="hover:bg-primary-200 rounded-full p-0.5 transition-colors flex-shrink-0"
+                                    aria-label={`Remove ${facility}`}
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </motion.span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Certification Dropdown */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Certification</label>
+                          <div className="relative">
+                            {/* Custom Dropdown Button */}
+                            <motion.button
+                              type="button"
+                              onClick={() => setShowCertificationDropdown(!showCertificationDropdown)}
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                              className="w-full px-4 py-2.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-gray-300 font-medium text-gray-700 relative flex items-center min-h-[42px]"
+                            >
+                              <span className={`flex-1 text-left truncate leading-normal ${filterCertification.length > 0 ? "text-gray-900" : "text-gray-400"}`}>
+                                {filterCertification.length > 0 ? `${filterCertification.length} selected` : "Select certification"}
+                              </span>
+                              <motion.div
+                                animate={{ rotate: showCertificationDropdown ? 180 : 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute right-3 pointer-events-none flex items-center"
+                                style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                              >
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                              </motion.div>
+                            </motion.button>
+
+                            {/* Custom Dropdown Menu */}
+                            <AnimatePresence>
+                              {showCertificationDropdown && (
+                                <>
+                                  {/* Backdrop to close on outside click */}
+                                  <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setShowCertificationDropdown(false)}
+                                  />
+                                  
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50 max-h-64 overflow-y-auto"
+                                  >
+                                    <div className="p-2 space-y-1">
+                                      {uniqueCertifications.map((cert, idx) => {
+                                        const isSelected = filterCertification.includes(cert)
+                                        return (
+                                          <motion.button
+                                            key={cert}
+                                            type="button"
+                                            onClick={() => {
+                                              if (isSelected) {
+                                                setFilterCertification(filterCertification.filter(c => c !== cert))
+                                              } else {
+                                                setFilterCertification([...filterCertification, cert])
+                                              }
+                                            }}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.01 }}
+                                            whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                              isSelected
+                                                ? 'bg-primary-50 text-primary-700 font-semibold'
+                                                : 'text-gray-700 hover:bg-gray-50'
+                                            }`}
+                                          >
+                                            <div className={`w-4 h-4 min-w-[16px] min-h-[16px] rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                              isSelected
+                                                ? 'border-primary-600 bg-primary-600'
+                                                : 'border-gray-300'
+                                            }`}>
+                                              {isSelected && (
+                                                <motion.svg
+                                                  initial={{ scale: 0 }}
+                                                  animate={{ scale: 1 }}
+                                                  className="w-3 h-3 min-w-[12px] min-h-[12px] text-white"
+                                                  fill="none"
+                                                  viewBox="0 0 24 24"
+                                                  stroke="currentColor"
+                                                  strokeWidth={3}
+                                                >
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </motion.svg>
+                                              )}
+                                            </div>
+                                            <span className="truncate">{cert}</span>
+                                          </motion.button>
+                                        )
+                                      })}
+                                    </div>
+                                  </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                          {filterCertification.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {filterCertification.map((cert) => (
+                                <motion.span
+                                  key={cert}
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 border border-primary-200 text-primary-700 rounded-lg text-sm font-medium shadow-sm hover:bg-primary-100 transition-colors"
+                                >
+                                  <span className="truncate max-w-[200px]">{cert}</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setFilterCertification(filterCertification.filter(c => c !== cert))
+                                    }}
+                                    className="hover:bg-primary-200 rounded-full p-0.5 transition-colors flex-shrink-0"
+                                    aria-label={`Remove ${cert}`}
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </motion.span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Specialty Dropdown */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Specialty</label>
+                          <div className="relative">
+                            {/* Custom Dropdown Button */}
+                            <motion.button
+                              type="button"
+                              onClick={() => setShowSpecialtyDropdown(!showSpecialtyDropdown)}
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                              className="w-full px-4 py-2.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-gray-300 font-medium text-gray-700 relative flex items-center min-h-[42px]"
+                            >
+                              <span className={`flex-1 text-left truncate leading-normal ${filterSpecialty.length > 0 ? "text-gray-900" : "text-gray-400"}`}>
+                                {filterSpecialty.length > 0 ? `${filterSpecialty.length} selected` : "Select specialty"}
+                              </span>
+                              <motion.div
+                                animate={{ rotate: showSpecialtyDropdown ? 180 : 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute right-3 pointer-events-none flex items-center"
+                                style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                              >
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                              </motion.div>
+                            </motion.button>
+
+                            {/* Custom Dropdown Menu */}
+                            <AnimatePresence>
+                              {showSpecialtyDropdown && (
+                                <>
+                                  {/* Backdrop to close on outside click */}
+                                  <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setShowSpecialtyDropdown(false)}
+                                  />
+                                  
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50 max-h-64 overflow-y-auto"
+                                  >
+                                    <div className="p-2 space-y-1">
+                                      {uniqueSpecialties.map((specialty, idx) => {
+                                        const isSelected = filterSpecialty.includes(specialty)
+                                        return (
+                                          <motion.button
+                                            key={specialty}
+                                            type="button"
+                                            onClick={() => {
+                                              if (isSelected) {
+                                                setFilterSpecialty(filterSpecialty.filter(s => s !== specialty))
+                                              } else {
+                                                setFilterSpecialty([...filterSpecialty, specialty])
+                                              }
+                                            }}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.01 }}
+                                            whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                              isSelected
+                                                ? 'bg-primary-50 text-primary-700 font-semibold'
+                                                : 'text-gray-700 hover:bg-gray-50'
+                                            }`}
+                                          >
+                                            <div className={`w-4 h-4 min-w-[16px] min-h-[16px] rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                              isSelected
+                                                ? 'border-primary-600 bg-primary-600'
+                                                : 'border-gray-300'
+                                            }`}>
+                                              {isSelected && (
+                                                <motion.svg
+                                                  initial={{ scale: 0 }}
+                                                  animate={{ scale: 1 }}
+                                                  className="w-3 h-3 min-w-[12px] min-h-[12px] text-white"
+                                                  fill="none"
+                                                  viewBox="0 0 24 24"
+                                                  stroke="currentColor"
+                                                  strokeWidth={3}
+                                                >
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </motion.svg>
+                                              )}
+                                            </div>
+                                            <span className="truncate">{specialty}</span>
+                                          </motion.button>
+                                        )
+                                      })}
+                                    </div>
+                                  </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                          {filterSpecialty.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {filterSpecialty.map((specialty) => (
+                                <motion.span
+                                  key={specialty}
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 border border-primary-200 text-primary-700 rounded-lg text-sm font-medium shadow-sm hover:bg-primary-100 transition-colors"
+                                >
+                                  <span className="truncate max-w-[200px]">{specialty}</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setFilterSpecialty(filterSpecialty.filter(s => s !== specialty))
+                                    }}
+                                    className="hover:bg-primary-200 rounded-full p-0.5 transition-colors flex-shrink-0"
+                                    aria-label={`Remove ${specialty}`}
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </motion.span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Salary Section */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="pt-6 border-t border-gray-200"
+                    >
+                      <div className="flex items-center gap-2 mb-4">
+                        <DollarSign className="w-5 h-5 text-primary-600" />
+                        <h3 className="text-lg font-bold text-gray-900">Salary & Schedule</h3>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Salary Range</label>
+                        <div className="grid grid-cols-2 gap-4">
+                          <motion.div
+                            whileHover={{ scale: 1.01 }}
+                            transition={{ type: "spring", stiffness: 400 }}
+                          >
+                            <input
+                              type="number"
+                              value={filterMinSalary}
+                              onChange={(e) => setFilterMinSalary(e.target.value)}
+                              placeholder="Min Salary ($)"
+                              className="w-full px-4 py-2.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50"
+                            />
+                          </motion.div>
+                          <motion.div
+                            whileHover={{ scale: 1.01 }}
+                            transition={{ type: "spring", stiffness: 400 }}
+                          >
+                            <input
+                              type="number"
+                              value={filterMaxSalary}
+                              onChange={(e) => setFilterMaxSalary(e.target.value)}
+                              placeholder="Max Salary ($)"
+                              className="w-full px-4 py-2.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50"
+                            />
+                          </motion.div>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Work Schedule Section */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 }}
+                      className="pt-6 border-t border-gray-200"
+                    >
+                      <div className="flex items-center gap-2 mb-4">
+                        <Clock className="w-5 h-5 text-primary-600" />
+                        <h3 className="text-lg font-bold text-gray-900">Work Schedule</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Shift</label>
+                          <div className="relative">
+                            {/* Custom Dropdown Button */}
+                            <motion.button
+                              type="button"
+                              onClick={() => setShowShiftDropdown(!showShiftDropdown)}
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                              className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left min-h-[42px] relative flex items-center"
+                            >
+                              <span className={`flex-1 text-left truncate leading-normal ${filterShift === 'all' ? "text-gray-400" : "text-gray-900"}`}>
+                                {filterShift === 'all' ? 'All Shifts' : 
+                                 filterShift === 'day' ? 'Day Shift' :
+                                 filterShift === 'night' ? 'Night Shift' :
+                                 filterShift === 'evening' ? 'Evening Shift' : 'All Shifts'}
+                              </span>
+                              <motion.div
+                                animate={{ rotate: showShiftDropdown ? 180 : 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute right-3 pointer-events-none flex items-center"
+                                style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                              >
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                              </motion.div>
+                            </motion.button>
+
+                            {/* Custom Dropdown Menu */}
+                            <AnimatePresence>
+                              {showShiftDropdown && (
+                                <>
+                                  {/* Backdrop to close on outside click */}
+                                  <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setShowShiftDropdown(false)}
+                                  />
+                                  
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50"
+                                  >
+                                    <div className="p-2">
+                                      {[
+                                        { value: 'all', label: 'All Shifts' },
+                                        { value: 'day', label: 'Day Shift' },
+                                        { value: 'night', label: 'Night Shift' },
+                                        { value: 'evening', label: 'Evening Shift' }
+                                      ].map((option, idx) => (
+                                        <motion.button
+                                          key={option.value}
+                                          type="button"
+                                          onClick={() => {
+                                            setFilterShift(option.value)
+                                            setShowShiftDropdown(false)
+                                          }}
+                                          initial={{ opacity: 0, x: -10 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          transition={{ delay: idx * 0.02 }}
+                                          whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                            filterShift === option.value
+                                              ? 'bg-primary-50 text-primary-700 font-semibold'
+                                              : 'text-gray-700 hover:bg-gray-50'
+                                          }`}
+                                        >
+                                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                            filterShift === option.value
+                                              ? 'border-primary-600 bg-primary-600'
+                                              : 'border-gray-300'
+                                          }`}>
+                                            {filterShift === option.value && (
+                                              <motion.svg
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                className="w-3 h-3 text-white"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                              >
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                              </motion.svg>
+                                            )}
+                                          </div>
+                                          <span>{option.label}</span>
+                                        </motion.button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Duration</label>
+                          <div className="relative">
+                            {/* Custom Dropdown Button */}
+                            <motion.button
+                              type="button"
+                              onClick={() => setShowDurationDropdown(!showDurationDropdown)}
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                              className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left min-h-[42px] relative flex items-center"
+                            >
+                              <span className={`flex-1 text-left truncate leading-normal ${filterDuration === 'all' ? "text-gray-400" : "text-gray-900"}`}>
+                                {filterDuration === 'all' ? 'All Durations' : 
+                                 filterDuration === '8' ? '8 Hours' :
+                                 filterDuration === '10' ? '10 Hours' :
+                                 filterDuration === '12' ? '12 Hours' : 'All Durations'}
+                              </span>
+                              <motion.div
+                                animate={{ rotate: showDurationDropdown ? 180 : 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute right-3 pointer-events-none flex items-center"
+                                style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
+                              >
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                              </motion.div>
+                            </motion.button>
+
+                            {/* Custom Dropdown Menu */}
+                            <AnimatePresence>
+                              {showDurationDropdown && (
+                                <>
+                                  {/* Backdrop to close on outside click */}
+                                  <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setShowDurationDropdown(false)}
+                                  />
+                                  
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50"
+                                  >
+                                    <div className="p-2">
+                                      {[
+                                        { value: 'all', label: 'All Durations' },
+                                        { value: '8', label: '8 Hours' },
+                                        { value: '10', label: '10 Hours' },
+                                        { value: '12', label: '12 Hours' }
+                                      ].map((option, idx) => (
+                                        <motion.button
+                                          key={option.value}
+                                          type="button"
+                                          onClick={() => {
+                                            setFilterDuration(option.value)
+                                            setShowDurationDropdown(false)
+                                          }}
+                                          initial={{ opacity: 0, x: -10 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          transition={{ delay: idx * 0.02 }}
+                                          whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
+                                            filterDuration === option.value
+                                              ? 'bg-primary-50 text-primary-700 font-semibold'
+                                              : 'text-gray-700 hover:bg-gray-50'
+                                          }`}
+                                        >
+                                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                            filterDuration === option.value
+                                              ? 'border-primary-600 bg-primary-600'
+                                              : 'border-gray-300'
+                                          }`}>
+                                            {filterDuration === option.value && (
+                                              <motion.svg
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                className="w-3 h-3 text-white"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                              >
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                              </motion.svg>
+                                            )}
+                                          </div>
+                                          <span>{option.label}</span>
+                                        </motion.button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Additional Options */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 }}
+                      className="pt-6 border-t border-gray-200"
+                    >
+                      <div className="flex items-center gap-2 mb-4">
+                        <Sparkles className="w-5 h-5 text-primary-600" />
+                        <h3 className="text-lg font-bold text-gray-900">Additional Options</h3>
+                      </div>
+                      <label className="flex items-center gap-3 cursor-pointer group">
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            checked={filterFeaturedOnly}
+                            onChange={(e) => setFilterFeaturedOnly(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-700 group-hover:text-primary-600 transition-colors">
+                          Show Featured Jobs Only
+                        </span>
+                      </label>
+                    </motion.div>
+                  </div>
+                </div>
+
+                {/* Mobile Footer - Sticky Bottom */}
+                <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 py-4 flex items-center gap-3 flex-shrink-0 z-10">
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleResetFilters}
+                    className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 active:bg-gray-100 transition-colors"
+                  >
+                    Reset
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleApplyFilters}
+                    className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-xl text-sm font-semibold active:bg-primary-700 transition-colors"
+                  >
+                    Apply
+                  </motion.button>
+                </div>
+              </motion.div>
+            ) : (
+              /* Desktop Modal */
+              <>
+                {/* Backdrop */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
+                  onClick={() => setShowFilters(false)}
+                >
+                  {/* Modal */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+                    className="relative w-full max-w-4xl mx-4 sm:mx-0"
+                    style={{ maxHeight: '90vh' }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Glow effect behind modal */}
+                    <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
+                    
+                    {/* Main modal container */}
+                    <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
+                      {/* Header Section */}
+                      <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              {/* Animated Icon */}
+                              <motion.div
+                                animate={{ rotate: [0, 10, -10, 0] }}
+                                transition={{ duration: 4, repeat: Infinity, repeatDelay: 2 }}
+                                className="relative"
+                              >
+                                <div className="absolute inset-0 bg-primary-100 rounded-2xl blur-xl opacity-60" />
+                                <div className="relative p-3 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-lg">
+                                  <Filter className="w-7 h-7 text-white" />
+                                </div>
+                              </motion.div>
+                              
+                              <div>
+                                <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
+                                  {filterToEdit ? 'Edit Filter' : 'Advanced Job Filters'}
+                                </h2>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {filterToEdit ? `Editing: ${filterToEdit.name}` : 'Refine your search to find the perfect job'}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {/* Close Button */}
+                            <motion.button
+                              whileHover={{ scale: 1.1, rotate: 90 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => {
+                                if (filterToEdit) {
+                                  handleCancelEditFilter()
+                                } else {
+                                  setShowFilters(false)
+                                }
+                              }}
+                              className="p-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                            >
+                              <X className="w-5 h-5 text-gray-600" />
+                            </motion.button>
+                          </div>
+                          
+                        </div>
+
+                        {/* Divider */}
+                        <div className="px-4 sm:px-6 md:px-8">
+                          <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                        </div>
+
+                        {/* Content Area - Scrollable */}
+                        <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
+                          <div className="space-y-8">
+                            {/* Location Section */}
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -1572,7 +2786,7 @@ function JobsPageContent() {
                               onClick={() => setShowStatesDropdown(!showStatesDropdown)}
                             whileHover={{ scale: 1.01 }}
                               whileTap={{ scale: 0.99 }}
-                              className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-primary-300 min-h-[42px] relative flex items-center"
+                              className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left min-h-[42px] relative flex items-center"
                             >
                               <span className={`flex-1 text-left truncate leading-normal ${filterStates.length > 0 ? "text-gray-900" : "text-gray-400"}`}>
                                 {filterStates.length > 0 
@@ -1710,7 +2924,7 @@ function JobsPageContent() {
                             onClick={() => setShowAgencyDropdown(!showAgencyDropdown)}
                             whileHover={{ scale: 1.01 }}
                             whileTap={{ scale: 0.99 }}
-                            className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-primary-300 min-h-[42px] relative flex items-center"
+                            className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left min-h-[42px] relative flex items-center"
                           >
                             <span className={`flex-1 text-left truncate leading-normal ${filterAgency ? "text-gray-900" : "text-gray-500"}`}>
                               {filterAgency || "All Agencies"}
@@ -2278,7 +3492,7 @@ function JobsPageContent() {
                               onClick={() => setShowShiftDropdown(!showShiftDropdown)}
                             whileHover={{ scale: 1.01 }}
                               whileTap={{ scale: 0.99 }}
-                              className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-primary-300 min-h-[42px] relative flex items-center"
+                              className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left min-h-[42px] relative flex items-center"
                             >
                               <span className={`flex-1 text-left truncate leading-normal ${filterShift === 'all' ? "text-gray-400" : "text-gray-900"}`}>
                                 {filterShift === 'all' ? 'All Shifts' : 
@@ -2374,7 +3588,7 @@ function JobsPageContent() {
                               onClick={() => setShowDurationDropdown(!showDurationDropdown)}
                             whileHover={{ scale: 1.01 }}
                               whileTap={{ scale: 0.99 }}
-                              className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left hover:border-primary-300 min-h-[42px] relative flex items-center"
+                              className="w-full px-4 py-2.5 pr-10 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-lg outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-xl focus:shadow-primary-100/50 cursor-pointer text-left min-h-[42px] relative flex items-center"
                             >
                               <span className={`flex-1 text-left truncate leading-normal ${filterDuration === 'all' ? "text-gray-400" : "text-gray-900"}`}>
                                 {filterDuration === 'all' ? 'All Durations' : 
@@ -2493,22 +3707,23 @@ function JobsPageContent() {
                   </div>
                 </div>
 
-                    {/* Footer Section */}
-                    <div className="relative px-4 sm:px-6 md:px-8 py-4 sm:py-6 flex-shrink-0">
-                      {/* Divider */}
-                      <div className="mb-4 sm:mb-6">
-                        <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                      </div>
-                      
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
-                        <motion.button
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.3, delay: 0.9 }}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={handleResetFilters}
-                          className="group relative flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all text-sm sm:text-base overflow-hidden"
+                      {/* Footer Section - Desktop Only */}
+                      {!isMobile && (
+                        <div className="relative px-4 sm:px-6 md:px-8 py-4 sm:py-6 flex-shrink-0">
+                        {/* Divider */}
+                        <div className="mb-4 sm:mb-6">
+                          <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                        </div>
+                        
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+                          <motion.button
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.3, delay: 0.9 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={handleResetFilters}
+                            className="group relative flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all text-sm sm:text-base overflow-hidden"
                         >
                           {/* Glassmorphism overlay on hover */}
                           <div className="absolute inset-0 bg-white/80 backdrop-blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"
@@ -2549,15 +3764,19 @@ function JobsPageContent() {
                           </motion.button>
                         </div>
                       </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  </motion.div>
                 </motion.div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+              </>
+            )}
+          </>
+        )}
+      </AnimatePresence>
 
-      {/* Header Section */}
+      {/* Header Section - Desktop Only */}
+      {!isMobile && (
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 pt-32 pb-6">
           {/* Simple Glass Breadcrumb */}
@@ -2602,20 +3821,20 @@ function JobsPageContent() {
             className="flex flex-wrap items-center gap-2 lg:gap-3"
           >
             {/* Search Input */}
-            <div className="relative flex-1 min-w-[200px] flex items-center gap-3 px-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-primary-300 transition-colors focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-200">
-              <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    applyFilters()
-                  }
-                }}
-                placeholder="Search by job title, facility, location, certification..."
-                className="flex-1 bg-transparent border-none outline-none text-base text-gray-900 placeholder-gray-400"
-              />
+              <div className="relative flex-1 min-w-[200px] flex items-center gap-3 px-4 py-3 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-primary-300 transition-colors focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-200">
+                <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      applyFilters()
+                    }
+                  }}
+                  placeholder="Search by job title, facility, location, certification..."
+                  className="flex-1 bg-transparent border-none outline-none text-base text-gray-900 placeholder-gray-400"
+                />
               <AnimatePresence>
                 {searchQuery && (
                   <motion.button
@@ -2791,12 +4010,13 @@ function JobsPageContent() {
                 )}
               </AnimatePresence>
             </div>
-
           </motion.div>
         </div>
       </div>
+      )}
 
-      {/* Results Bar */}
+      {/* Results Bar - Desktop Only */}
+      {!isMobile && (
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -2849,11 +4069,10 @@ function JobsPageContent() {
                     <ChevronRight size={16} className="rotate-90" />
                   </motion.div>
                 </motion.button>
+              </div>
+              )}
 
-                                          </div>
-                                        )}
-
-              {/* Sort Dropdown */}
+              {/* Sort Dropdown - Desktop Only */}
               <div className="relative">
                 <motion.button
                   onClick={() => setShowSortDropdown(!showSortDropdown)}
@@ -2889,87 +4108,170 @@ function JobsPageContent() {
                   </motion.div>
                 </motion.button>
 
-                {/* Enhanced Dropdown Menu */}
-                <AnimatePresence>
-                  {showSortDropdown && (
-                    <>
-                      {/* Backdrop to close on outside click */}
-                      <div 
-                        className="fixed inset-0 z-40" 
-                        onClick={() => setShowSortDropdown(false)}
-                      />
-                      
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        transition={{ duration: 0.2, ease: "easeOut" }}
-                        className="absolute top-full right-0 mt-4 w-64 bg-white/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden max-h-[70vh] overflow-y-auto"
-                        style={{ zIndex: 100 }}
-                      >
-                        <div className="p-2">
-                          {[
-                            { value: 'relevance', icon: '✅', label: 'Relevance' },
-                            { value: 'salary-high-to-low', icon: '💰', label: 'Salary: High to Low' },
-                            { value: 'salary-low-to-high', icon: '💰', label: 'Salary: Low to High' },
-                            { value: 'date-newest', icon: '📅', label: 'Date: Newest First' },
-                            { value: 'date-oldest', icon: '📅', label: 'Date: Oldest First' },
-                            { value: 'title-a-z', icon: '📝', label: 'Title: A-Z' },
-                            { value: 'title-z-a', icon: '📝', label: 'Title: Z-A' },
-                            { value: 'facility-a-z', icon: '🏥', label: 'Facility: A-Z' },
-                            { value: 'facility-z-a', icon: '🏥', label: 'Facility: Z-A' },
-                          ].map((option, idx) => (
-                            <motion.button
-                              key={option.value}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: idx * 0.03 }}
-                              onClick={() => {
-                                setSortBy(option.value)
-                                setShowSortDropdown(false)
-                              }}
-                              className={`block w-full px-4 py-3 rounded-xl transition-all text-sm font-medium group text-left ${
-                                sortBy === option.value 
-                                  ? 'bg-gradient-to-r from-primary-50 to-primary-100/50 text-primary-700' 
-                                  : 'text-gray-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100/50 hover:text-primary-700'
-                              }`}
-                              whileHover={{ x: 4 }}
-                            >
-                              <span className="flex items-center justify-between">
-                                <span className="flex items-center gap-2">
-                                  <span>{option.icon}</span>
-                                  <span>{option.label}</span>
-                                </span>
-                                {sortBy === option.value ? (
-                                  <motion.span
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    className="text-primary-600 font-bold"
-                                  >
-                                    ✓
-                                  </motion.span>
-                                ) : (
-                                  <motion.span
-                                    className="opacity-0 group-hover:opacity-100"
-                                    initial={{ x: -5 }}
-                                    whileHover={{ x: 0 }}
-                                  >
-                                    →
-                                  </motion.span>
-                                )}
-                              </span>
-                            </motion.button>
-                          ))}
-                        </div>
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
               </div>
             </div>
           </div>
         </div>
       </motion.div>
+      )}
+
+      {/* Sort Dropdown - Works for both Mobile and Desktop */}
+      <AnimatePresence>
+        {showSortDropdown && (
+          <>
+            {/* Hide bottom nav when modal is open on mobile */}
+            {isMobile && (
+              <style jsx global>{`
+                [data-mobile-bottom-nav] {
+                  display: none !important;
+                }
+              `}</style>
+            )}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[120] ${isMobile ? '' : 'flex items-center justify-center p-4'}`}
+              onClick={() => setShowSortDropdown(false)}
+              style={{ zIndex: 120 }}
+            >
+              <motion.div
+                initial={isMobile ? { opacity: 0, y: '100%' } : { opacity: 0, scale: 0.9, y: 20 }}
+                animate={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, scale: 1, y: 0 }}
+                exit={isMobile ? { opacity: 0, y: '100%' } : { opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ duration: isMobile ? 0.3 : 0.4, ease: isMobile ? [0.32, 0.72, 0, 1] : [0.34, 1.56, 0.64, 1] }}
+                onClick={(e) => e.stopPropagation()}
+                className={isMobile 
+                  ? "fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[60vh] overflow-hidden flex flex-col z-[120]"
+                  : "bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[60vh] overflow-hidden flex flex-col"
+                }
+                style={isMobile ? { 
+                  bottom: 0,
+                  zIndex: 120,
+                  paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+                } : {}}
+              >
+                {/* Header Section */}
+                <div className={`relative ${isMobile ? 'px-4 pt-4 pb-3' : 'px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6'} flex-shrink-0`}>
+                  {/* Mobile Drag Handle */}
+                  {isMobile && (
+                    <div className="flex justify-center mb-3">
+                      <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <div className={`flex items-center ${isMobile ? 'gap-3' : 'gap-4'}`}>
+                      {/* Animated Icon - Hidden on Mobile */}
+                      {!isMobile && (
+                        <motion.div
+                          animate={{ rotate: [0, 10, -10, 0] }}
+                          transition={{ duration: 4, repeat: Infinity, repeatDelay: 2 }}
+                          className="relative"
+                        >
+                          <div className="absolute inset-0 bg-primary-100 rounded-2xl blur-xl opacity-60" />
+                          <div className="relative p-3 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-lg">
+                            <ArrowUpDown className="w-7 h-7 text-white" />
+                          </div>
+                        </motion.div>
+                      )}
+                      
+                      <div>
+                        <h2 className={`font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent ${isMobile ? 'text-lg' : 'text-2xl'}`}>
+                          Sort By
+                        </h2>
+                        {!isMobile && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            Choose how to sort your job listings
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Close Button */}
+                    <motion.button
+                      whileHover={!isMobile ? { scale: 1.1, rotate: 90 } : {}}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setShowSortDropdown(false)}
+                      className={`${isMobile ? 'p-2' : 'p-2'} rounded-xl bg-gray-100 ${isMobile ? 'active:bg-gray-200' : 'hover:bg-gray-200'} text-gray-600 ${isMobile ? 'active:text-gray-900' : 'hover:text-gray-900'} transition-colors`}
+                      aria-label="Close modal"
+                    >
+                      <X className="w-5 h-5" />
+                    </motion.button>
+                  </div>
+                </div>
+
+                {/* Modal Content */}
+                <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-4 pb-20' : 'px-4 sm:px-6 md:px-8 pb-6'}`}>
+                  <div className="space-y-1">
+                    {[
+                      { value: 'relevance', icon: '✅', label: 'Relevance' },
+                      { value: 'salary-high-to-low', icon: '💰', label: 'Salary: High to Low' },
+                      { value: 'salary-low-to-high', icon: '💰', label: 'Salary: Low to High' },
+                      { value: 'date-newest', icon: '📅', label: 'Date: Newest First' },
+                      { value: 'date-oldest', icon: '📅', label: 'Date: Oldest First' },
+                      { value: 'title-a-z', icon: '📝', label: 'Title: A-Z' },
+                      { value: 'title-z-a', icon: '📝', label: 'Title: Z-A' },
+                      { value: 'facility-a-z', icon: '🏥', label: 'Facility: A-Z' },
+                      { value: 'facility-z-a', icon: '🏥', label: 'Facility: Z-A' },
+                    ].map((option, idx) => (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          setSortBy(option.value)
+                          setShowSortDropdown(false)
+                        }}
+                        className={`w-full flex items-center gap-3 ${isMobile ? 'px-4 py-3' : 'px-4 py-2.5'} rounded-lg transition-colors text-left ${
+                          sortBy === option.value 
+                            ? 'bg-primary-50 text-primary-700' 
+                            : 'bg-transparent hover:bg-gray-50 text-gray-900 active:bg-gray-100'
+                        }`}
+                      >
+                        <span className="text-base">{option.icon}</span>
+                        <span className={`flex-1 ${isMobile ? 'text-sm' : 'text-sm'}`}>{option.label}</span>
+                        {sortBy === option.value && (
+                          <div className="w-5 h-5 bg-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg
+                              className="w-3 h-3 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Results Count - Mobile Only */}
+      {isMobile && (
+        <div 
+          className="border-b border-gray-100 px-3 py-2.5 sticky"
+          style={{ 
+            position: 'sticky', 
+            top: 'calc(56px + 120px)', 
+            zIndex: 98,
+            backgroundColor: '#ffffff',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)'
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 bg-primary-600 rounded-full" />
+            <span className="text-xs text-gray-600">
+              Showing <span className="font-semibold text-gray-900">{filteredJobs.length}</span> jobs
+              <span className="text-gray-500"> (of {SAMPLE_JOBS.length} total)</span>
+            </span>
+          </div>
+        </div>
+      )}
 
 
       {/* Save Filter Modal */}
@@ -3053,25 +4355,50 @@ function JobsPageContent() {
       <AnimatePresence>
         {showSavedFilters && (
           <>
+            {/* Hide bottom nav when modal is open on mobile */}
+            {isMobile && (
+              <style jsx global>{`
+                [data-mobile-bottom-nav] {
+                  display: none !important;
+                }
+              `}</style>
+            )}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[110] flex items-center justify-center p-4"
+              className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[120] ${isMobile ? '' : 'flex items-center justify-center p-4'}`}
               onClick={() => setShowSavedFilters(false)}
+              style={{ zIndex: 120 }}
             >
               <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                initial={isMobile ? { opacity: 0, y: '100%' } : { opacity: 0, scale: 0.9, y: 20 }}
+                animate={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, scale: 1, y: 0 }}
+                exit={isMobile ? { opacity: 0, y: '100%' } : { opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ duration: isMobile ? 0.3 : 0.4, ease: isMobile ? [0.32, 0.72, 0, 1] : [0.34, 1.56, 0.64, 1] }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+                className={isMobile 
+                  ? "fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col z-[120]"
+                  : "bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+                }
+                style={isMobile ? { 
+                  bottom: 0,
+                  zIndex: 120,
+                  paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+                } : {}}
               >
                 {/* Header Section */}
-                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
+                <div className={`relative ${isMobile ? 'px-4 pt-4 pb-3' : 'px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6'} flex-shrink-0`}>
+                  {/* Mobile Drag Handle */}
+                  {isMobile && (
+                    <div className="flex justify-center mb-3">
+                      <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      {/* Animated Icon */}
+                    <div className={`flex items-center ${isMobile ? 'gap-3' : 'gap-4'}`}>
+                      {/* Animated Icon - Hidden on Mobile */}
+                      {!isMobile && (
                       <motion.div
                         animate={{ rotate: [0, 10, -10, 0] }}
                         transition={{ duration: 4, repeat: Infinity, repeatDelay: 2 }}
@@ -3082,23 +4409,26 @@ function JobsPageContent() {
                           <BookmarkCheck className="w-7 h-7 text-white" />
                         </div>
                       </motion.div>
+                      )}
                       
                       <div>
-                        <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
+                        <h2 className={`font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent ${isMobile ? 'text-lg' : 'text-2xl'}`}>
                           Saved Filters
                         </h2>
+                        {!isMobile && (
                         <p className="text-sm text-gray-500 mt-1">
                           Manage your saved filter presets
                         </p>
+                        )}
                       </div>
                     </div>
                     
                     {/* Close Button */}
                     <motion.button
-                      whileHover={{ scale: 1.1, rotate: 90 }}
+                      whileHover={!isMobile ? { scale: 1.1, rotate: 90 } : {}}
                       whileTap={{ scale: 0.9 }}
                       onClick={() => setShowSavedFilters(false)}
-                      className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 transition-colors"
+                      className={`${isMobile ? 'p-2' : 'p-2'} rounded-xl bg-gray-100 ${isMobile ? 'active:bg-gray-200' : 'hover:bg-gray-200'} text-gray-600 ${isMobile ? 'active:text-gray-900' : 'hover:text-gray-900'} transition-colors`}
                       aria-label="Close modal"
                     >
                       <X className="w-5 h-5" />
@@ -3107,7 +4437,7 @@ function JobsPageContent() {
                 </div>
 
                 {/* Modal Content */}
-                <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 pb-6">
+                <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-4 pb-24' : 'px-4 sm:px-6 md:px-8 pb-6'}`}>
                   {savedFilterPresets.length === 0 ? (
                     <div className="text-center py-16">
                       <BookmarkCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -3342,7 +4672,7 @@ function JobsPageContent() {
           </AnimatePresence>
 
       {/* Job Listings - Modern Card Grid */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-6 w-full">
+      <main className={`flex-1 ${isMobile ? 'px-0 pb-20' : 'max-w-7xl mx-auto px-4 py-6'} w-full`} style={isMobile ? { position: 'relative', zIndex: 1 } : {}}>
         {filteredJobs.length === 0 ? (
           <div className="text-center py-16">
             <div className="max-w-md mx-auto">

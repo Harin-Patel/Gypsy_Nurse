@@ -21,6 +21,7 @@ export default function Navigation() {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [isProfileHovered, setIsProfileHovered] = useState(false)
+  const [hoveredNavItem, setHoveredNavItem] = useState<string | null>(null)
   
   // Use real authentication
   const { user, isAuthenticated, isLoading, logout } = useAuth()
@@ -96,6 +97,14 @@ export default function Navigation() {
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [activeDropdown, showLoginDropdown])
+
+  // Clear hover state when dropdown closes
+  useEffect(() => {
+    if (!activeDropdown) {
+      // Clear hover when dropdown closes
+      setHoveredNavItem(null)
+    }
+  }, [activeDropdown])
 
   const navItems = [
     { 
@@ -383,6 +392,13 @@ export default function Navigation() {
                 <div
                   key={item.name}
                   className="relative py-1 nav-dropdown-container"
+                  onMouseEnter={() => setHoveredNavItem(item.name)}
+                  onMouseLeave={() => {
+                    // Only clear hover if dropdown is not open for this item
+                    if (activeDropdown !== item.name) {
+                      setHoveredNavItem(null)
+                    }
+                  }}
                 >
                   {item.href.startsWith('/') ? (
                     <Link href={item.href}>
@@ -394,7 +410,12 @@ export default function Navigation() {
                           <button
                             onClick={(e) => {
                               e.preventDefault()
-                              setActiveDropdown(activeDropdown === item.name ? null : item.name)
+                              const newDropdownState = activeDropdown === item.name ? null : item.name
+                              setActiveDropdown(newDropdownState)
+                              // Clear hover when closing dropdown
+                              if (!newDropdownState) {
+                                setHoveredNavItem(null)
+                              }
                             }}
                             className="relative z-10"
                             style={{ 
@@ -405,18 +426,43 @@ export default function Navigation() {
                             <ChevronDown size={16} />
                           </button>
                         )}
+                        
+                        {/* Glass Hover Effect - Matching Reference Site */}
+                        <motion.div
+                          className="absolute -inset-1 bg-white/70 backdrop-blur-xl rounded-xl border border-primary-200/50 shadow-lg -z-10 overflow-hidden"
+                          initial={{ opacity: 0 }}
+                          animate={{ 
+                            opacity: (hoveredNavItem === item.name || activeDropdown === item.name) ? 1 : 0
+                          }}
+                          transition={{ duration: 0.2 }}
+                        />
+                        
+                        {/* Subtle Gradient Overlay */}
+                        <motion.div
+                          className="absolute -inset-1 bg-gradient-to-br from-primary-100/50 via-primary-50/30 to-transparent rounded-xl -z-10"
+                          initial={{ opacity: 0 }}
+                          animate={{ 
+                            opacity: (hoveredNavItem === item.name || activeDropdown === item.name) ? 1 : 0
+                          }}
+                          transition={{ duration: 0.3 }}
+                        />
                       </div>
                     </Link>
                   ) : (
                   <button
                       onClick={() => {
                         if (item.dropdown) {
-                          setActiveDropdown(activeDropdown === item.name ? null : item.name)
+                          const newDropdownState = activeDropdown === item.name ? null : item.name
+                          setActiveDropdown(newDropdownState)
+                          // Clear hover when closing dropdown
+                          if (!newDropdownState) {
+                            setHoveredNavItem(null)
+                          }
                         } else {
                           handleNavClick(item.href, item.href.startsWith('/'))
                         }
                       }}
-                    className="relative text-gray-700 hover:text-primary-600 font-semibold transition-colors duration-300 flex items-center space-x-1 px-4 py-2.5 group"
+                      className="relative text-gray-700 hover:text-primary-600 font-semibold transition-colors duration-300 flex items-center space-x-1 px-4 py-2.5 group cursor-pointer"
                   >
                     <span className="relative z-10">{item.name}</span>
                     {item.dropdown && (
@@ -425,10 +471,31 @@ export default function Navigation() {
                           transform: activeDropdown === item.name ? 'rotate(180deg)' : 'rotate(0deg)',
                           transition: 'transform 0.3s ease'
                         }}
+                        className="relative z-10"
                       >
-                        <ChevronDown size={16} className="relative z-10" />
+                        <ChevronDown size={16} />
                       </div>
                     )}
+                    
+                    {/* Glass Hover Effect - Matching Reference Site */}
+                    <motion.div
+                      className="absolute -inset-1 bg-white/70 backdrop-blur-xl rounded-xl border border-primary-200/50 shadow-lg -z-10 overflow-hidden"
+                      initial={{ opacity: 0 }}
+                      animate={{ 
+                        opacity: (hoveredNavItem === item.name || activeDropdown === item.name) ? 1 : 0
+                      }}
+                      transition={{ duration: 0.2 }}
+                    />
+                    
+                    {/* Subtle Gradient Overlay */}
+                    <motion.div
+                      className="absolute -inset-1 bg-gradient-to-br from-primary-100/50 via-primary-50/30 to-transparent rounded-xl -z-10"
+                      initial={{ opacity: 0 }}
+                      animate={{ 
+                        opacity: (hoveredNavItem === item.name || activeDropdown === item.name) ? 1 : 0
+                      }}
+                      transition={{ duration: 0.3 }}
+                    />
                   </button>
                   )}
                   

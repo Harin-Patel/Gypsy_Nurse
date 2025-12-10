@@ -42,6 +42,11 @@ export default function Chatbot() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+  
+  // Hide chatbot on mobile - return after all hooks are declared
+  if (isMobile) {
+    return null
+  }
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return
@@ -291,15 +296,14 @@ export default function Chatbot() {
       </AnimatePresence>
 
       {/* Chatbot Window - Ultra Premium Design & Responsive */}
-      {mounted && isOpen && (
-        isMobile && typeof document !== 'undefined' ? createPortal(
+      {mounted && isOpen && typeof document !== 'undefined' && createPortal(
           <AnimatePresence>
             <motion.div
             initial={{ 
               opacity: 0, 
-              y: isMobile ? '100%' : 100, 
-              scale: isMobile ? 1 : 0.3, 
-              rotateX: isMobile ? 0 : -15 
+              y: 100, 
+              scale: 0.3, 
+              rotateX: -15 
             }}
             animate={{ 
               opacity: 1, 
@@ -309,9 +313,9 @@ export default function Chatbot() {
             }}
             exit={{ 
               opacity: 0, 
-              y: isMobile ? '100%' : 100, 
-              scale: isMobile ? 1 : 0.3, 
-              rotateX: isMobile ? 0 : 15 
+              y: 100, 
+              scale: 0.3, 
+              rotateX: 15 
             }}
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
             className={`fixed ${
@@ -321,16 +325,8 @@ export default function Chatbot() {
             }`}
             style={{ 
               perspective: '1000px',
-              maxHeight: isMinimized ? 'auto' : (isMobile ? 'calc(100vh - 4rem)' : 'calc(100vh - 5rem)'),
-              zIndex: isMobile ? 10001 : 101,
-              ...(isMobile && { 
-                top: 'auto',
-                bottom: '0',
-                left: '0',
-                right: '0',
-                width: '100%',
-                position: 'fixed'
-              })
+              maxHeight: isMinimized ? 'auto' : 'calc(100vh - 5rem)',
+              zIndex: 101
             }}
           >
             {/* Outer Glow */}
@@ -459,9 +455,7 @@ export default function Chatbot() {
             {/* Chat Messages */}
             {!isMinimized && (
               <>
-                <div className={`overflow-y-auto space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white p-3 sm:p-4 ${
-                  isMobile ? 'h-[calc(100vh-16rem)]' : 'h-80 md:h-96'
-                }`}>
+                <div className="overflow-y-auto space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white p-3 sm:p-4 h-80 md:h-96">
                   <AnimatePresence>
                     {messages.map((message, index) => (
                       <motion.div
@@ -673,392 +667,10 @@ export default function Chatbot() {
             )}
             </div>
           </motion.div>
-          </AnimatePresence>
-        , document.body) : (
-          <AnimatePresence>
-            <motion.div
-            initial={{ 
-              opacity: 0, 
-              y: isMobile ? '100%' : 100, 
-              scale: isMobile ? 1 : 0.3, 
-              rotateX: isMobile ? 0 : -15 
-            }}
-            animate={{ 
-              opacity: 1, 
-              y: 0, 
-              scale: 1,
-              rotateX: 0
-            }}
-            exit={{ 
-              opacity: 0, 
-              y: isMobile ? '100%' : 100, 
-              scale: isMobile ? 1 : 0.3, 
-              rotateX: isMobile ? 0 : 15 
-            }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className={`fixed ${
-              isMobile 
-                ? 'left-0 right-0 bottom-0 w-full' 
-                : 'bottom-4 right-4 left-auto w-[420px] max-w-[calc(100vw-2rem)]'
-            }`}
-            style={{ 
-              perspective: '1000px',
-              maxHeight: isMinimized ? 'auto' : (isMobile ? 'calc(100vh - 4rem)' : 'calc(100vh - 5rem)'),
-              zIndex: isMobile ? 10001 : 101,
-              ...(isMobile && { 
-                top: 'auto',
-                bottom: '0',
-                left: '0',
-                right: '0',
-                width: '100%',
-                position: 'fixed'
-              })
-            }}
-          >
-            {/* Outer Glow */}
-            <motion.div
-              className="absolute -inset-4 bg-gradient-to-br from-primary-500/30 via-primary-400/20 to-primary-600/30 rounded-3xl blur-2xl"
-              animate={{
-                opacity: [0.5, 0.8, 0.5],
-                scale: [0.98, 1.02, 0.98],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
-
-            {/* Main Card with Glassmorphism */}
-            <div className={`relative bg-white/95 backdrop-blur-2xl shadow-2xl overflow-hidden border border-white/60 ${
-              isMobile ? 'rounded-t-3xl' : 'rounded-3xl'
-            }`}>
-              {/* Gradient Border Effect */}
-              <div className={`absolute inset-0 p-[2px] bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600 opacity-20 ${
-                isMobile ? 'rounded-t-3xl' : 'rounded-3xl'
-              }`} />
-              
-              {/* Animated Background Pattern */}
-              <motion.div
-                className="absolute inset-0 opacity-5"
-                animate={{
-                  backgroundPosition: ['0% 0%', '100% 100%'],
-                }}
-                transition={{
-                  duration: 20,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
-                style={{
-                  backgroundImage: 'radial-gradient(circle, #7f2860 1px, transparent 1px)',
-                  backgroundSize: '30px 30px'
-                }}
-              />
-            {/* Header */}
-            <motion.div
-              className="relative bg-gradient-to-r from-primary-600 to-primary-500 p-3 sm:p-4 text-white overflow-hidden"
-              whileHover={{ backgroundPosition: '100% 50%' }}
-              style={{ backgroundSize: '200% 100%' }}
-            >
-              {/* Animated Background Pattern */}
-              <motion.div
-                className="absolute inset-0 opacity-10"
-                animate={{
-                  backgroundPosition: ['0% 0%', '100% 100%'],
-                }}
-                transition={{
-                  duration: 20,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
-                style={{
-                  backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
-                  backgroundSize: '20px 20px'
-                }}
-              />
-
-              <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center space-x-2 sm:space-x-3">
-                  {/* Bot Avatar with Animation */}
-                  <motion.div
-                    animate={{
-                      rotate: [0, 10, -10, 0],
-                      scale: [1, 1.1, 1],
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                    className="relative"
-                  >
-                    <div className="absolute inset-0 bg-white/30 rounded-full blur-md" />
-                    <div className="relative bg-white/20 backdrop-blur-sm p-2 rounded-full border border-white/30">
-                      <Bot className="w-5 h-5" />
-                    </div>
-                  </motion.div>
-                  
-                  <div>
-                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-1.5 sm:gap-2">
-                      <span className="hidden sm:inline">Gypsy Nurse Assistant</span>
-                      <span className="sm:hidden">GN Assistant</span>
-                      <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    </h3>
-                    <motion.p
-                      className="text-xs text-white/80"
-                      animate={{ opacity: [0.6, 1, 0.6] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      Online • Ready to help
-                    </motion.p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  {/* Minimize Button */}
-                  <motion.button
-                    whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.2)' }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setIsMinimized(!isMinimized)}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    <Minimize2 className="w-4 h-4" />
-                  </motion.button>
-
-                  {/* Close Button */}
-                  <motion.button
-                    whileHover={{ scale: 1.1, rotate: 90, backgroundColor: 'rgba(255,255,255,0.2)' }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setIsOpen(false)}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Chat Messages */}
-            {!isMinimized && (
-              <>
-                <div className={`overflow-y-auto space-y-3 sm:space-y-4 bg-gradient-to-b from-gray-50 to-white p-3 sm:p-4 ${
-                  isMobile ? 'h-[calc(100vh-16rem)]' : 'h-80 md:h-96'
-                }`}>
-                  <AnimatePresence>
-                    {messages.map((message, index) => (
-                      <motion.div
-                        key={message.id}
-                        initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        transition={{ delay: index * 0.1 }}
-                        className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div className={`flex items-end space-x-1.5 sm:space-x-2 max-w-[85%] sm:max-w-[80%] ${message.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                          {/* Avatar */}
-                          <motion.div
-                            whileHover={{ scale: 1.1, rotate: 5 }}
-                            className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ${
-                              message.sender === 'user'
-                                ? 'bg-gradient-to-br from-primary-500 to-primary-600'
-                                : 'bg-gradient-to-br from-gray-600 to-gray-700'
-                            }`}
-                          >
-                            {message.sender === 'user' ? (
-                              <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                            ) : (
-                              <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                            )}
-                          </motion.div>
-
-                          {/* Message Bubble */}
-                          <motion.div
-                            whileHover={{ scale: 1.02 }}
-                            className={`relative px-3 py-2 sm:px-4 sm:py-3 rounded-2xl ${
-                              message.sender === 'user'
-                                ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white rounded-br-sm'
-                                : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm shadow-md'
-                            }`}
-                          >
-                            {message.sender === 'bot' && (
-                              <motion.div
-                                className="absolute -inset-0.5 bg-gradient-to-r from-primary-400/20 to-primary-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100"
-                                transition={{ duration: 0.3 }}
-                              />
-                            )}
-                            <p className="text-sm relative z-10">{message.text}</p>
-                            <span className={`text-xs mt-1 block ${
-                              message.sender === 'user' ? 'text-white/70' : 'text-gray-500'
-                            }`}>
-                              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </motion.div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-
-                  {/* Typing Indicator */}
-                  {isTyping && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex items-end space-x-2"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center">
-                        <Bot className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="bg-white border border-gray-200 px-4 py-3 rounded-2xl rounded-bl-sm shadow-md">
-                        <div className="flex space-x-2">
-                          <motion.div
-                            className="w-2 h-2 bg-gray-400 rounded-full"
-                            animate={{ y: [0, -5, 0] }}
-                            transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                          />
-                          <motion.div
-                            className="w-2 h-2 bg-gray-400 rounded-full"
-                            animate={{ y: [0, -5, 0] }}
-                            transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                          />
-                          <motion.div
-                            className="w-2 h-2 bg-gray-400 rounded-full"
-                            animate={{ y: [0, -5, 0] }}
-                            transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                          />
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Input Area with Glass Effect */}
-                <div className="relative p-3 sm:p-4 border-t border-white/20 bg-gradient-to-br from-white/60 via-white/40 to-white/60 backdrop-blur-xl">
-                  {/* Subtle animated background */}
-                  <motion.div
-                    className="absolute inset-0 opacity-30"
-                    animate={{
-                      backgroundPosition: ['0% 0%', '100% 100%'],
-                    }}
-                    transition={{
-                      duration: 20,
-                      repeat: Infinity,
-                      ease: "linear"
-                    }}
-                    style={{
-                      backgroundImage: 'radial-gradient(circle, rgba(127, 40, 96, 0.1) 1px, transparent 1px)',
-                      backgroundSize: '20px 20px'
-                    }}
-                  />
-
-                  <div className="relative flex items-end space-x-2">
-                    <div className="flex-1 relative">
-                      {/* Glass effect container for textarea */}
-                      <motion.div
-                        whileFocus={{ scale: 1.01 }}
-                        className="relative bg-white/70 backdrop-blur-md border-2 border-white/60 rounded-2xl shadow-lg overflow-hidden group"
-                      >
-                        {/* Shine effect on focus */}
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 group-focus-within:opacity-100"
-                          animate={{
-                            x: ['-100%', '200%'],
-                          }}
-                          transition={{
-                            duration: 1.5,
-                            repeat: Infinity,
-                            repeatDelay: 3,
-                          }}
-                        />
-                        
-                        <textarea
-                          value={inputMessage}
-                          onChange={(e) => setInputMessage(e.target.value)}
-                          onKeyPress={handleKeyPress}
-                          placeholder="Type your message..."
-                          rows={1}
-                          className="relative z-10 w-full px-4 py-3 bg-transparent resize-none outline-none text-gray-800 placeholder-gray-500 text-sm"
-                          style={{ maxHeight: '100px' }}
-                        />
-                      </motion.div>
-                    </div>
-
-                    {/* Glass effect send button */}
-                    <motion.button
-                      whileHover={{ scale: 1.08 }}
-                      whileTap={{ scale: 0.92 }}
-                      onClick={handleSendMessage}
-                      disabled={!inputMessage.trim()}
-                      className="relative p-2.5 sm:p-3 bg-gradient-to-br from-white/80 to-white/70 backdrop-blur-sm border-2 border-primary-200/50 rounded-2xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden group hover:border-primary-400 transition-all duration-300"
-                    >
-                      {/* Gradient overlay on hover */}
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-br from-primary-500 to-primary-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      />
-                      
-                      {/* Shine effect on hover */}
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100"
-                        animate={{
-                          x: ['-100%', '200%'],
-                        }}
-                        transition={{
-                          duration: 0.8,
-                          ease: "easeInOut"
-                        }}
-                      />
-                      
-                      {/* Sparkle effect on hover */}
-                      <motion.div
-                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"
-                        initial={{ scale: 0, rotate: 0 }}
-                        whileHover={{
-                          scale: [0, 1, 0],
-                          rotate: [0, 180, 360]
-                        }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <Sparkles className="w-3 h-3 text-yellow-300" />
-                      </motion.div>
-
-                      <Send className="relative z-10 w-5 h-5 text-primary-600 group-hover:text-white transition-colors duration-300" strokeWidth={2.5} />
-                    </motion.button>
-                  </div>
-
-                  {/* Quick Actions with Glass Effect */}
-                  <div className="relative mt-3 flex flex-wrap gap-2">
-                    {['Find Jobs', 'Resources', 'Events', 'Help'].map((action, index) => (
-                      <motion.button
-                        key={action}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        whileHover={{ scale: 1.05, y: -2 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setInputMessage(action)}
-                        className="relative px-3 py-1.5 text-xs font-medium text-primary-700 bg-white/60 backdrop-blur-md border border-white/60 rounded-xl hover:bg-white/80 transition-all shadow-md overflow-hidden group"
-                      >
-                        {/* Shine effect on hover */}
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0 group-hover:opacity-100"
-                          initial={{ x: '-100%' }}
-                          whileHover={{ x: '100%' }}
-                          transition={{ duration: 0.5 }}
-                        />
-                        <span className="relative z-10">{action}</span>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-            </div>
-          </motion.div>
-          </AnimatePresence>
+          </AnimatePresence>,
+          document.body
         )
-      )}
+      }
     </>
   )
 }
-

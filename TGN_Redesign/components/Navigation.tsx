@@ -273,7 +273,7 @@ export default function Navigation() {
         <div className={`max-w-7xl mx-auto ${isMobile ? 'px-4' : 'px-4 sm:px-6 lg:px-8'}`}>
           {isMobile ? (
             /* Mobile App Standard Navigation */
-            <div className="flex items-center justify-between h-12">
+            <div className="flex items-center justify-between h-12 pb-1">
               {/* Left Side - Back Button or Logo */}
               {pathname?.startsWith('/login') || pathname?.startsWith('/register') || pathname?.startsWith('/agency-register') || pathname?.startsWith('/agency-login') || pathname?.startsWith('/recruiter-login') || pathname?.startsWith('/admin-login') || pathname?.startsWith('/forgot-password') || pathname?.startsWith('/change-password') ? (
                 <button
@@ -290,11 +290,11 @@ export default function Navigation() {
                   <ChevronLeft className="w-6 h-6 text-gray-700" />
                 </button>
               ) : (
-                <Link href="/">
+                <Link href="/" className="flex items-center">
                   <img 
                     src="/logo.svg" 
                     alt="The Gypsy Nurse Logo" 
-                    className="h-16 w-auto"
+                    className="h-10 w-auto"
                   />
                 </Link>
               )}

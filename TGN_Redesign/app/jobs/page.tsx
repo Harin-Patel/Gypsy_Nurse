@@ -1459,14 +1459,6 @@ function JobsPageContent() {
               <h1 className="text-xl font-bold text-gray-900">
                 Find Your Next Job
               </h1>
-              {/* Job Count - Mobile */}
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 bg-primary-600 rounded-full" />
-                <span className="text-xs text-gray-600">
-                  Showing <span className="font-semibold text-gray-900">{filteredJobs.length}</span> jobs
-                  <span className="text-gray-500"> (of {SAMPLE_JOBS.length} total)</span>
-                </span>
-              </div>
             </div>
             
             {/* Mobile Search Bar - Native App Style */}
@@ -1484,7 +1476,8 @@ function JobsPageContent() {
                     }
                   }}
                   placeholder="Search jobs..."
-                  className="flex-1 bg-transparent border-none outline-none text-sm text-gray-900 placeholder-gray-500"
+                  className="flex-1 bg-transparent border-none outline-none text-base text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-0"
+                  style={{ fontSize: '16px' }}
                 />
                 <AnimatePresence>
                   {searchQuery && (
@@ -1554,33 +1547,59 @@ function JobsPageContent() {
                   })()}
                 </motion.button>
 
-                {/* Sort Button */}
+                {/* Explore Jobs Button */}
                 <motion.button
-                  onClick={() => setShowSortDropdown(!showSortDropdown)}
+                  onClick={() => setShowQuickAccessDropdown(!showQuickAccessDropdown)}
                   whileTap={{ scale: 0.98 }}
                   className="relative flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 rounded-xl text-sm font-medium text-gray-900 active:bg-gray-100 transition-colors"
                 >
-                  <ArrowUpDown className="w-4 h-4 text-gray-700" />
-                  <span>Sort By</span>
+                  <MapPin className="w-4 h-4 text-gray-700" />
+                  <span>Explore Jobs</span>
                 </motion.button>
+              </div>
+            </div>
+            
+            {/* Mobile Results Count - Fixed at Bottom of Sticky Header */}
+            <div className="border-t border-gray-100 px-3 py-1.5 bg-white mt-2">
+              <div className="flex items-center justify-between pt-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-primary-600 rounded-full" />
+                  <span className="text-sm text-gray-600">
+                    Showing <span className="font-semibold text-gray-900">{filteredJobs.length}</span> jobs
+                    <span className="text-gray-500"> (of {SAMPLE_JOBS.length} total)</span>
+                  </span>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2">
+                  {/* Saved Filters Button */}
+                  <motion.button
+                    onClick={() => setShowSavedFilters(!showSavedFilters)}
+                    whileTap={{ scale: 0.95 }}
+                    className="relative flex items-center justify-center px-3 py-2 bg-gray-50 rounded-lg text-xs font-medium text-gray-700 active:bg-gray-100 transition-colors"
+                  >
+                    <BookmarkCheck className={`w-5 h-5 ${savedFilterPresets.length > 0 ? 'text-primary-600' : 'text-gray-700'}`} />
+                    {savedFilterPresets.length > 0 && (
+                      <span className={`absolute -top-1 -right-1 flex items-center justify-center h-4 bg-primary-600 text-white text-[9px] font-semibold rounded-full border-2 border-white shadow-sm ${
+                        savedFilterPresets.length > 12 
+                          ? 'px-1 min-w-[20px]' 
+                          : 'w-4 px-0'
+                      }`}>
+                        {savedFilterPresets.length}
+                      </span>
+                    )}
+                  </motion.button>
 
-                {/* Saved Filters Button */}
-                <motion.button
-                  onClick={() => setShowSavedFilters(!showSavedFilters)}
-                  whileTap={{ scale: 0.98 }}
-                  className="relative flex items-center justify-center px-3 py-3 bg-gray-50 rounded-xl text-sm font-medium text-gray-900 active:bg-gray-100 transition-colors"
-                >
-                  <BookmarkCheck className={`w-4 h-4 ${savedFilterPresets.length > 0 ? 'text-primary-600' : 'text-gray-700'}`} />
-                  {savedFilterPresets.length > 0 && (
-                    <span className={`absolute -top-1 -right-1 flex items-center justify-center h-5 bg-primary-600 text-white text-[10px] font-semibold rounded-full border-2 border-white shadow-sm ${
-                      savedFilterPresets.length > 12 
-                        ? 'px-1.5 min-w-[28px]' 
-                        : 'w-5 px-0'
-                    }`}>
-                      {savedFilterPresets.length}
-                    </span>
-                  )}
-                </motion.button>
+                  {/* Sort By Button - Icon Only */}
+                  <motion.button
+                    onClick={() => setShowSortDropdown(!showSortDropdown)}
+                    whileTap={{ scale: 0.95 }}
+                    className="relative flex items-center justify-center px-3 py-2 bg-gray-50 rounded-lg text-gray-700 active:bg-gray-100 transition-colors"
+                    aria-label="Sort by"
+                  >
+                    <ArrowUpDown className="w-5 h-5" />
+                  </motion.button>
+                </div>
               </div>
             </div>
           </div>
@@ -1600,66 +1619,76 @@ function JobsPageContent() {
               `}</style>
             )}
             {isMobile ? (
-              /* Mobile Full Screen Filter Page */
-              <motion.div
-                initial={{ opacity: 0, x: '100%' }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: '100%' }}
-                transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-                className="fixed inset-0 bg-white z-[9999] flex flex-col"
-                style={{ 
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  position: 'fixed',
-                  zIndex: 9999
-                }}
-              >
-                {/* Mobile Header */}
-                <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
-                  <div className="flex items-center gap-3">
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        if (filterToEdit) {
-                          handleCancelEditFilter()
-                        } else {
-                          setShowFilters(false)
-                        }
-                      }}
-                      className="p-2 -ml-2 active:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <ChevronLeft className="w-5 h-5 text-gray-700" />
-                    </motion.button>
-                    <div>
-                      <h2 className="text-lg font-bold text-gray-900">
-                        {filterToEdit ? 'Edit Filter' : 'Filters'}
-                      </h2>
-                      {filterToEdit && (
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {filterToEdit.name}
-                        </p>
-                      )}
+              /* Mobile Filter Modal - Bottom Sheet Style (Similar to Saved Filters) */
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[120]"
+                  onClick={() => {
+                    if (filterToEdit) {
+                      handleCancelEditFilter()
+                    } else {
+                      setShowFilters(false)
+                    }
+                  }}
+                  style={{ zIndex: 120 }}
+                />
+                <motion.div
+                  initial={{ opacity: 0, y: '100%' }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: '100%' }}
+                  transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col z-[120]"
+                  style={{ 
+                    bottom: 0,
+                    zIndex: 120,
+                    paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+                  }}
+                >
+                  {/* Header Section */}
+                  <div className="relative px-4 pt-4 pb-3 flex-shrink-0">
+                    {/* Mobile Drag Handle */}
+                    <div className="flex justify-center mb-3">
+                      <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <h2 className="font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent text-lg">
+                            {filterToEdit ? 'Edit Filter' : 'Filters'}
+                          </h2>
+                          {filterToEdit && (
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {filterToEdit.name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Close Button */}
+                      <motion.button
+                        whileHover={{}}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => {
+                          if (filterToEdit) {
+                            handleCancelEditFilter()
+                          } else {
+                            setShowFilters(false)
+                          }
+                        }}
+                        className="p-2 rounded-xl bg-gray-100 active:bg-gray-200 text-gray-600 active:text-gray-900 transition-colors"
+                        aria-label="Close modal"
+                      >
+                        <X className="w-5 h-5" />
+                      </motion.button>
                     </div>
                   </div>
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      if (filterToEdit) {
-                        handleCancelEditFilter()
-                      } else {
-                        setShowFilters(false)
-                      }
-                    }}
-                    className="p-2 active:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <X className="w-5 h-5 text-gray-700" />
-                  </motion.button>
-                </div>
 
-                {/* Mobile Content - Scrollable */}
-                <div className="flex-1 overflow-y-auto px-4 py-4">
+                  {/* Modal Content */}
+                  <div className="flex-1 overflow-y-auto px-4 pb-24">
                   <div className="space-y-6 pb-4">
                     {/* Location Section */}
                     <motion.div
@@ -2633,26 +2662,27 @@ function JobsPageContent() {
                       </label>
                     </motion.div>
                   </div>
-                </div>
-
-                {/* Mobile Footer - Sticky Bottom */}
-                <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 py-4 flex items-center gap-3 flex-shrink-0 z-10">
-                  <motion.button
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleResetFilters}
-                    className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 active:bg-gray-100 transition-colors"
-                  >
-                    Reset
-                  </motion.button>
-                  <motion.button
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleApplyFilters}
-                    className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-xl text-sm font-semibold active:bg-primary-700 transition-colors"
-                  >
-                    Apply
-                  </motion.button>
-                </div>
-              </motion.div>
+                  </div>
+                  
+                  {/* Mobile Footer - Sticky Bottom */}
+                  <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 py-4 flex items-center gap-3 flex-shrink-0 z-10 mt-auto">
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleResetFilters}
+                      className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 active:bg-gray-100 transition-colors"
+                    >
+                      Reset
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleApplyFilters}
+                      className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-xl text-sm font-semibold active:bg-primary-700 transition-colors"
+                    >
+                      Apply
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </>
             ) : (
               /* Desktop Modal */
               <>
@@ -3939,9 +3969,9 @@ function JobsPageContent() {
                 </motion.div>
               </motion.button>
 
-              {/* Dropdown Menu */}
+              {/* Dropdown Menu - Desktop Only */}
               <AnimatePresence>
-                {showQuickAccessDropdown && (
+                {showQuickAccessDropdown && !isMobile && (
                   <>
                     <motion.div
                       initial={{ opacity: 0 }}
@@ -4250,28 +4280,6 @@ function JobsPageContent() {
         )}
       </AnimatePresence>
 
-      {/* Mobile Results Count - Mobile Only */}
-      {isMobile && (
-        <div 
-          className="border-b border-gray-100 px-3 py-2.5 sticky"
-          style={{ 
-            position: 'sticky', 
-            top: 'calc(56px + 120px)', 
-            zIndex: 98,
-            backgroundColor: '#ffffff',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)'
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-primary-600 rounded-full" />
-            <span className="text-xs text-gray-600">
-              Showing <span className="font-semibold text-gray-900">{filteredJobs.length}</span> jobs
-              <span className="text-gray-500"> (of {SAMPLE_JOBS.length} total)</span>
-            </span>
-          </div>
-        </div>
-      )}
 
 
       {/* Save Filter Modal */}
@@ -4671,6 +4679,121 @@ function JobsPageContent() {
             )}
           </AnimatePresence>
 
+      {/* Explore Jobs Modal - Mobile Bottom Sheet */}
+      <AnimatePresence>
+        {showQuickAccessDropdown && isMobile && (
+          <>
+            {/* Hide bottom nav when modal is open on mobile */}
+            <style jsx global>{`
+              [data-mobile-bottom-nav] {
+                display: none !important;
+              }
+            `}</style>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[120]"
+              onClick={() => setShowQuickAccessDropdown(false)}
+              style={{ zIndex: 120 }}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: '100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: '100%' }}
+              transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col z-[120]"
+              style={{ 
+                bottom: 0,
+                zIndex: 120,
+                paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+              }}
+            >
+              {/* Header Section */}
+              <div className="relative px-4 pt-4 pb-3 flex-shrink-0">
+                {/* Mobile Drag Handle */}
+                <div className="flex justify-center mb-3">
+                  <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <h2 className="font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent text-lg">
+                        Explore Jobs
+                      </h2>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Browse jobs by location or specialty
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Close Button */}
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setShowQuickAccessDropdown(false)}
+                    className="p-2 rounded-xl bg-gray-100 active:bg-gray-200 text-gray-600 active:text-gray-900 transition-colors"
+                    aria-label="Close modal"
+                  >
+                    <X className="w-5 h-5" />
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto px-4 pb-24">
+                <div className="space-y-3">
+                  {/* Jobs by State Option */}
+                  <Link href="/jobs-by-state" onClick={() => setShowQuickAccessDropdown(false)}>
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      className="w-full flex items-center gap-3 px-4 py-4 rounded-xl bg-gray-50 active:bg-gray-100 border border-gray-200 transition-colors group"
+                    >
+                      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-sm group-active:shadow-md transition-all group-active:scale-110">
+                        <MapPin className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="text-base font-semibold text-gray-900 group-active:text-primary-700 transition-colors">
+                          Jobs by State
+                        </div>
+                        <div className="text-sm text-gray-500 mt-0.5">
+                          Browse by location
+                        </div>
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-gray-400 group-active:text-primary-600 group-active:translate-x-1 transition-all" />
+                    </motion.button>
+                  </Link>
+
+                  {/* Divider */}
+                  <div className="h-px bg-gray-200 my-2" />
+
+                  {/* Nursing Specialties Option */}
+                  <Link href="/nursing-specialties" onClick={() => setShowQuickAccessDropdown(false)}>
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      className="w-full flex items-center gap-3 px-4 py-4 rounded-xl bg-gray-50 active:bg-gray-100 border border-gray-200 transition-colors group"
+                    >
+                      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-sm group-active:shadow-md transition-all group-active:scale-110">
+                        <Stethoscope className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="text-base font-semibold text-gray-900 group-active:text-primary-700 transition-colors">
+                          Nursing Specialties
+                        </div>
+                        <div className="text-sm text-gray-500 mt-0.5">
+                          Explore specialties
+                        </div>
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-gray-400 group-active:text-primary-600 group-active:translate-x-1 transition-all" />
+                    </motion.button>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Job Listings - Modern Card Grid */}
       <main className={`flex-1 ${isMobile ? 'px-0 pb-20' : 'max-w-7xl mx-auto px-4 py-6'} w-full`} style={isMobile ? { position: 'relative', zIndex: 1 } : {}}>
         {filteredJobs.length === 0 ? (
@@ -4685,7 +4808,9 @@ function JobsPageContent() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Spacer for mobile to account for sticky "showing jobs" wrapper */}
+            {isMobile && <div className="h-16"></div>}
+            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${isMobile ? 'px-4 pt-2 pb-4' : 'px-4 sm:px-6 lg:px-8'}`}>
               {filteredJobs.map((job, index) => (
             <a
               key={job.id}
@@ -4820,7 +4945,7 @@ function JobsPageContent() {
               </div>
 
               {/* Card Body */}
-              <div className="p-3 bg-white/80 backdrop-blur-sm flex-1 flex flex-col">
+              <div className={`${isMobile ? 'p-4 sm:p-5' : 'p-3'} bg-white/80 backdrop-blur-sm flex-1 flex flex-col`}>
                 {/* Title and Days Ago */}
                 <div className="flex items-center justify-between mb-1.5 gap-2">
                   <div className="flex-1 min-w-0">

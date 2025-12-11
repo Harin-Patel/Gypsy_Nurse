@@ -57,6 +57,7 @@ import {
 } from '@/utils/jobStorage'
 import { getFacilityImageWithFallback } from '@/utils/stateImages'
 import { Job, SAMPLE_JOBS } from '../page'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface JobDetails {
   id: string
@@ -729,6 +730,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { isAuthenticated } = useAuth()
+  const isMobile = useIsMobile()
   
   // Check if user came from applications or bookmarks page
   const fromApplications = searchParams?.get('from') === 'applications'
@@ -1206,7 +1208,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
   
   const [activeTab, setActiveTab] = useState('overview')
   const [isTabBarFixed, setIsTabBarFixed] = useState(false)
-  const [navHeight, setNavHeight] = useState(80)
+  const [navHeight, setNavHeight] = useState(isMobile ? 0 : 80) // 0 on mobile since nav is hidden
   const [tabBarPosition, setTabBarPosition] = useState({ left: 0, width: 0 })
   const isProgrammaticScrollRef = useRef(false)
   
@@ -1223,6 +1225,11 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
   // Calculate navigation height and tab bar position
   useEffect(() => {
     const updateNavHeight = () => {
+      if (isMobile) {
+        // Navigation is hidden on mobile for job details page
+        setNavHeight(0)
+        return
+      }
       const nav = document.querySelector('nav')
       if (nav) {
         const height = nav.getBoundingClientRect().height
@@ -1300,7 +1307,9 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
           // Check if tab bar should be fixed
           const scrollPosition = window.scrollY
           // Tab bar should become fixed when its natural position would be at navHeight from viewport top
-          const shouldBeFixed = scrollPosition >= tabBarInitialTop - navHeight
+          // On mobile, make it sticky earlier for better UX
+          const threshold = isMobile ? tabBarInitialTop - navHeight - 20 : tabBarInitialTop - navHeight
+          const shouldBeFixed = scrollPosition >= threshold
           
           if (shouldBeFixed !== isTabBarFixed) {
             setIsTabBarFixed(shouldBeFixed)
@@ -1371,6 +1380,59 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
       // Set flag to prevent scroll handler from updating active tab
       isProgrammaticScrollRef.current = true
       
+      // Mobile-specific scroll handling
+      if (isMobile) {
+        // Use requestAnimationFrame to ensure DOM is ready on mobile
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (!sectionRef.current) {
+              isProgrammaticScrollRef.current = false
+              return
+            }
+            
+            // On mobile, nav is hidden, so only account for tab bar
+            const tabBarHeight = 48
+            const offset = tabBarHeight + 15  // Tab bar + buffer
+            
+            // Get element position relative to document
+            const elementRect = sectionRef.current.getBoundingClientRect()
+            const elementPosition = elementRect.top + window.scrollY
+            const offsetPosition = Math.max(0, elementPosition - offset)
+
+            // Use scrollIntoView for better mobile compatibility
+            sectionRef.current.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+              inline: 'nearest'
+            })
+            
+            // Adjust for offset after initial scroll
+            setTimeout(() => {
+              if (sectionRef.current) {
+                const currentScroll = window.scrollY
+                const elementRect = sectionRef.current.getBoundingClientRect()
+                const adjustment = elementRect.top - offset
+                if (Math.abs(adjustment) > 5) {
+                  window.scrollTo({
+                    top: currentScroll + adjustment,
+                    behavior: 'smooth'
+                  })
+                }
+              }
+            }, 100)
+            
+            // Reset flag after scroll completes
+            const scrollDistance = Math.abs(window.scrollY - offsetPosition)
+            const estimatedDuration = Math.min(Math.max(scrollDistance * 1.2, 800), 2000)
+            setTimeout(() => {
+              isProgrammaticScrollRef.current = false
+            }, estimatedDuration + 300)
+          })
+        })
+        return // Exit early for mobile, don't execute desktop code
+      }
+      
+      // Desktop scroll handling (unchanged)
       // Use requestAnimationFrame to ensure DOM is ready
       requestAnimationFrame(() => {
         if (!sectionRef.current) return
@@ -1642,43 +1704,53 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
-      <Navigation />
+    <div className={`min-h-screen flex flex-col ${isMobile ? 'bg-white' : 'bg-gradient-to-br from-gray-50 to-gray-100'}`}>
+      {!isMobile && <Navigation />}
       
       {/* Main Content Container */}
-      <div className="flex-1 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 pt-24 pb-8 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className={`flex-1 ${isMobile ? 'w-full' : 'max-w-[1600px] mx-auto'} ${isMobile ? 'px-0' : 'px-4 sm:px-6 lg:px-12 xl:px-16'} ${isMobile ? 'pt-0 pb-20' : 'pt-24 pb-8'} w-full`}>
+        <div className={`${isMobile ? 'flex flex-col' : 'grid grid-cols-1 lg:grid-cols-12'} ${isMobile ? '' : 'gap-8 items-start'}`}>
           {/* Left Column - Main Card with Image, Tabs, and Sections */}
-          <div className="lg:col-span-9">
-            <div ref={cardRef} className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mt-8">
+          <div className={isMobile ? 'w-full' : 'lg:col-span-9'}>
+            <div ref={cardRef} className={`bg-white ${isMobile ? 'rounded-none shadow-none border-0' : 'rounded-2xl shadow-lg border border-gray-200'} overflow-hidden ${isMobile ? 'mt-0' : 'mt-8'}`}>
               {/* Facility Image */}
-              <div className="relative w-full h-80 overflow-hidden">
+              <div className={`relative w-full ${isMobile ? 'h-64' : 'h-80'} overflow-hidden`}>
                 <img 
                   src={getFacilityImageWithFallback(job.facilityImage, job.state)} 
                   alt={job.facilityName || job.title}
                   className="w-full h-full object-cover"
                 />
-                {/* Black Overlay from Four Corners (Vignette Effect) */}
-                <div className="absolute inset-0" 
-                  style={{
-                    background: `
-                      radial-gradient(circle at top left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
-                      radial-gradient(circle at top right, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
-                      radial-gradient(circle at bottom left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
-                      radial-gradient(circle at bottom right, rgba(0, 0, 0, 0.4) 0%, transparent 50%)
-                    `
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                {/* Black Overlay from Four Corners (Vignette Effect) - Desktop only */}
+                {!isMobile && (
+                  <>
+                    <div className="absolute inset-0" 
+                      style={{
+                        background: `
+                          radial-gradient(circle at top left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+                          radial-gradient(circle at top right, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+                          radial-gradient(circle at bottom left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+                          radial-gradient(circle at bottom right, rgba(0, 0, 0, 0.4) 0%, transparent 50%)
+                        `
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                  </>
+                )}
+                {/* Simple gradient overlay for mobile */}
+                {isMobile && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                )}
 
-                {/* Back Button - Top Left with Glassmorphism */}
-                <div className="absolute top-4 left-4 z-20">
+                {/* Back Button - Top Left */}
+                <div className={`absolute ${isMobile ? 'top-3 left-3' : 'top-4 left-4'} ${isMobile ? 'z-[110]' : 'z-20'}`}>
                   <Link href={fromApplications ? "/applications" : fromBookmarks ? "/bookmarks" : "/jobs"}>
                     <motion.button
-                      whileHover={{ scale: 1.1 }}
+                      whileHover={isMobile ? {} : { scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
-                      className="group w-12 h-12 rounded-xl transition-all duration-200 flex items-center justify-center"
-                      style={{
+                      className={`group ${isMobile ? 'w-10 h-10 rounded-lg bg-white/90' : 'w-12 h-12 rounded-xl'} transition-all duration-200 flex items-center justify-center`}
+                      style={isMobile ? {
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+                      } : {
                         background: 'rgba(255, 255, 255, 0.15)',
                         backdropFilter: 'blur(20px) saturate(180%)',
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
@@ -1686,20 +1758,20 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
                       }}
                     >
-                      <ArrowLeft className="w-5 h-5 text-white drop-shadow-lg transition-transform duration-200 group-hover:-translate-x-1" />
+                      <ArrowLeft className={`${isMobile ? 'w-5 h-5 text-gray-700' : 'w-5 h-5 text-white drop-shadow-lg transition-transform duration-200 group-hover:-translate-x-1'}`} />
                     </motion.button>
                   </Link>
                 </div>
 
                 {/* Action Buttons - Top Right */}
                 {isAuthenticated && (
-                  <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                  <div className={`absolute ${isMobile ? 'top-3 right-3' : 'top-4 right-4'} flex items-center ${isMobile ? 'gap-1.5' : 'gap-2'} ${isMobile ? 'z-[110]' : 'z-10'}`}>
                     {/* Like Button */}
                     <motion.button
                       type="button"
                       disabled={isPending}
-                      whileHover={isPending ? {} : { scale: 1.1 }}
-                      whileTap={isPending ? {} : { scale: 0.9 }}
+                      whileHover={isMobile || isPending ? {} : { scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={(e) => {
                         if (isPending) {
                           e.preventDefault()
@@ -1710,8 +1782,14 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         e.stopPropagation()
                         handleLike()
                       }}
-                      className={`w-12 h-12 rounded-xl transition-all flex items-center justify-center ${isPending ? 'cursor-not-allowed opacity-70' : ''}`}
-                      style={isLiked ? {
+                      className={`${isMobile ? 'w-9 h-9 rounded-lg' : 'w-12 h-12 rounded-xl'} transition-all flex items-center justify-center ${isPending ? 'cursor-not-allowed opacity-70' : ''}`}
+                      style={isMobile ? (isLiked ? {
+                        background: '#7F2860',
+                        boxShadow: '0 2px 8px rgba(127, 40, 96, 0.3)'
+                      } : {
+                        background: 'rgba(255, 255, 255, 0.95)',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+                      }) : (isLiked ? {
                         background: isPending ? 'rgba(127, 40, 96, 0.6)' : 'rgba(127, 40, 96, 0.9)',
                         backdropFilter: 'blur(20px) saturate(180%)',
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
@@ -1723,17 +1801,17 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                         border: isPending ? '1px solid rgba(200, 200, 200, 0.5)' : '1px solid rgba(255, 255, 255, 0.3)',
                         boxShadow: isPending ? '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                      }}
+                      })}
                     >
-                      <ThumbsUp className={`w-5 h-5 ${isLiked ? 'fill-white text-white' : isPending ? 'text-gray-300' : 'text-white'} drop-shadow-lg`} />
+                      <ThumbsUp className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} ${isLiked ? 'fill-white text-white' : isPending ? (isMobile ? 'text-gray-400' : 'text-gray-300') : (isMobile ? 'text-gray-700' : 'text-white drop-shadow-lg')}`} />
                     </motion.button>
 
                     {/* Dislike Button */}
                     <motion.button
                       type="button"
                       disabled={isPending}
-                      whileHover={isPending ? {} : { scale: 1.1 }}
-                      whileTap={isPending ? {} : { scale: 0.9 }}
+                      whileHover={isMobile || isPending ? {} : { scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={(e) => {
                         if (isPending) {
                           e.preventDefault()
@@ -1744,8 +1822,14 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         e.stopPropagation()
                         handleDislike()
                       }}
-                      className={`w-12 h-12 rounded-xl transition-all flex items-center justify-center ${isPending ? 'cursor-not-allowed opacity-70' : ''}`}
-                      style={isDisliked ? {
+                      className={`${isMobile ? 'w-9 h-9 rounded-lg' : 'w-12 h-12 rounded-xl'} transition-all flex items-center justify-center ${isPending ? 'cursor-not-allowed opacity-70' : ''}`}
+                      style={isMobile ? (isDisliked ? {
+                        background: '#7F2860',
+                        boxShadow: '0 2px 8px rgba(127, 40, 96, 0.3)'
+                      } : {
+                        background: 'rgba(255, 255, 255, 0.95)',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+                      }) : (isDisliked ? {
                         background: isPending ? 'rgba(127, 40, 96, 0.6)' : 'rgba(127, 40, 96, 0.9)',
                         backdropFilter: 'blur(20px) saturate(180%)',
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
@@ -1757,17 +1841,17 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                         border: isPending ? '1px solid rgba(200, 200, 200, 0.5)' : '1px solid rgba(255, 255, 255, 0.3)',
                         boxShadow: isPending ? '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                      }}
+                      })}
                     >
-                      <ThumbsDown className={`w-5 h-5 ${isDisliked ? 'fill-white text-white' : isPending ? 'text-gray-300' : 'text-white'} drop-shadow-lg`} />
+                      <ThumbsDown className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} ${isDisliked ? 'fill-white text-white' : isPending ? (isMobile ? 'text-gray-400' : 'text-gray-300') : (isMobile ? 'text-gray-700' : 'text-white drop-shadow-lg')}`} />
                     </motion.button>
 
                     {/* Bookmark Button */}
                     <motion.button
                       type="button"
                       disabled={isPending}
-                      whileHover={isPending ? {} : { scale: 1.1 }}
-                      whileTap={isPending ? {} : { scale: 0.9 }}
+                      whileHover={isMobile || isPending ? {} : { scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={(e) => {
                         if (isPending) {
                           e.preventDefault()
@@ -1778,8 +1862,14 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         e.stopPropagation()
                         handleSave()
                       }}
-                      className={`w-12 h-12 rounded-xl transition-all flex items-center justify-center ${isPending ? 'cursor-not-allowed opacity-70' : ''}`}
-                      style={isSaved ? {
+                      className={`${isMobile ? 'w-9 h-9 rounded-lg' : 'w-12 h-12 rounded-xl'} transition-all flex items-center justify-center ${isPending ? 'cursor-not-allowed opacity-70' : ''}`}
+                      style={isMobile ? (isSaved ? {
+                        background: '#7F2860',
+                        boxShadow: '0 2px 8px rgba(127, 40, 96, 0.3)'
+                      } : {
+                        background: 'rgba(255, 255, 255, 0.95)',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+                      }) : (isSaved ? {
                         background: isPending ? 'rgba(127, 40, 96, 0.6)' : 'rgba(127, 40, 96, 0.9)',
                         backdropFilter: 'blur(20px) saturate(180%)',
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
@@ -1791,9 +1881,9 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                         border: isPending ? '1px solid rgba(200, 200, 200, 0.5)' : '1px solid rgba(255, 255, 255, 0.3)',
                         boxShadow: isPending ? '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                      }}
+                      })}
                     >
-                      <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-white text-white' : isPending ? 'text-gray-300' : 'text-white'} drop-shadow-lg`} />
+                      <Bookmark className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} ${isSaved ? 'fill-white text-white' : isPending ? (isMobile ? 'text-gray-400' : 'text-gray-300') : (isMobile ? 'text-gray-700' : 'text-white drop-shadow-lg')}`} />
                     </motion.button>
                   </div>
                 )}
@@ -1808,33 +1898,35 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                     duration: 0.15, 
                     ease: [0.25, 0.1, 0.25, 1]
                   }}
-                  className={`border-b-2 transition-colors duration-150 ${
+                  className={`${isMobile ? 'border-b' : 'border-b-2'} transition-colors duration-150 ${
                     isTabBarFixed 
-                      ? 'bg-white/80 backdrop-blur-xl border-gray-200/50 shadow-2xl'
+                      ? `${isMobile ? 'bg-white border-gray-200' : 'bg-white/80 backdrop-blur-xl border-gray-200/50 shadow-2xl'}`
                       : 'bg-white border-gray-200'
                   }`}
                   style={
                     isTabBarFixed
                       ? { 
                           position: 'fixed', 
-                          top: `${navHeight}px`, 
-                          left: `${tabBarPosition.left}px`,
-                          width: `${tabBarPosition.width}px`,
-                          zIndex: 40,
-                          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1), 0 1px 8px rgba(0, 0, 0, 0.08)',
+                          top: `${isMobile ? navHeight : navHeight}px`, 
+                          left: isMobile ? '0' : `${tabBarPosition.left}px`,
+                          width: isMobile ? '100%' : `${tabBarPosition.width}px`,
+                          zIndex: isMobile ? 100 : 40,
+                          boxShadow: isMobile ? '0 2px 8px rgba(0, 0, 0, 0.1)' : '0 10px 30px rgba(0, 0, 0, 0.1), 0 1px 8px rgba(0, 0, 0, 0.08)',
                           willChange: 'transform',
                           transform: 'translateZ(0)',
                         }
                       : { 
-                          position: 'relative',
+                          position: isMobile ? 'sticky' : 'relative',
+                          top: isMobile ? '0px' : 'auto', // No nav offset on mobile since nav is hidden
+                          zIndex: isMobile ? 100 : 'auto',
                           willChange: 'auto'
                         }
                   }
                 >
-                  <div className="px-6">
-                    <div className="flex items-center gap-4">
+                  <div className={isMobile ? 'px-4' : 'px-6'}>
+                    <div className={`flex items-center ${isMobile ? 'gap-0' : 'gap-4'}`}>
                       {/* Tabs */}
-                      <div className="flex gap-1 overflow-x-auto flex-1">
+                      <div className={`flex ${isMobile ? 'gap-0' : 'gap-1'} overflow-x-auto flex-1 ${isMobile ? '-mx-4 px-4' : ''}`}>
                         {[
                           { id: 'overview', label: 'Overview', ref: overviewRef },
                           { id: 'facility-details', label: 'Facility Details', ref: facilityDetailsRef },
@@ -1845,9 +1937,9 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                 <motion.button
                   key={tab.id}
                   onClick={() => scrollToSection(tab.ref, tab.id)}
-                  whileHover={{ y: -2 }}
+                  whileHover={isMobile ? {} : { y: -2 }}
                   whileTap={{ scale: 0.98 }}
-                  className={`relative px-6 py-4 text-sm font-semibold transition-all duration-300 whitespace-nowrap ${
+                  className={`relative ${isMobile ? 'px-4 py-3 text-xs' : 'px-6 py-4 text-sm'} font-semibold transition-all duration-300 whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'text-primary-600'
                       : 'text-gray-600 hover:text-gray-900'
@@ -1903,19 +1995,19 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
         </motion.div>
         
         {/* Invisible spacer to maintain layout when tab bar is fixed */}
-        {isTabBarFixed && <div style={{ height: '64px' }} aria-hidden="true"></div>}
+        {isTabBarFixed && !isMobile && <div style={{ height: '64px' }} aria-hidden="true"></div>}
       </div>
 
               {/* Tab Content Sections - Inside the card */}
-              <div className="p-6">
-                <div className="space-y-12">
+              <div className={isMobile ? 'p-4' : 'p-6'}>
+                <div className={isMobile ? 'space-y-6' : 'space-y-12'}>
                 {/* Overview Section */}
-                <div ref={overviewRef} id="overview" className="scroll-mt-44">
-                  <div className="bg-white/80 backdrop-blur-xl rounded-lg border border-gray-200/50 shadow-lg p-6">
+                <div ref={overviewRef} id="overview" className={isMobile ? 'scroll-mt-20' : 'scroll-mt-44'}>
+                  <div className={`${isMobile ? 'bg-white rounded-none border-0 shadow-none' : 'bg-white/80 backdrop-blur-xl rounded-lg border border-gray-200/50 shadow-lg'} ${isMobile ? 'p-0' : 'p-6'}`}>
                     {/* Main Header - License-Specialty */}
-                    <div className="mb-6 pb-6 border-b border-gray-200">
-                      <div className="flex items-start justify-between gap-4 mb-2">
-                        <h1 className="text-2xl font-bold text-gray-900 flex-1 min-w-0 break-words">
+                    <div className={`${isMobile ? 'mb-4 pb-4' : 'mb-6 pb-6'} border-b border-gray-200`}>
+                      <div className={`flex items-start justify-between ${isMobile ? 'gap-2' : 'gap-4'} mb-2`}>
+                        <h1 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-gray-900 flex-1 min-w-0 break-words`}>
                           {job.specialtyRequired || job.title}
                         </h1>
                         {/* Badges - Featured and Pending */}
@@ -1934,86 +2026,86 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <MapPin className="w-4 h-4" />
-                        <span className="text-base">{job.city}, {job.state}</span>
+                      <div className={`flex items-center gap-2 text-gray-600`}>
+                        <MapPin className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
+                        <span className={isMobile ? 'text-sm' : 'text-base'}>{job.city}, {job.state}</span>
                         </div>
                       </div>
 
                     {/* Key Information Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className={`${isMobile ? 'grid grid-cols-1 gap-3' : 'grid grid-cols-1 md:grid-cols-2 gap-4'} ${isMobile ? 'mb-4' : 'mb-6'}`}>
                       {/* Estimated Start Date */}
-                      <div className="flex items-start gap-3">
-                        <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                      <div className={`flex items-start ${isMobile ? 'gap-2' : 'gap-3'}`}>
+                        <Calendar className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-gray-400 flex-shrink-0 mt-0.5`} />
                         <div className="flex flex-col">
-                          <span className="text-xs text-gray-500 mb-1">Estimated Start Date</span>
-                          <span className="text-sm font-semibold text-gray-900">{job.startDate ? formatDateWithYear(job.startDate) : 'TBD'}</span>
+                          <span className={`${isMobile ? 'text-[11px]' : 'text-xs'} text-gray-500 mb-1`}>Estimated Start Date</span>
+                          <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-900`}>{job.startDate ? formatDateWithYear(job.startDate) : 'TBD'}</span>
                         </div>
                       </div>
 
                       {/* Facility Name */}
-                      <div className="flex items-start gap-3">
-                        <Building2 className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                      <div className={`flex items-start ${isMobile ? 'gap-2' : 'gap-3'}`}>
+                        <Building2 className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-gray-400 flex-shrink-0 mt-0.5`} />
                         <div className="flex flex-col">
-                          <span className="text-xs text-gray-500 mb-1">Facility Name</span>
-                          <span className="text-sm font-semibold text-gray-900">{job.facilityName || 'Not specified'}</span>
+                          <span className={`${isMobile ? 'text-[11px]' : 'text-xs'} text-gray-500 mb-1`}>Facility Name</span>
+                          <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-900`}>{job.facilityName || 'Not specified'}</span>
                         </div>
                       </div>
 
                       {/* Type of Shift */}
-                      <div className="flex items-start gap-3">
-                        <Clock className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                      <div className={`flex items-start ${isMobile ? 'gap-2' : 'gap-3'}`}>
+                        <Clock className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-gray-400 flex-shrink-0 mt-0.5`} />
                         <div className="flex flex-col">
-                          <span className="text-xs text-gray-500 mb-1">Type of Shift</span>
-                          <span className="text-sm font-semibold text-gray-900">{job.shift || 'Not specified'}</span>
+                          <span className={`${isMobile ? 'text-[11px]' : 'text-xs'} text-gray-500 mb-1`}>Type of Shift</span>
+                          <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-900`}>{job.shift || 'Not specified'}</span>
                         </div>
                       </div>
 
                       {/* Shift Length */}
-                      <div className="flex items-start gap-3">
-                        <Clock className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                      <div className={`flex items-start ${isMobile ? 'gap-2' : 'gap-3'}`}>
+                        <Clock className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-gray-400 flex-shrink-0 mt-0.5`} />
                         <div className="flex flex-col">
-                          <span className="text-xs text-gray-500 mb-1">Shift Length</span>
-                          <span className="text-sm font-semibold text-gray-900">{job.shiftHours || 'Not specified'}</span>
+                          <span className={`${isMobile ? 'text-[11px]' : 'text-xs'} text-gray-500 mb-1`}>Shift Length</span>
+                          <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-900`}>{job.shiftHours || 'Not specified'}</span>
                         </div>
                       </div>
 
                       {/* Assignment Length */}
-                      <div className="flex items-start gap-3">
-                        <Infinity className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                      <div className={`flex items-start ${isMobile ? 'gap-2' : 'gap-3'}`}>
+                        <Infinity className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-gray-400 flex-shrink-0 mt-0.5`} />
                         <div className="flex flex-col">
-                          <span className="text-xs text-gray-500 mb-1">Assignment Length</span>
-                          <span className="text-sm font-semibold text-gray-900">{job.duration || 'Not specified'}</span>
+                          <span className={`${isMobile ? 'text-[11px]' : 'text-xs'} text-gray-500 mb-1`}>Assignment Length</span>
+                          <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-900`}>{job.duration || 'Not specified'}</span>
                         </div>
                       </div>
 
                       {/* Expected Shift Time */}
-                      <div className="flex items-start gap-3">
-                        <Clock className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                      <div className={`flex items-start ${isMobile ? 'gap-2' : 'gap-3'}`}>
+                        <Clock className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-gray-400 flex-shrink-0 mt-0.5`} />
                         <div className="flex flex-col">
-                          <span className="text-xs text-gray-500 mb-1">Expected Shift Time</span>
-                          <span className="text-sm font-semibold text-gray-900">08:00 - 16:30</span>
+                          <span className={`${isMobile ? 'text-[11px]' : 'text-xs'} text-gray-500 mb-1`}>Expected Shift Time</span>
+                          <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-900`}>08:00 - 16:30</span>
                         </div>
                       </div>
 
                       {/* Weekly Hours */}
                       {job.guaranteedHours && (
-                        <div className="flex items-start gap-3">
-                          <Clock className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                        <div className={`flex items-start ${isMobile ? 'gap-2' : 'gap-3'}`}>
+                          <Clock className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-gray-400 flex-shrink-0 mt-0.5`} />
                           <div className="flex flex-col">
-                            <span className="text-xs text-gray-500 mb-1">Weekly Hours</span>
-                            <span className="text-sm font-semibold text-gray-900">{job.guaranteedHours} hours/week</span>
+                            <span className={`${isMobile ? 'text-[11px]' : 'text-xs'} text-gray-500 mb-1`}>Weekly Hours</span>
+                            <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-900`}>{job.guaranteedHours} hours/week</span>
                         </div>
                       </div>
                       )}
 
                       {/* Shifts Per Week */}
                       {job.guaranteedHours && job.shiftHours && (
-                        <div className="flex items-start gap-3">
-                          <Clock className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                        <div className={`flex items-start ${isMobile ? 'gap-2' : 'gap-3'}`}>
+                          <Clock className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-gray-400 flex-shrink-0 mt-0.5`} />
                           <div className="flex flex-col">
-                            <span className="text-xs text-gray-500 mb-1">Shifts Per Week</span>
-                            <span className="text-sm font-semibold text-gray-900">
+                            <span className={`${isMobile ? 'text-[11px]' : 'text-xs'} text-gray-500 mb-1`}>Shifts Per Week</span>
+                            <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-900`}>
                               {(() => {
                                 const hours = parseFloat(job.shiftHours.replace(/[^0-9.]/g, '')) || 8
                                 const weeklyHours = job.guaranteedHours || 36
@@ -2151,7 +2243,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                 </div>
 
             {/* Facility Details Section */}
-            <div ref={facilityDetailsRef} id="facility-details" className="scroll-mt-44 space-y-6">
+            <div ref={facilityDetailsRef} id="facility-details" className={isMobile ? 'scroll-mt-20 space-y-6' : 'scroll-mt-44 space-y-6'}>
               <h2 className="text-3xl font-bold text-gray-900 mb-6">Facility Details</h2>
               
               <div className="bg-white/80 backdrop-blur-xl rounded-lg border border-gray-200/50 shadow-lg p-6">
@@ -2340,7 +2432,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
             </div>
 
             {/* Cost of Living Section */}
-            <div ref={costOfLivingRef} id="cost-of-living" className="scroll-mt-44 space-y-6">
+            <div ref={costOfLivingRef} id="cost-of-living" className={isMobile ? 'scroll-mt-20 space-y-6' : 'scroll-mt-44 space-y-6'}>
               <h2 className="text-3xl font-bold text-gray-900 mb-6">Cost of Living</h2>
               
               {costOfLivingLoading ? (
@@ -2789,7 +2881,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
             </div>
 
             {/* Weather Section */}
-            <div ref={weatherRef} id="weather" className="scroll-mt-44">
+            <div ref={weatherRef} id="weather" className={isMobile ? 'scroll-mt-20' : 'scroll-mt-44'}>
               <h2 className="text-3xl font-bold text-gray-900 mb-6">Weather</h2>
               
               {weatherLoading ? (
@@ -3043,7 +3135,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
             </div>
 
             {/* Transportation and Crime Section */}
-            <div ref={transportationRef} id="transportation" className="scroll-mt-44 space-y-6">
+            <div ref={transportationRef} id="transportation" className={isMobile ? 'scroll-mt-20 space-y-6' : 'scroll-mt-44 space-y-6'}>
               <h2 className="text-3xl font-bold text-gray-900 mb-6">Transportation and Crime</h2>
               
               {transportationCrimeLoading ? (

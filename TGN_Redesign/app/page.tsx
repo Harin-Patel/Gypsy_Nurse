@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, Gift, Sparkles } from 'lucide-react'
+// import { useState, useEffect } from 'react'
+// import { motion, AnimatePresence } from 'framer-motion'
+// import { X, Gift, Sparkles } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 import Hero from '@/components/Hero'
 import FeaturedJobs from '@/components/FeaturedJobs'
@@ -12,55 +12,55 @@ import InstagramFeed from '@/components/InstagramFeed'
 import Resources from '@/components/Resources'
 import Blog from '@/components/Blog'
 import Footer from '@/components/Footer'
-import { useDisableBodyScroll } from '@/utils/useDisableBodyScroll'
+// import { useDisableBodyScroll } from '@/utils/useDisableBodyScroll'
 
 export default function Home() {
-  const [showChristmasModal, setShowChristmasModal] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  // const [showChristmasModal, setShowChristmasModal] = useState(false)
+  // const [isMobile, setIsMobile] = useState(false)
   
   // Disable body scroll when modal is open
-  useDisableBodyScroll(showChristmasModal)
+  // useDisableBodyScroll(showChristmasModal)
 
   // Detect mobile screen size
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640)
-    }
-    
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+  // useEffect(() => {
+  //   const checkMobile = () => {
+  //     setIsMobile(window.innerWidth < 640)
+  //   }
+  //   
+  //   checkMobile()
+  //   window.addEventListener('resize', checkMobile)
+  //   return () => window.removeEventListener('resize', checkMobile)
+  // }, [])
 
   // Show Christmas modal on page load (once per session)
   // Appears 1.5 seconds after the homepage loads
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const hasSeenModal = sessionStorage.getItem('christmas-modal-seen')
-      if (!hasSeenModal) {
-        // Delay for better UX - allows page to load first
-        const timer = setTimeout(() => {
-          setShowChristmasModal(true)
-          sessionStorage.setItem('christmas-modal-seen', 'true')
-        }, 1500)
-        return () => clearTimeout(timer)
-      }
-    }
-  }, [])
+  // useEffect(() => {
+  //   if (typeof window !== 'undefined') {
+  //     const hasSeenModal = sessionStorage.getItem('christmas-modal-seen')
+  //     if (!hasSeenModal) {
+  //       // Delay for better UX - allows page to load first
+  //       const timer = setTimeout(() => {
+  //         setShowChristmasModal(true)
+  //         sessionStorage.setItem('christmas-modal-seen', 'true')
+  //       }, 1500)
+  //       return () => clearTimeout(timer)
+  //     }
+  //   }
+  // }, [])
 
   // Handle ESC key to close modal
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showChristmasModal) {
-        setShowChristmasModal(false)
-      }
-    }
-    
-    if (showChristmasModal) {
-      window.addEventListener('keydown', handleEscape)
-      return () => window.removeEventListener('keydown', handleEscape)
-    }
-  }, [showChristmasModal])
+  // useEffect(() => {
+  //   const handleEscape = (e: KeyboardEvent) => {
+  //     if (e.key === 'Escape' && showChristmasModal) {
+  //       setShowChristmasModal(false)
+  //     }
+  //   }
+  //   
+  //   if (showChristmasModal) {
+  //     window.addEventListener('keydown', handleEscape)
+  //     return () => window.removeEventListener('keydown', handleEscape)
+  //   }
+  // }, [showChristmasModal])
 
   return (
     <main className="min-h-screen bg-white">
@@ -75,12 +75,12 @@ export default function Home() {
       <Blog />
       <Footer />
 
-      {/* Christmas Event Modal */}
-      <AnimatePresence>
+      {/* Christmas Event Modal - Hidden */}
+      {/* <AnimatePresence>
         {showChristmasModal && (
           <>
             {/* Backdrop */}
-            <motion.div
+            {/* <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -89,7 +89,7 @@ export default function Home() {
               onClick={() => setShowChristmasModal(false)}
             >
               {/* Animated snowflakes in background - reduced on mobile for performance */}
-              {[...Array(isMobile ? 10 : 20)].map((_, i) => (
+              {/* {[...Array(isMobile ? 10 : 20)].map((_, i) => (
                 <motion.div
                   key={`snowflake-${i}`}
                   className="absolute text-white/30 text-xl sm:text-2xl pointer-events-none"
@@ -115,7 +115,7 @@ export default function Home() {
               ))}
 
               {/* Modal */}
-              <motion.div
+              {/* <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -128,7 +128,7 @@ export default function Home() {
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Glow effect behind modal - Christmas themed - hidden on mobile for performance */}
-                <motion.div
+                {/* <motion.div
                   animate={{
                     opacity: [0.3, 0.5, 0.3],
                     scale: [1, 1.05, 1],
@@ -142,7 +142,7 @@ export default function Home() {
                 />
                 
                 {/* Main modal container */}
-                <div className="relative bg-white rounded-xl sm:rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden border-2 border-red-200/40 flex flex-col"
+                {/* <div className="relative bg-white rounded-xl sm:rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden border-2 border-red-200/40 flex flex-col"
                   style={{ 
                     maxHeight: 'calc(100vh - 2rem)',
                     minHeight: 'auto'
@@ -150,9 +150,9 @@ export default function Home() {
                 >
                   
                   {/* Festive Christmas Header */}
-                  <div className="relative bg-gradient-to-r from-red-600 via-red-500 to-green-600 overflow-hidden flex-shrink-0">
+                  {/* <div className="relative bg-gradient-to-r from-red-600 via-red-500 to-green-600 overflow-hidden flex-shrink-0">
                     {/* Animated sparkles overlay */}
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    {/* <div className="absolute inset-0 overflow-hidden pointer-events-none">
                       {[...Array(10)].map((_, i) => (
                         <motion.div
                           key={`sparkle-${i}`}
@@ -177,7 +177,7 @@ export default function Home() {
                     </div>
 
                     {/* Close button */}
-                    <motion.button
+                    {/* <motion.button
                       initial={{ opacity: 0, scale: 0 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.3, type: "spring" }}
@@ -189,10 +189,10 @@ export default function Home() {
                     </motion.button>
 
                     {/* Header content */}
-                    <div className="relative z-10 pt-4 pb-4 sm:pt-6 sm:pb-6 md:pt-7 md:pb-7 px-3 sm:px-4 md:px-6 lg:px-8">
+                    {/* <div className="relative z-10 pt-4 pb-4 sm:pt-6 sm:pb-6 md:pt-7 md:pb-7 px-3 sm:px-4 md:px-6 lg:px-8">
                       <div className="flex flex-col items-center justify-center text-center w-full">
                         {/* Icons */}
-                        <motion.div
+                        {/* <motion.div
                           initial={{ scale: 0, rotate: -180 }}
                           animate={{ scale: 1, rotate: 0 }}
                           transition={{ 
@@ -225,7 +225,7 @@ export default function Home() {
                         </motion.div>
                         
                         {/* Title */}
-                        <motion.h2
+                        {/* <motion.h2
                           initial={{ opacity: 0, y: -20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.35, type: "spring", stiffness: 200 }}
@@ -235,7 +235,7 @@ export default function Home() {
                         </motion.h2>
                         
                         {/* Subtitle */}
-                        <motion.p
+                        {/* <motion.p
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.45 }}
@@ -248,7 +248,7 @@ export default function Home() {
                   </div>
 
                   {/* Content Area - Scrollable */}
-                  <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-5 md:py-6 overflow-y-auto flex-1 bg-gradient-to-b from-white via-red-50/30 to-green-50/30 min-h-0"
+                  {/* <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-5 md:py-6 overflow-y-auto flex-1 bg-gradient-to-b from-white via-red-50/30 to-green-50/30 min-h-0"
                     style={{ 
                       maxHeight: 'calc(100vh - 200px)',
                       WebkitOverflowScrolling: 'touch'
@@ -256,7 +256,7 @@ export default function Home() {
                   >
                     <div className="space-y-3 sm:space-y-4 md:space-y-5">
                       {/* Main message */}
-                      <motion.div
+                      {/* <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5, duration: 0.5 }}
@@ -268,7 +268,7 @@ export default function Home() {
                       </motion.div>
 
                       {/* Decorative divider with animated sparkles */}
-                      <motion.div
+                      {/* <motion.div
                         initial={{ scaleX: 0 }}
                         animate={{ scaleX: 1 }}
                         transition={{ delay: 0.6, duration: 0.6 }}
@@ -285,14 +285,14 @@ export default function Home() {
                       </motion.div>
 
                       {/* Holiday message box */}
-                      <motion.div
+                      {/* <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: 15 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         transition={{ delay: 0.7, type: "spring", stiffness: 200 }}
                         className="bg-gradient-to-br from-red-50 via-white to-green-50 rounded-lg sm:rounded-xl p-3 sm:p-3.5 md:p-4 border-2 border-red-300/50 shadow-lg relative overflow-hidden"
                       >
                         {/* Animated background sparkles - reduced on mobile */}
-                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                        {/* <div className="absolute inset-0 overflow-hidden pointer-events-none">
                           {[...Array(isMobile ? 4 : 6)].map((_, i) => (
                             <motion.div
                               key={`box-sparkle-${i}`}
@@ -343,7 +343,7 @@ export default function Home() {
             </motion.div>
           </>
         )}
-      </AnimatePresence>
+      </AnimatePresence> */}
     </main>
   )
 }

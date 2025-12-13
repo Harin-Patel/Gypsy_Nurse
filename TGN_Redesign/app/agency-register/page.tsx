@@ -265,9 +265,9 @@ export default function AgencyRegisterPage() {
                   initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={isMobile ? { duration: 0 } : { delay: 0.3 }}
-                  className="text-center mb-6"
+                  className={`mb-6 ${isMobile ? '' : 'text-center'}`}
                 >
-                  <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-gray-900 mb-2`}>
+                  <h1 className={`${isMobile ? 'text-2xl truncate max-w-full' : 'text-3xl'} font-bold text-gray-900 mb-2 ${isMobile ? '' : 'text-center'}`}>
                     Create Agency Account
                   </h1>
                   <p className={`${isMobile ? 'text-sm' : 'text-base'} text-gray-600`}>Register your agency to start posting jobs</p>

@@ -10,14 +10,18 @@ import {
   Mail, MapPin, Calendar, Shield, Award, Briefcase, 
   GraduationCap, Users, Edit, Download, Upload,
   Plus, Trash2, Clock, ArrowUpRight, FileX, Inbox, X,
-  Camera, Image as ImageIcon, ChevronDown
+  Camera, Image as ImageIcon, ChevronDown, ChevronLeft
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { useDisableBodyScroll } from '@/utils/useDisableBodyScroll'
 import { getProfilePhoto, setProfilePhoto as saveProfilePhoto, removeProfilePhoto as deleteProfilePhoto, getProfilePhotoWithFallback } from '@/utils/profilePhoto'
 import { compressImage } from '@/utils/imageCompression'
 
 export default function ProfilePage() {
+  const isMobile = useIsMobile()
+  const router = useRouter()
   const { user: authUser } = useAuth()
   const [activeTab, setActiveTab] = useState('Professional Licenses')
   const [showEditModal, setShowEditModal] = useState(false)
@@ -479,8 +483,116 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-white">
         <Navigation />
 
-      <div className="pt-32 pb-12 px-4 max-w-7xl mx-auto">
-        {/* Profile Header Card with Glass Effect */}
+      <div className={isMobile ? 'pt-0 pb-24' : 'pt-32 pb-12 px-4 max-w-7xl mx-auto'}
+        style={isMobile ? {
+          paddingTop: `calc(3.5rem + env(safe-area-inset-top))`,
+          paddingBottom: `calc(6rem + env(safe-area-inset-bottom))`,
+        } : {}}
+      >
+        {/* Profile Header - Mobile Native Full Screen Style */}
+        {isMobile ? (
+          <div className="bg-white">
+            {/* Back Button - Mobile Only */}
+            <div className="px-4 pt-4 pb-2">
+              <motion.button
+                onClick={() => router.back()}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors"
+                aria-label="Go back"
+              >
+                <ChevronLeft className="w-5 h-5" />
+                <span className="text-sm font-medium">Back</span>
+              </motion.button>
+            </div>
+            {/* Profile Header Section */}
+            <div className="px-4 pt-2 pb-4">
+              <div className="flex flex-col items-center gap-4">
+                {/* Profile Picture - Mobile Native Style */}
+                <motion.div
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="relative group cursor-pointer"
+                  onClick={handlePhotoClick}
+                >
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="relative w-28 h-28 rounded-full object-cover ring-2 ring-primary-200 shadow-md"
+                  />
+                  {/* Camera Icon Overlay */}
+                  <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 active:opacity-100 transition-opacity flex items-center justify-center">
+                    <Camera className="w-5 h-5 text-white" />
+                  </div>
+                </motion.div>
+
+                {/* User Info */}
+                <div className="w-full text-center">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                    {user.name}
+                  </h1>
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 200, delay: 0.3 }}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-full shadow-sm mb-4"
+                  >
+                    <Briefcase className="w-4 h-4" />
+                    <span className="text-sm font-semibold">{user.experience}</span>
+                  </motion.div>
+
+                  {/* Action Buttons - Mobile Native Style */}
+                  <div className="flex items-center gap-2 w-full">
+                    <motion.button
+                      onClick={() => setShowEditModal(true)}
+                      whileTap={{ scale: 0.95 }}
+                      className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-sm active:bg-primary-700"
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span>Edit</span>
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-sm active:bg-gray-200"
+                    >
+                      <Download className="w-4 h-4" />
+                    </motion.button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Contact Info - Mobile Native Style */}
+            <div className="px-4 pb-4 space-y-2">
+              {[
+                { icon: Mail, label: 'Email', value: user.email },
+                { icon: MapPin, label: 'Address', value: user.address },
+                { icon: Calendar, label: 'DOB', value: user.dob },
+                { icon: Shield, label: 'SSN', value: user.ssn },
+              ].map((item, index) => {
+                const Icon = item.icon
+                return (
+                  <motion.div
+                    key={item.label}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 * index }}
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
+                  >
+                    <div className="p-2 bg-primary-100 rounded-lg">
+                      <Icon className="w-4 h-4 text-primary-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-gray-500 font-medium mb-0.5">{item.label}</p>
+                      <p className="text-sm text-gray-900 font-semibold truncate">{item.value}</p>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </div>
+          </div>
+        ) : (
+          /* Desktop Profile Header Card */
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -492,7 +604,7 @@ export default function ProfilePage() {
           
           <div className="relative p-8">
             <div className="flex flex-col lg:flex-row items-start lg:items-center gap-8">
-              {/* Profile Picture with Glass Effect */}
+                {/* Profile Picture */}
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 300 }}
@@ -505,7 +617,6 @@ export default function ProfilePage() {
                   alt={user.name}
                   className="relative w-28 h-28 rounded-3xl object-cover ring-4 ring-white/50 shadow-2xl"
                 />
-                {/* Overlay on hover */}
                 <div className="absolute inset-0 bg-black/40 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Camera className="w-6 h-6 text-white" />
                 </div>
@@ -529,7 +640,7 @@ export default function ProfilePage() {
                     </motion.div>
                   </div>
 
-                  {/* Action Buttons with Glass Effect */}
+                    {/* Action Buttons */}
                   <div className="flex items-center gap-3">
                     <motion.button
                       onClick={() => setShowEditModal(true)}
@@ -550,8 +661,7 @@ export default function ProfilePage() {
                     </motion.button>
                   </div>
                 </div>
-
-                {/* Contact Info Grid with Glass Effect */}
+                  {/* Contact Info Grid - Desktop */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
                   {[
                     { icon: Mail, label: 'Email', value: user.email, color: 'from-primary-500 to-primary-600' },
@@ -583,19 +693,21 @@ export default function ProfilePage() {
             </div>
           </div>
         </motion.div>
+        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6">
+        {isMobile ? (
+          <div className="px-0">
+            {/* Mobile Content */}
+            <div className="space-y-0">
             {/* Integrated Tabs and Content Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="relative"
+                className="relative bg-white"
             >
-              {/* Tabs Navigation */}
-              <div className="flex overflow-x-auto gap-3 px-2 scrollbar-hide mb-[-1px] relative z-10">
+                {/* Tabs Navigation - Mobile Native Style */}
+                <div className="flex overflow-x-auto gap-2 px-4 pt-4 pb-3 border-b border-gray-200 scrollbar-hide relative z-10">
                 {tabs.map((tab, index) => {
                   const isActive = activeTab === tab
                   
@@ -615,48 +727,22 @@ export default function ProfilePage() {
                       }}
                       className="relative group"
                     >
-                      <div className={`relative px-6 py-3.5 font-semibold text-sm whitespace-nowrap transition-all duration-300 ${
+                      <div className={`relative px-4 py-2.5 font-semibold text-sm whitespace-nowrap transition-all duration-300 ${
                         isActive
-                          ? 'text-white rounded-t-2xl'
-                          : 'text-gray-600 hover:text-primary-700 rounded-2xl'
+                          ? 'text-white rounded-xl' 
+                          : 'text-gray-600 rounded-xl bg-gray-50'
                       }`}>
                         
-                        {/* Active tab with refined glass effect */}
+                        {/* Active tab - Mobile Native Style */}
                         {isActive && (
                           <motion.div
                             layoutId="activeTabBg"
-                            className="absolute inset-0 rounded-t-2xl overflow-hidden"
+                            className="absolute inset-0 rounded-xl overflow-hidden"
                             transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                           >
                             {/* Solid gradient background */}
                             <div className="absolute inset-0 bg-gradient-to-r from-primary-600 to-primary-700" />
-                            
-                            {/* Subtle glass overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent" />
-                            
-                            {/* Refined shine effect */}
-                            <motion.div
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                              animate={{ x: ['-200%', '200%'] }}
-                              transition={{ 
-                                duration: 3,
-                                repeat: Infinity,
-                                repeatDelay: 3,
-                                ease: "easeInOut"
-                              }}
-                            />
-                            
-                            {/* Subtle top border highlight */}
-                            <div className="absolute inset-x-0 top-0 h-[1px] bg-white/30" />
                           </motion.div>
-                        )}
-                        
-                        {/* Inactive tab hover effect */}
-                        {!isActive && (
-                          <motion.div
-                            className="absolute inset-0 bg-white/50 rounded-2xl opacity-0 group-hover:opacity-100 backdrop-blur-sm"
-                            transition={{ duration: 0.2 }}
-                          />
                         )}
                         
                         {/* Tab text with icon */}
@@ -679,19 +765,19 @@ export default function ProfilePage() {
                 })}
               </div>
               
-              {/* Content Area - Integrated with active tab */}
+              {/* Content Area - Mobile Native Full Screen Style */}
               <motion.div
                 layout
-                className="bg-white/70 backdrop-blur-xl rounded-2xl rounded-tl-none shadow-lg border border-white/50 p-6 relative"
+                className="bg-white px-4 py-4 relative"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
                 {/* Header */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
-                    <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
+                    <h2 className="text-lg font-bold text-gray-900">
                       {activeTab}
                     </h2>
                     <motion.span
@@ -726,12 +812,11 @@ export default function ProfilePage() {
                       setShowAddModal(true)
                     }
                   }}
-                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="px-6 py-2.5 bg-gradient-to-r from-white/90 to-primary-50/50 backdrop-blur-md border border-primary-200/60 hover:border-primary-400/60 text-primary-700 rounded-xl font-semibold transition-all flex items-center gap-2 shadow-md hover:shadow-lg"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg font-semibold active:bg-primary-700 transition-all flex items-center gap-2 shadow-sm"
                 >
-                  <Plus className="w-5 h-5" />
-                  <span>
+                  <Plus className="w-4 h-4" />
+                  <span className="text-sm">
                     {activeTab === 'Professional Licenses' ? 'Add License' :
                      activeTab === 'Certificates' ? 'Add Certificate' :
                      activeTab === 'Specialties' ? 'Add Specialty' :
@@ -777,7 +862,7 @@ export default function ProfilePage() {
                       </p>
                     </motion.div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className={`${isMobile ? 'space-y-3' : 'grid grid-cols-1 md:grid-cols-2 gap-6'}`}>
                       {licenses.map((license, index) => (
                     <motion.div
                       key={index}
@@ -788,55 +873,77 @@ export default function ProfilePage() {
                         delay: index * 0.1,
                         ease: [0.34, 1.56, 0.64, 1]
                       }}
-                      whileHover={{
+                      whileHover={isMobile ? undefined : {
                         y: -10,
                         rotateY: 2,
                         transition: { duration: 0.3 }
                       }}
                       className="group relative"
                     >
-                      {/* Animated background glow */}
+                      {/* Animated background glow - Desktop Only */}
+                      {!isMobile && (
                       <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
+                      )}
                       
-                      {/* Main card */}
-                      <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
-                        {/* Decorative corner accent */}
+                      {/* Main card - Mobile Native Style */}
+                      <div className={`relative ${isMobile ? 'bg-white rounded-xl p-4 border border-gray-200' : 'bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300'} transition-all duration-300 overflow-hidden ${isMobile ? 'shadow-sm' : 'shadow-lg group-hover:shadow-2xl'} ${isMobile ? '' : 'h-full'} flex flex-col`}>
+                        {/* Decorative corner accent - Desktop Only */}
+                        {!isMobile && (
                         <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
+                        )}
                         
-                        {/* Title at top-left */}
-                        <div className="relative">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                        {/* Title - Mobile Native Style */}
+                        <div className={`relative ${isMobile ? 'flex items-start justify-between mb-4' : ''}`}>
+                          <h3 className={`${isMobile ? 'text-base font-semibold' : 'text-lg font-semibold'} text-gray-900 ${isMobile ? 'flex-1 pr-2' : 'mb-6 pr-24'} leading-tight`}>
                             {license.title}
                           </h3>
-                        </div>
 
-                        {/* Action buttons */}
-                        <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                          {/* Action buttons - Mobile Native Style */}
+                          <div className={`${isMobile ? 'flex items-center gap-2' : 'absolute top-4 right-4 flex items-center gap-2 z-10'}`}>
                           <motion.button
                             onClick={() => {
                               setSelectedItem(license)
                               setShowEditLicenseModal(true)
                             }}
-                            whileHover={{ scale: 1.1, rotate: 5 }}
+                              whileHover={isMobile ? undefined : { scale: 1.1, rotate: 5 }}
                             whileTap={{ scale: 0.95 }}
-                            className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                              className={`${isMobile ? 'p-1.5' : 'p-2'} ${isMobile ? 'bg-gray-100 active:bg-gray-200' : 'bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300'} text-primary-600 ${isMobile ? 'rounded-lg' : 'rounded-lg transition-all shadow-md'}`}
                           >
                             <Edit className="w-4 h-4" />
                           </motion.button>
                           <motion.button
                             onClick={() => handleDeleteClick(license, 'License')}
-                            whileHover={{ scale: 1.1, rotate: -5 }}
+                              whileHover={isMobile ? undefined : { scale: 1.1, rotate: -5 }}
                             whileTap={{ scale: 0.95 }}
-                            className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                              className={`${isMobile ? 'p-1.5' : 'p-2'} ${isMobile ? 'bg-gray-100 active:bg-gray-200' : 'bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300'} text-red-600 ${isMobile ? 'rounded-lg' : 'rounded-lg transition-all shadow-md'}`}
                           >
                             <Trash2 className="w-4 h-4" />
                           </motion.button>
+                          </div>
                         </div>
 
                         {/* Content */}
                         <div className="relative flex-grow">
 
-                          {/* License details with modern styling */}
+                          {/* License details - Mobile Native Style */}
+                          {isMobile ? (
+                            <div className="space-y-2">
+                              {license.number && (
+                                <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                                  <p className="text-xs text-gray-500 font-medium">License Number</p>
+                                  <p className="text-sm font-semibold text-gray-900">{license.number}</p>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                                <p className="text-xs text-gray-500 font-medium">State</p>
+                                <p className="text-sm font-semibold text-gray-900">{license.state}</p>
+                              </div>
+                              <div className="flex items-center justify-between py-2">
+                                <p className="text-xs text-gray-500 font-medium">Expiration Date</p>
+                                <p className="text-sm font-semibold text-gray-900">{license.expiration}</p>
+                              </div>
+                            </div>
+                          ) : (
                           <div className="space-y-3">
                             {/* License Number */}
                             {license.number && (
@@ -870,10 +977,13 @@ export default function ProfilePage() {
                               </div>
                             </div>
                           </div>
+                          )}
                         </div>
 
-                        {/* Animated bottom accent line */}
+                        {/* Animated bottom accent line - Desktop Only */}
+                        {!isMobile && (
                         <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        )}
                       </div>
                       </motion.div>
                       ))}
@@ -1601,6 +1711,946 @@ export default function ProfilePage() {
               )}
               </motion.div>
             </motion.div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Content - Original Structure */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Main Content */}
+            <div className="lg:col-span-3 space-y-6">
+              {/* Integrated Tabs and Content Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="relative"
+              >
+                {/* Tabs Navigation */}
+                <div className="flex overflow-x-auto gap-3 px-2 scrollbar-hide mb-[-1px] relative z-10">
+                  {tabs.map((tab, index) => {
+                    const isActive = activeTab === tab
+                    
+                    return (
+                      <motion.button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        whileHover={{ y: isActive ? 0 : -3 }}
+                        whileTap={{ scale: 0.98 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ 
+                          duration: 0.4, 
+                          delay: 0.05 * index,
+                          type: "spring",
+                          stiffness: 300
+                        }}
+                        className="relative group"
+                      >
+                        <div className={`relative px-6 py-3.5 font-semibold text-sm whitespace-nowrap transition-all duration-300 ${
+                          isActive
+                            ? 'text-white rounded-t-2xl'
+                            : 'text-gray-600 hover:text-primary-700 rounded-2xl'
+                        }`}>
+                          
+                          {/* Active tab with refined glass effect */}
+                          {isActive && (
+                            <motion.div
+                              layoutId="activeTabBg"
+                              className="absolute inset-0 rounded-t-2xl overflow-hidden"
+                              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                            >
+                              {/* Solid gradient background */}
+                              <div className="absolute inset-0 bg-gradient-to-r from-primary-600 to-primary-700" />
+                              
+                              {/* Subtle glass overlay */}
+                              <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent" />
+                              
+                              {/* Refined shine effect */}
+                              <motion.div
+                                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                                animate={{ x: ['-200%', '200%'] }}
+                                transition={{ 
+                                  duration: 3,
+                                  repeat: Infinity,
+                                  repeatDelay: 3,
+                                  ease: "easeInOut"
+                                }}
+                              />
+                              
+                              {/* Subtle top border highlight */}
+                              <div className="absolute inset-x-0 top-0 h-[1px] bg-white/30" />
+                            </motion.div>
+                          )}
+                          
+                          {/* Inactive tab hover effect */}
+                          {!isActive && (
+                            <motion.div
+                              className="absolute inset-0 bg-white/50 rounded-2xl opacity-0 group-hover:opacity-100 backdrop-blur-sm"
+                              transition={{ duration: 0.2 }}
+                            />
+                          )}
+                          
+                          {/* Tab text with icon */}
+                          <span className="relative z-10 flex items-center gap-2">
+                            {tab}
+                            {isActive && (
+                              <motion.span
+                                initial={{ scale: 0, rotate: -180 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                transition={{ type: "spring", delay: 0.15, duration: 0.5 }}
+                                className="inline-flex items-center justify-center w-5 h-5 bg-white/30 rounded-full text-xs font-bold"
+                              >
+                                ✓
+                              </motion.span>
+                            )}
+                          </span>
+                        </div>
+                      </motion.button>
+                    )
+                  })}
+                </div>
+                
+                {/* Content Area - Integrated with active tab */}
+                <motion.div
+                  layout
+                  className="bg-white/70 backdrop-blur-xl rounded-2xl rounded-tl-none shadow-lg border border-white/50 p-6 relative"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
+                          {activeTab}
+                        </h2>
+                        <motion.span
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+                          className="inline-flex items-center justify-center min-w-[2rem] h-8 px-3 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 backdrop-blur-sm border border-primary-300/30 text-primary-700 text-sm font-bold rounded-full shadow-sm"
+                        >
+                          {activeTab === 'Professional Licenses' ? licenses.length : 
+                           activeTab === 'Certificates' ? certificates.length :
+                           activeTab === 'Specialties' ? specialties.length :
+                           activeTab === 'Work History' ? workHistory.length :
+                           activeTab === 'Education' ? education.length :
+                           activeTab === 'References' ? references.length : 0}
+                        </motion.span>
+                      </div>
+                      <p className="text-gray-600">Manage your professional credentials and certifications</p>
+                    </div>
+                    <motion.button
+                      onClick={() => {
+                        if (activeTab === 'Certificates') {
+                          setShowAddCertificateModal(true)
+                        } else if (activeTab === 'Specialties') {
+                          setShowAddSpecialtyModal(true)
+                        } else if (activeTab === 'Work History') {
+                          setShowAddWorkHistoryModal(true)
+                        } else if (activeTab === 'Education') {
+                          setShowAddEducationModal(true)
+                        } else if (activeTab === 'References') {
+                          setShowAddReferenceModal(true)
+                        } else {
+                          setShowAddModal(true)
+                        }
+                      }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="px-6 py-2.5 bg-gradient-to-r from-white/90 to-primary-50/50 backdrop-blur-md border border-primary-200/60 hover:border-primary-400/60 text-primary-700 rounded-xl font-semibold transition-all flex items-center gap-2 shadow-md hover:shadow-lg"
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span>
+                        {activeTab === 'Professional Licenses' ? 'Add License' :
+                         activeTab === 'Certificates' ? 'Add Certificate' :
+                         activeTab === 'Specialties' ? 'Add Specialty' :
+                         activeTab === 'Work History' ? 'Add Work History' :
+                         activeTab === 'Education' ? 'Add Education' :
+                         activeTab === 'References' ? 'Add Reference' : 'Add Item'}
+                      </span>
+                    </motion.button>
+                  </div>
+
+                  {/* Dynamic Content Based on Active Tab - Desktop (same content as mobile but with desktop styling) */}
+                  {activeTab === 'Professional Licenses' && (
+                    <>
+                      {licenses.length === 0 ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5 }}
+                          className="flex flex-col items-center justify-center py-16 px-4"
+                        >
+                          <div className="relative mb-6">
+                            <motion.div
+                              animate={{ 
+                                scale: [1, 1.05, 1],
+                                rotate: [0, 5, -5, 0]
+                              }}
+                              transition={{ 
+                                duration: 3,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                              }}
+                              className="w-32 h-32 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center"
+                            >
+                              <Shield className="w-16 h-16 text-primary-600" />
+                            </motion.div>
+                            <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-primary-200">
+                              <FileX className="w-6 h-6 text-gray-400" />
+                            </div>
+                          </div>
+                          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Professional Licenses Found</h3>
+                          <p className="text-gray-600 text-center max-w-md">
+                            You haven't added any professional licenses yet. Click the button above to add your first license.
+                          </p>
+                        </motion.div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {licenses.map((license, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
+                              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                              transition={{ 
+                                duration: 0.5, 
+                                delay: index * 0.1,
+                                ease: [0.34, 1.56, 0.64, 1]
+                              }}
+                              whileHover={{
+                                y: -10,
+                                rotateY: 2,
+                                transition: { duration: 0.3 }
+                              }}
+                              className="group relative"
+                            >
+                              {/* Animated background glow */}
+                              <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
+                              
+                              {/* Main card */}
+                              <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
+                                {/* Decorative corner accent */}
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
+                                
+                                {/* Title at top-left */}
+                                <div className="relative">
+                                  <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                                    {license.title}
+                                  </h3>
+                                </div>
+
+                                {/* Action buttons */}
+                                <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                  <motion.button
+                                    onClick={() => {
+                                      setSelectedItem(license)
+                                      setShowEditLicenseModal(true)
+                                    }}
+                                    whileHover={{ scale: 1.1, rotate: 5 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </motion.button>
+                                  <motion.button
+                                    onClick={() => handleDeleteClick(license, 'License')}
+                                    whileHover={{ scale: 1.1, rotate: -5 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </motion.button>
+                                </div>
+
+                                {/* Content */}
+                                <div className="relative flex-grow">
+                                  {/* License details with modern styling */}
+                                  <div className="space-y-3">
+                                    {/* License Number */}
+                                    {license.number && (
+                                      <div className="group/item">
+                                        <p className="text-xs text-gray-500 mb-1.5 font-semibold">License Number</p>
+                                        <div className="relative overflow-hidden">
+                                          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                            <p className="text-sm font-semibold text-gray-900">{license.number}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* State */}
+                                    <div className="group/item">
+                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">State</p>
+                                      <div className="relative overflow-hidden">
+                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                          <p className="text-sm font-semibold text-gray-900">{license.state}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Expiration Date */}
+                                    <div className="group/item">
+                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Expiration Date</p>
+                                      <div className="relative overflow-hidden">
+                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                          <p className="text-sm font-semibold text-gray-900">{license.expiration}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Animated bottom accent line */}
+                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Other tabs content for desktop - same structure as mobile but with desktop styling */}
+                  {activeTab === 'Certificates' && (
+                    <>
+                      {certificates.length === 0 ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5 }}
+                          className="flex flex-col items-center justify-center py-16 px-4"
+                        >
+                          <div className="relative mb-6">
+                            <motion.div
+                              animate={{ 
+                                scale: [1, 1.05, 1],
+                                rotate: [0, 5, -5, 0]
+                              }}
+                              transition={{ 
+                                duration: 3,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                              }}
+                              className="w-32 h-32 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center"
+                            >
+                              <Award className="w-16 h-16 text-primary-600" />
+                            </motion.div>
+                            <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-primary-200">
+                              <FileX className="w-6 h-6 text-gray-400" />
+                            </div>
+                          </div>
+                          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Certificates Found</h3>
+                          <p className="text-gray-600 text-center max-w-md">
+                            You haven't added any certificates yet. Click the button above to add your first certificate.
+                          </p>
+                        </motion.div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {certificates.map((cert, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
+                              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                              transition={{ 
+                                duration: 0.5, 
+                                delay: index * 0.1,
+                                ease: [0.34, 1.56, 0.64, 1]
+                              }}
+                              whileHover={{
+                                y: -10,
+                                rotateY: 2,
+                                transition: { duration: 0.3 }
+                              }}
+                              className="group relative"
+                            >
+                              {/* Animated background glow */}
+                              <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
+                              
+                              {/* Main card */}
+                              <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
+                                {/* Decorative corner accent */}
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
+                                
+                                {/* Title at top-left */}
+                                <div className="relative">
+                                  <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                                    {cert.title}
+                                  </h3>
+                                </div>
+
+                                {/* Action buttons */}
+                                <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                  <motion.button
+                                    onClick={() => {
+                                      setSelectedItem(cert)
+                                      setShowEditCertificateModal(true)
+                                    }}
+                                    whileHover={{ scale: 1.1, rotate: 5 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </motion.button>
+                                  <motion.button
+                                    onClick={() => handleDeleteClick(cert, 'Certificate')}
+                                    whileHover={{ scale: 1.1, rotate: -5 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </motion.button>
+                                </div>
+
+                                {/* Content */}
+                                <div className="relative flex-grow">
+                                  {/* Certificate details with modern styling */}
+                                  <div className="space-y-3">
+                                    {/* Certificate Number */}
+                                    <div className="group/item">
+                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Certificate Number</p>
+                                      <div className="relative overflow-hidden">
+                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                          <p className="text-sm font-semibold text-gray-900">{cert.number}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Expiration Date */}
+                                    <div className="group/item">
+                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Expiration Date</p>
+                                      <div className="relative overflow-hidden">
+                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                          <p className="text-sm font-semibold text-gray-900">{cert.expiration}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Animated bottom accent line */}
+                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Add other tab sections for desktop (Specialties, Work History, Education, References) - same pattern */}
+                  {activeTab === 'Specialties' && (
+                    <>
+                      {specialties.length === 0 ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5 }}
+                          className="flex flex-col items-center justify-center py-16 px-4"
+                        >
+                          <div className="relative mb-6">
+                            <motion.div
+                              animate={{ 
+                                scale: [1, 1.05, 1],
+                                rotate: [0, 5, -5, 0]
+                              }}
+                              transition={{ 
+                                duration: 3,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                              }}
+                              className="w-32 h-32 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center"
+                            >
+                              <Award className="w-16 h-16 text-primary-600" />
+                            </motion.div>
+                            <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-primary-200">
+                              <FileX className="w-6 h-6 text-gray-400" />
+                            </div>
+                          </div>
+                          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Certification Specialties Found</h3>
+                          <p className="text-gray-600 text-center max-w-md">
+                            You haven't added any certification specialties yet. Click the button above to add your first specialty.
+                          </p>
+                        </motion.div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {specialties.map((specialty, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
+                              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                              transition={{ 
+                                duration: 0.5, 
+                                delay: index * 0.1,
+                                ease: [0.34, 1.56, 0.64, 1]
+                              }}
+                              whileHover={{
+                                y: -10,
+                                rotateY: 2,
+                                transition: { duration: 0.3 }
+                              }}
+                              className="group relative"
+                            >
+                              <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
+                              <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
+                                <div className="relative">
+                                  <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                                    {specialty.title}
+                                  </h3>
+                                </div>
+                                <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                  <motion.button
+                                    onClick={() => {
+                                      setSelectedItem(specialty)
+                                      setShowEditSpecialtyModal(true)
+                                    }}
+                                    whileHover={{ scale: 1.1, rotate: 5 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </motion.button>
+                                  <motion.button
+                                    onClick={() => handleDeleteClick(specialty, 'Specialty')}
+                                    whileHover={{ scale: 1.1, rotate: -5 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </motion.button>
+                                </div>
+                                <div className="relative flex-grow">
+                                  <div className="space-y-3">
+                                    <div className="group/item">
+                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Specialty</p>
+                                      <div className="relative overflow-hidden">
+                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                          <p className="text-sm font-semibold text-gray-900">{specialty.specialty}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Work History, Education, References sections for desktop - using same pattern */}
+                  {activeTab === 'Work History' && (
+                    <>
+                      {workHistory.length === 0 ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5 }}
+                          className="flex flex-col items-center justify-center py-16 px-4"
+                        >
+                          <div className="relative mb-6">
+                            <motion.div
+                              animate={{ 
+                                scale: [1, 1.05, 1],
+                                rotate: [0, 5, -5, 0]
+                              }}
+                              transition={{ 
+                                duration: 3,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                              }}
+                              className="w-32 h-32 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center"
+                            >
+                              <Briefcase className="w-16 h-16 text-primary-600" />
+                            </motion.div>
+                            <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-primary-200">
+                              <Inbox className="w-6 h-6 text-gray-400" />
+                            </div>
+                          </div>
+                          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Work History Found</h3>
+                          <p className="text-gray-600 text-center max-w-md">
+                            You haven't added any work history yet. Start building your professional profile by adding your work experience.
+                          </p>
+                        </motion.div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {workHistory.map((work, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
+                              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                              transition={{ 
+                                duration: 0.5, 
+                                delay: index * 0.1,
+                                ease: [0.34, 1.56, 0.64, 1]
+                              }}
+                              whileHover={{
+                                y: -10,
+                                rotateY: 2,
+                                transition: { duration: 0.3 }
+                              }}
+                              className="group relative"
+                            >
+                              <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
+                              <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
+                                <div className="relative">
+                                  <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                                    {work.title}
+                                  </h3>
+                                </div>
+                                <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                  <motion.button
+                                    onClick={() => {
+                                      setSelectedItem(work)
+                                      setShowEditWorkHistoryModal(true)
+                                    }}
+                                    whileHover={{ scale: 1.1, rotate: 5 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </motion.button>
+                                  <motion.button
+                                    onClick={() => handleDeleteClick(work, 'Work History')}
+                                    whileHover={{ scale: 1.1, rotate: -5 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </motion.button>
+                                </div>
+                                <div className="relative flex-grow">
+                                  <div className="space-y-3">
+                                    <div className="group/item">
+                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Unit</p>
+                                      <div className="relative overflow-hidden">
+                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                          <p className="text-sm font-semibold text-gray-900">{work.unit}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="group/item">
+                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Period</p>
+                                      <div className="relative overflow-hidden">
+                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                          <p className="text-sm font-semibold text-gray-900">{work.period}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {work.agency && (
+                                      <div className="group/item">
+                                        <p className="text-xs text-gray-500 mb-1.5 font-semibold">Agency</p>
+                                        <div className="relative overflow-hidden">
+                                          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                            <p className="text-sm font-semibold text-gray-900">{work.agency}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {work.description && (
+                                      <div className="group/item">
+                                        <p className="text-xs text-gray-500 mb-1.5 font-semibold">Description</p>
+                                        <div className="relative overflow-hidden">
+                                          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                            <p className="text-sm font-semibold text-gray-900">{work.description}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {work.chargeExperience && (
+                                      <div className="group/item">
+                                        <p className="text-xs text-gray-500 mb-1.5 font-semibold">Charge Experience</p>
+                                        <div className="relative overflow-hidden">
+                                          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                            <p className="text-sm font-semibold text-gray-900">{work.chargeExperience}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {activeTab === 'Education' && (
+                    <>
+                      {education.length === 0 ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5 }}
+                          className="flex flex-col items-center justify-center py-16 px-4"
+                        >
+                          <div className="relative mb-6">
+                            <motion.div
+                              animate={{ 
+                                scale: [1, 1.05, 1],
+                                rotate: [0, 5, -5, 0]
+                              }}
+                              transition={{ 
+                                duration: 3,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                              }}
+                              className="w-32 h-32 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center"
+                            >
+                              <GraduationCap className="w-16 h-16 text-primary-600" />
+                            </motion.div>
+                            <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-primary-200">
+                              <Inbox className="w-6 h-6 text-gray-400" />
+                            </div>
+                          </div>
+                          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Education History Found</h3>
+                          <p className="text-gray-600 text-center max-w-md">
+                            You haven't added any education history yet. Showcase your academic achievements and qualifications.
+                          </p>
+                        </motion.div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {education.map((edu, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
+                              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                              transition={{ 
+                                duration: 0.5, 
+                                delay: index * 0.1,
+                                ease: [0.34, 1.56, 0.64, 1]
+                              }}
+                              whileHover={{
+                                y: -10,
+                                rotateY: 2,
+                                transition: { duration: 0.3 }
+                              }}
+                              className="group relative"
+                            >
+                              <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
+                              <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
+                                <div className="relative">
+                                  <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                                    {edu.title}
+                                  </h3>
+                                </div>
+                                <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                  <motion.button
+                                    onClick={() => {
+                                      setSelectedItem(edu)
+                                      setShowEditEducationModal(true)
+                                    }}
+                                    whileHover={{ scale: 1.1, rotate: 5 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </motion.button>
+                                  <motion.button
+                                    onClick={() => handleDeleteClick(edu, 'Education')}
+                                    whileHover={{ scale: 1.1, rotate: -5 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </motion.button>
+                                </div>
+                                <div className="relative flex-grow">
+                                  <div className="space-y-3">
+                                    <div className="group/item">
+                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Course</p>
+                                      <div className="relative overflow-hidden">
+                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                          <p className="text-sm font-semibold text-gray-900">{edu.course}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="group/item">
+                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Status</p>
+                                      <div className="relative overflow-hidden">
+                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                          <p className="text-sm font-semibold text-gray-900">{edu.status}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {edu.graduated && (
+                                      <div className="group/item">
+                                        <p className="text-xs text-gray-500 mb-1.5 font-semibold">Graduated</p>
+                                        <div className="relative overflow-hidden">
+                                          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                            <p className="text-sm font-semibold text-gray-900">{edu.graduated}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {edu.degree && (
+                                      <div className="group/item">
+                                        <p className="text-xs text-gray-500 mb-1.5 font-semibold">Degree</p>
+                                        <div className="relative overflow-hidden">
+                                          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                            <p className="text-sm font-semibold text-gray-900">{edu.degree}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {activeTab === 'References' && (
+                    <>
+                      {references.length === 0 ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5 }}
+                          className="flex flex-col items-center justify-center py-16 px-4"
+                        >
+                          <div className="relative mb-6">
+                            <motion.div
+                              animate={{ 
+                                scale: [1, 1.05, 1],
+                                rotate: [0, 5, -5, 0]
+                              }}
+                              transition={{ 
+                                duration: 3,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                              }}
+                              className="w-32 h-32 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full flex items-center justify-center"
+                            >
+                              <Users className="w-16 h-16 text-primary-600" />
+                            </motion.div>
+                            <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-primary-200">
+                              <Inbox className="w-6 h-6 text-gray-400" />
+                            </div>
+                          </div>
+                          <h3 className="text-xl font-semibold text-gray-900 mb-2">No References Found</h3>
+                          <p className="text-gray-600 text-center max-w-md">
+                            You haven't added any professional references yet. Add references to strengthen your profile.
+                          </p>
+                        </motion.div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {references.map((ref, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
+                              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                              transition={{ 
+                                duration: 0.5, 
+                                delay: index * 0.1,
+                                ease: [0.34, 1.56, 0.64, 1]
+                              }}
+                              whileHover={{
+                                y: -10,
+                                rotateY: 2,
+                                transition: { duration: 0.3 }
+                              }}
+                              className="group relative"
+                            >
+                              <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
+                              <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
+                                <div className="relative">
+                                  <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                                    {ref.name}
+                                  </h3>
+                                </div>
+                                <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                  <motion.button
+                                    onClick={() => {
+                                      setSelectedItem(ref)
+                                      setShowEditReferenceModal(true)
+                                    }}
+                                    whileHover={{ scale: 1.1, rotate: 5 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </motion.button>
+                                  <motion.button
+                                    onClick={() => handleDeleteClick(ref, 'Reference')}
+                                    whileHover={{ scale: 1.1, rotate: -5 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </motion.button>
+                                </div>
+                                <div className="relative flex-grow">
+                                  <div className="space-y-3">
+                                    <div className="group/item">
+                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Title</p>
+                                      <div className="relative overflow-hidden">
+                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                          <p className="text-sm font-semibold text-gray-900">{ref.title}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="group/item">
+                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Company</p>
+                                      <div className="relative overflow-hidden">
+                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                          <p className="text-sm font-semibold text-gray-900">{ref.company}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="group/item">
+                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Period</p>
+                                      <div className="relative overflow-hidden">
+                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                          <p className="text-sm font-semibold text-gray-900">{ref.period}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="group/item">
+                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Phone</p>
+                                      <div className="relative overflow-hidden">
+                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                          <p className="text-sm font-semibold text-gray-900">{ref.phone}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {ref.email && (
+                                      <div className="group/item">
+                                        <p className="text-xs text-gray-500 mb-1.5 font-semibold">Email</p>
+                                        <div className="relative overflow-hidden">
+                                          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
+                                            <p className="text-sm font-semibold text-gray-900">{ref.email}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+              </motion.div>
+            </motion.div>
           </div>
 
           {/* Sidebar */}
@@ -1685,6 +2735,8 @@ export default function ProfilePage() {
             </motion.div>
           </div>
         </div>
+          </>
+        )}
       </div>
 
       <Footer />
@@ -1697,27 +2749,66 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
+            className={`fixed inset-0 bg-black/50 backdrop-blur-sm ${isMobile ? 'z-[10001]' : 'z-[9999]'} ${isMobile ? '' : 'flex items-center justify-center'} p-4 sm:p-6`}
             onClick={() => setShowEditModal(false)}
           >
-            {/* Modal */}
+            {/* Modal - Bottom Sheet on Mobile, Centered on Desktop */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl mx-4 sm:mx-0"
-              style={{ maxHeight: '90vh' }}
+              initial={isMobile ? { opacity: 0, y: '100%' } : { opacity: 0, scale: 0.9, y: 20 }}
+              animate={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, scale: 1, y: 0 }}
+              exit={isMobile ? { opacity: 0, y: '100%' } : { opacity: 0, scale: 0.9, y: 20 }}
+              transition={isMobile ? { duration: 0.3, ease: [0.32, 0.72, 0, 1] } : { duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+              className={`relative ${isMobile ? 'fixed left-0 right-0 w-full' : 'w-full max-w-2xl mx-4 sm:mx-0'}`}
+              style={isMobile ? { 
+                bottom: 0,
+                top: 'calc(3.5rem + env(safe-area-inset-top, 0px))',
+                height: 'auto',
+                maxHeight: 'calc(100vh - 3.5rem - env(safe-area-inset-top, 0px))',
+                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                zIndex: 10002
+              } : { maxHeight: '90vh' }}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Glow effect behind modal */}
+              {/* Glow effect behind modal - Desktop Only */}
+              {!isMobile && (
               <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
+              )}
               
               {/* Main modal container */}
-              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
+              <div className={`relative bg-white ${isMobile ? 'rounded-t-3xl shadow-2xl' : 'rounded-2xl sm:rounded-3xl shadow-2xl'} overflow-hidden ${isMobile ? 'border-t border-gray-200' : 'border border-gray-100'} ${isMobile ? '' : 'max-h-[90vh]'} flex flex-col`}
+                style={isMobile ? { 
+                  maxHeight: 'calc(100vh - 3.5rem - env(safe-area-inset-top, 0px))'
+                } : {}}
+              >
+                
+                {/* Mobile Drag Handle */}
+                {isMobile && (
+                  <div className="flex justify-center pt-3 pb-2">
+                    <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+                  </div>
+                )}
                 
                 {/* Header Section */}
-                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
+                <div className={`relative ${isMobile ? 'px-4 pt-4 pb-3' : 'px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6'} flex-shrink-0 ${isMobile ? 'flex items-center justify-between' : ''}`}>
+                  {isMobile ? (
+                    <>
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900">
+                          Edit Profile Information
+                        </h2>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Update your information
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowEditModal(false)}
+                        className="p-2 rounded-lg bg-gray-100 active:bg-gray-200"
+                      >
+                        <X className="w-5 h-5 text-gray-600" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
                   {/* Icon and Title */}
                   <div className="flex items-start gap-5">
                     {/* Animated Icon */}
@@ -1770,16 +2861,20 @@ export default function ProfilePage() {
                       </motion.p>
                     </div>
                   </div>
+                    </>
+                  )}
                 </div>
 
-                {/* Divider */}
+                {/* Divider - Desktop Only */}
+                {!isMobile && (
                 <div className="px-4 sm:px-6 md:px-8">
                   <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
                 </div>
+                )}
 
               {/* Content Area - Scrollable */}
-              <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className={`${isMobile ? 'px-4 py-4' : 'px-4 sm:px-6 md:px-8 py-4 sm:py-6'} overflow-y-auto flex-1`} style={{ maxHeight: isMobile ? 'calc(90vh - 180px)' : 'calc(90vh - 200px)' }}>
+                <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} ${isMobile ? 'gap-4' : 'gap-6'}`}>
                   {/* First Name */}
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -1797,7 +2892,7 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       defaultValue="Julia"
-                      className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700"
+                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700`}
                     />
                   </motion.div>
 
@@ -1818,7 +2913,7 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       defaultValue="Roberts"
-                      className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700"
+                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700`}
                     />
                   </motion.div>
 
@@ -1837,7 +2932,7 @@ export default function ProfilePage() {
                     <input
                       type="date"
                       defaultValue="1997-03-20"
-                      className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700"
+                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700`}
                     />
                     <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
                       <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
@@ -1865,7 +2960,7 @@ export default function ProfilePage() {
                       type="text"
                       defaultValue="987654321"
                       placeholder="123456789"
-                      className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
+                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700 placeholder:text-gray-400`}
                     />
                     <p className="mt-1.5 text-xs text-gray-500">Enter exactly 9 digits (e.g., 123456789)</p>
                   </motion.div>
@@ -1887,16 +2982,16 @@ export default function ProfilePage() {
                       defaultValue="25"
                       min="1"
                       max="50"
-                      className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700"
+                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700`}
                     />
                     <p className="mt-1.5 text-xs text-gray-500">Must be between 1 and 50 years</p>
                   </motion.div>
 
                   {/* Address Information Header */}
-                  <div className="md:col-span-2 pt-4">
+                  <div className={`${isMobile ? '' : 'md:col-span-2'} ${isMobile ? 'pt-2' : 'pt-4'}`}>
                     <div className="flex items-center gap-2 mb-4">
-                      <MapPin className="w-5 h-5 text-primary-600" />
-                      <h3 className="text-lg font-bold text-gray-900">Address Information</h3>
+                      <MapPin className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-primary-600`} />
+                      <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-bold text-gray-900`}>Address Information</h3>
                     </div>
                   </div>
 
@@ -1913,7 +3008,7 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       defaultValue="3371 Columbia Boulevard"
-                      className="w-full px-4 py-3.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-lg focus:shadow-primary-100/50"
+                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'}`}
                     />
                   </motion.div>
 
@@ -1930,12 +3025,12 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       placeholder="Apartment, suite, etc. (optional)"
-                      className="w-full px-4 py-3.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-lg focus:shadow-primary-100/50"
+                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'}`}
                     />
                   </motion.div>
 
                   {/* City & State */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} ${isMobile ? 'gap-4' : 'gap-4'}`}>
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -1948,7 +3043,7 @@ export default function ProfilePage() {
                       <input
                         type="text"
                         defaultValue="Baltimore"
-                        className="w-full px-4 py-3.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-lg focus:shadow-primary-100/50"
+                        className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'}`}
                       />
                     </motion.div>
                     <motion.div
@@ -1969,7 +3064,7 @@ export default function ProfilePage() {
                           onClick={() => setShowStateDropdown(!showStateDropdown)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className="w-full pl-4 pr-12 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 cursor-pointer text-left hover:border-gray-300 font-medium text-gray-700 relative flex items-center"
+                          className={`w-full pl-4 pr-12 ${isMobile ? 'py-3' : 'py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} cursor-pointer text-left ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700 relative flex items-center`}
                         >
                           <span className="flex-1 text-left truncate leading-normal">
                             {selectedState}
@@ -2069,7 +3164,7 @@ export default function ProfilePage() {
                       type="text"
                       defaultValue="21218"
                       placeholder="12345"
-                      className="w-full px-4 py-3.5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white focus:shadow-lg focus:shadow-primary-100/50"
+                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'}`}
                     />
                     <p className="text-xs text-gray-500 mt-1">Format: 12345 (5 digits only)</p>
                   </motion.div>
@@ -2077,9 +3172,10 @@ export default function ProfilePage() {
                   </div>
 
               {/* Footer */}
-              <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-                  {/* Info text */}
+              <div className={`${isMobile ? 'px-4 py-4' : 'px-4 sm:px-6 md:px-8 py-4 sm:py-6'} ${isMobile ? 'bg-white border-t border-gray-200' : 'bg-gray-50 border-t border-gray-100'} flex-shrink-0`}>
+                <div className={`flex ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'} ${isMobile ? 'gap-3' : 'items-stretch sm:items-center justify-between gap-4'}`}>
+                  {/* Info text - Desktop Only */}
+                  {!isMobile && (
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -2092,17 +3188,18 @@ export default function ProfilePage() {
                     <span className="hidden sm:inline">Your information is secure and encrypted</span>
                     <span className="sm:hidden">Secure & encrypted</span>
                   </motion.p>
+                  )}
                   
                   {/* Action buttons */}
-                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-3'} w-full ${isMobile ? '' : 'sm:w-auto'}`}>
                     <motion.button
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.3, delay: 1.0 }}
-                      whileHover={{ scale: 1.02 }}
+                      whileHover={isMobile ? undefined : { scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setShowEditModal(false)}
-                      className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
+                      className={`flex-1 ${isMobile ? 'px-4 py-3' : 'sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3'} bg-white border-2 border-gray-200 ${isMobile ? 'active:bg-gray-50' : 'hover:border-gray-300'} text-gray-700 ${isMobile ? 'rounded-lg' : 'rounded-xl'} font-semibold transition-all ${isMobile ? '' : 'shadow-sm hover:shadow'} text-sm sm:text-base`}
                     >
                       Cancel
                     </motion.button>
@@ -2111,21 +3208,22 @@ export default function ProfilePage() {
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.3, delay: 1.1 }}
-                      whileHover={{ scale: 1.02 }}
+                      whileHover={isMobile ? undefined : { scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => {
                         toast.success('Profile updated successfully')
                         setShowEditModal(false)
                       }}
-                      className="group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden text-sm sm:text-base"
+                      className={`group relative flex-1 ${isMobile ? 'px-4 py-3' : 'sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3'} bg-gradient-to-r from-primary-600 to-primary-700 ${isMobile ? 'active:from-primary-700 active:to-primary-800' : 'hover:from-primary-700 hover:to-primary-800'} text-white ${isMobile ? 'rounded-lg' : 'rounded-xl'} font-semibold ${isMobile ? 'shadow-sm' : 'shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40'} transition-all overflow-hidden text-sm sm:text-base`}
                     >
-                      <span className="relative z-10 flex items-center gap-2">
+                      <span className="relative z-10 flex items-center justify-center gap-2">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                         Update Profile
                       </span>
-                      {/* Shine effect */}
+                      {/* Shine effect - Desktop Only */}
+                      {!isMobile && (
                       <motion.div
                         className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
                         animate={{ x: ['-200%', '200%'] }}
@@ -2136,6 +3234,7 @@ export default function ProfilePage() {
                           ease: "easeInOut"
                         }}
                       />
+                      )}
                     </motion.button>
                   </div>
                 </div>
@@ -2154,27 +3253,59 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
+            className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] ${isMobile ? '' : 'flex items-center justify-center'} p-4 sm:p-6`}
             onClick={() => setShowAddModal(false)}
           >
-            {/* Modal */}
+            {/* Modal - Bottom Sheet on Mobile, Centered on Desktop */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl mx-4 sm:mx-0"
-              style={{ maxHeight: '90vh' }}
+              initial={isMobile ? { opacity: 0, y: '100%' } : { opacity: 0, scale: 0.9, y: 20 }}
+              animate={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, scale: 1, y: 0 }}
+              exit={isMobile ? { opacity: 0, y: '100%' } : { opacity: 0, scale: 0.9, y: 20 }}
+              transition={isMobile ? { duration: 0.3, ease: [0.32, 0.72, 0, 1] } : { duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+              className={`relative ${isMobile ? 'fixed bottom-0 left-0 right-0 w-full' : 'w-full max-w-2xl mx-4 sm:mx-0'}`}
+              style={isMobile ? { 
+                maxHeight: '90vh',
+                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                zIndex: 10000
+              } : { maxHeight: '90vh' }}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Glow effect behind modal */}
+              {/* Glow effect behind modal - Desktop Only */}
+              {!isMobile && (
               <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
+              )}
               
               {/* Main modal container */}
-              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
+              <div className={`relative bg-white ${isMobile ? 'rounded-t-3xl shadow-2xl' : 'rounded-2xl sm:rounded-3xl shadow-2xl'} overflow-hidden ${isMobile ? 'border-t border-gray-200' : 'border border-gray-100'} ${isMobile ? 'max-h-[90vh]' : 'max-h-[90vh]'} flex flex-col`}>
+                
+                {/* Mobile Drag Handle */}
+                {isMobile && (
+                  <div className="flex justify-center pt-3 pb-2">
+                    <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+                  </div>
+                )}
                 
                 {/* Header Section */}
-                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
+                <div className={`relative ${isMobile ? 'px-4 pt-4 pb-3' : 'px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6'} flex-shrink-0 ${isMobile ? 'flex items-center justify-between' : ''}`}>
+                  {isMobile ? (
+                    <>
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900">
+                          Add Professional License
+                        </h2>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Fill in your license information
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowAddModal(false)}
+                        className="p-2 rounded-lg bg-gray-100 active:bg-gray-200"
+                      >
+                        <X className="w-5 h-5 text-gray-600" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
                   {/* Icon and Title */}
                   <div className="flex items-start gap-5">
                     {/* Animated Icon */}
@@ -2227,15 +3358,19 @@ export default function ProfilePage() {
                       </motion.p>
                     </div>
                   </div>
+                    </>
+                  )}
                 </div>
 
-                {/* Divider */}
+                {/* Divider - Desktop Only */}
+                {!isMobile && (
                 <div className="px-8">
                   <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
                 </div>
+                )}
 
                 {/* Content Area - Scrollable */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
+                <div className={`${isMobile ? 'px-4 py-4' : 'px-4 sm:px-6 md:px-8 py-4 sm:py-6'} overflow-y-auto flex-1`} style={{ maxHeight: isMobile ? 'calc(90vh - 120px)' : 'calc(90vh - 200px)' }}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     {/* License Type - Full Width */}

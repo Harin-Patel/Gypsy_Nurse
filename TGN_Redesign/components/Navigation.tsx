@@ -290,17 +290,17 @@ export default function Navigation() {
                   <ChevronLeft className="w-6 h-6 text-gray-700" />
                 </button>
               ) : (
-                <Link href="/" className="flex items-center">
+                <div className="flex items-center">
                   <img 
                     src="/logo.svg" 
                     alt="The Gypsy Nurse Logo" 
                     className="h-10 w-auto"
                   />
-                </Link>
+                </div>
               )}
 
               {/* Centered Page Title */}
-              <h1 className="text-lg font-semibold text-gray-900 absolute left-1/2 transform -translate-x-1/2">
+              <h1 className={`text-lg font-semibold text-gray-900 absolute left-1/2 transform -translate-x-1/2 ${pathname?.startsWith('/agency-register') && isMobile ? 'max-w-[200px] truncate' : ''}`}>
                 {getPageTitle()}
               </h1>
 

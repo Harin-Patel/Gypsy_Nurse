@@ -48,7 +48,7 @@ export default function MobileBottomNav() {
   if (!isMobile) return null
 
   // Don't show on certain pages (login, register, etc.)
-  const hiddenPages = ['/login', '/register', '/agency-login', '/agency-register', '/recruiter-login', '/admin-login']
+  const hiddenPages = ['/login', '/register', '/agency-login', '/agency-register', '/recruiter-login', '/admin-login', '/forgot-password', '/profile']
   if (hiddenPages.some(page => pathname?.startsWith(page))) return null
 
   const handleLogout = () => {

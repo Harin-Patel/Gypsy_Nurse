@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useState, useEffect, useCallback, Suspense, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Search, 
@@ -484,6 +484,8 @@ function JobsPageContent() {
   const [pendingJobs, setPendingJobs] = useState<string[]>([])
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [showQuickAccessDropdown, setShowQuickAccessDropdown] = useState(false)
+  const mobileHeaderRef = useRef<HTMLDivElement>(null)
+  const [mobileHeaderHeight, setMobileHeaderHeight] = useState(240)
   const [showAgencyDropdown, setShowAgencyDropdown] = useState(false)
   const [showFacilityDropdown, setShowFacilityDropdown] = useState(false)
   const [showCertificationDropdown, setShowCertificationDropdown] = useState(false)
@@ -510,6 +512,27 @@ function JobsPageContent() {
       }
     }
   }, [])
+  
+  // Measure mobile header height for accurate spacing
+  useEffect(() => {
+    if (isMobile && mobileHeaderRef.current) {
+      const updateHeaderHeight = () => {
+        if (mobileHeaderRef.current) {
+          const height = mobileHeaderRef.current.offsetHeight || 240
+          setMobileHeaderHeight(height)
+        }
+      }
+      
+      // Use setTimeout to ensure measurement happens after render
+      const timeoutId = setTimeout(updateHeaderHeight, 0)
+      window.addEventListener('resize', updateHeaderHeight)
+      
+      return () => {
+        clearTimeout(timeoutId)
+        window.removeEventListener('resize', updateHeaderHeight)
+      }
+    }
+  }, [isMobile, searchQuery]) // Re-measure when mobile state or search query changes
   
   // Initialize search query and location from URL params
   useEffect(() => {
@@ -1440,17 +1463,30 @@ function JobsPageContent() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navigation />
-      
-      {/* Mobile Header Wrapper - Sticks with Navigation */}
+      {/* Status Bar Safe Area - Top Only (Mobile iOS Notch Support) */}
       {isMobile && (
         <div 
-          className="sticky z-[99] bg-white"
+          className="fixed top-0 left-0 right-0 bg-white z-[100]"
+          style={{
+            height: 'env(safe-area-inset-top, 0px)',
+            minHeight: 'env(safe-area-inset-top, 0px)',
+            backgroundColor: '#ffffff',
+          }}
+        />
+      )}
+      <Navigation />
+      
+      {/* Mobile Header Wrapper - Fixed at Top (Native App Behavior) */}
+      {isMobile && (
+        <div 
+          ref={mobileHeaderRef}
+          className="fixed left-0 right-0 bg-white z-[99]"
           style={{ 
-            position: 'sticky', 
-            top: '56px', 
+            position: 'fixed', 
+            top: `calc(56px + env(safe-area-inset-top, 0px))`, 
             zIndex: 99,
-            backgroundColor: '#ffffff'
+            backgroundColor: '#ffffff',
+            width: '100%',
           }}
         >
           {/* Mobile Header Content */}
@@ -1464,7 +1500,7 @@ function JobsPageContent() {
             {/* Mobile Search Bar - Native App Style */}
             <div className="space-y-2">
               {/* Search Input - Full Width, Compact */}
-              <div className="relative w-full flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-200 focus-within:bg-white focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-200/50 transition-all">
+              <div className="relative w-full flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-200 focus-within:bg-white transition-all">
                 <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 <input
                   type="text"
@@ -1476,7 +1512,7 @@ function JobsPageContent() {
                     }
                   }}
                   placeholder="Search jobs..."
-                  className="flex-1 bg-transparent border-none outline-none text-base text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-0"
+                  className="flex-1 bg-transparent border-none outline-none text-base text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-none"
                   style={{ fontSize: '16px' }}
                 />
                 <AnimatePresence>
@@ -1606,6 +1642,16 @@ function JobsPageContent() {
         </div>
       )}
 
+      {/* Spacer for Fixed Mobile Header - Accounts for Navigation (56px) + Header height + Safe area */}
+      {isMobile && (
+        <div 
+          style={{
+            height: `calc(56px + ${mobileHeaderHeight}px + env(safe-area-inset-top, 0px) + 8px)`,
+            minHeight: `calc(56px + ${mobileHeaderHeight}px + env(safe-area-inset-top, 0px) + 8px)`,
+          }}
+        />
+      )}
+
       {/* Advanced Filter Modal */}
       <AnimatePresence>
         {showFilters && (
@@ -1658,7 +1704,7 @@ function JobsPageContent() {
                       <div className="flex items-center gap-3">
                         <div>
                           <h2 className="font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent text-lg">
-                            {filterToEdit ? 'Edit Filter' : 'Filters'}
+                            {filterToEdit ? 'Edit Filter' : 'Advanced Job Filters'}
                           </h2>
                           {filterToEdit && (
                             <p className="text-xs text-gray-500 mt-0.5">
@@ -4138,6 +4184,73 @@ function JobsPageContent() {
                   </motion.div>
                 </motion.button>
 
+                {/* Dropdown Menu - Desktop Only */}
+                <AnimatePresence>
+                  {showSortDropdown && !isMobile && (
+                    <>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowSortDropdown(false)}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="absolute top-full right-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="p-2 space-y-1">
+                          {[
+                            { value: 'relevance', label: 'Relevance' },
+                            { value: 'salary-high-to-low', label: 'Salary: High to Low' },
+                            { value: 'salary-low-to-high', label: 'Salary: Low to High' },
+                            { value: 'date-newest', label: 'Date: Newest First' },
+                            { value: 'date-oldest', label: 'Date: Oldest First' },
+                            { value: 'title-a-z', label: 'Title: A-Z' },
+                            { value: 'title-z-a', label: 'Title: Z-A' },
+                            { value: 'facility-a-z', label: 'Facility: A-Z' },
+                            { value: 'facility-z-a', label: 'Facility: Z-A' },
+                          ].map((option, idx) => (
+                            <motion.button
+                              key={option.value}
+                              onClick={() => {
+                                setSortBy(option.value)
+                                setShowSortDropdown(false)
+                              }}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: idx * 0.01 }}
+                              whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
+                              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all text-left ${
+                                sortBy === option.value
+                                  ? 'bg-primary-50 text-primary-700 font-semibold'
+                                  : 'text-gray-700 hover:bg-gray-50'
+                              }`}
+                            >
+                              <span className="text-sm">{option.label}</span>
+                              {sortBy === option.value && (
+                                <motion.svg
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  className="w-4 h-4 text-primary-600"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </motion.svg>
+                              )}
+                            </motion.button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>
@@ -4145,9 +4258,9 @@ function JobsPageContent() {
       </motion.div>
       )}
 
-      {/* Sort Dropdown - Works for both Mobile and Desktop */}
+      {/* Sort Dropdown Modal - Mobile Only */}
       <AnimatePresence>
-        {showSortDropdown && (
+        {showSortDropdown && isMobile && (
           <>
             {/* Hide bottom nav when modal is open on mobile */}
             {isMobile && (
@@ -4161,68 +4274,43 @@ function JobsPageContent() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[120] ${isMobile ? '' : 'flex items-center justify-center p-4'}`}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[120]"
               onClick={() => setShowSortDropdown(false)}
               style={{ zIndex: 120 }}
             >
               <motion.div
-                initial={isMobile ? { opacity: 0, y: '100%' } : { opacity: 0, scale: 0.9, y: 20 }}
-                animate={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, scale: 1, y: 0 }}
-                exit={isMobile ? { opacity: 0, y: '100%' } : { opacity: 0, scale: 0.9, y: 20 }}
-                transition={{ duration: isMobile ? 0.3 : 0.4, ease: isMobile ? [0.32, 0.72, 0, 1] : [0.34, 1.56, 0.64, 1] }}
+                initial={{ opacity: 0, y: '100%' }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: '100%' }}
+                transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
                 onClick={(e) => e.stopPropagation()}
-                className={isMobile 
-                  ? "fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[60vh] overflow-hidden flex flex-col z-[120]"
-                  : "bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[60vh] overflow-hidden flex flex-col"
-                }
-                style={isMobile ? { 
+                className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[60vh] overflow-hidden flex flex-col z-[120]"
+                style={{ 
                   bottom: 0,
                   zIndex: 120,
                   paddingBottom: 'env(safe-area-inset-bottom, 0px)'
-                } : {}}
+                }}
               >
                 {/* Header Section */}
-                <div className={`relative ${isMobile ? 'px-4 pt-4 pb-3' : 'px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6'} flex-shrink-0`}>
+                <div className="relative px-4 pt-4 pb-3 flex-shrink-0">
                   {/* Mobile Drag Handle */}
-                  {isMobile && (
                     <div className="flex justify-center mb-3">
                       <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
                     </div>
-                  )}
                   <div className="flex items-center justify-between">
-                    <div className={`flex items-center ${isMobile ? 'gap-3' : 'gap-4'}`}>
-                      {/* Animated Icon - Hidden on Mobile */}
-                      {!isMobile && (
-                        <motion.div
-                          animate={{ rotate: [0, 10, -10, 0] }}
-                          transition={{ duration: 4, repeat: Infinity, repeatDelay: 2 }}
-                          className="relative"
-                        >
-                          <div className="absolute inset-0 bg-primary-100 rounded-2xl blur-xl opacity-60" />
-                          <div className="relative p-3 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-lg">
-                            <ArrowUpDown className="w-7 h-7 text-white" />
-                          </div>
-                        </motion.div>
-                      )}
-                      
+                    <div className="flex items-center gap-3">
                       <div>
-                        <h2 className={`font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent ${isMobile ? 'text-lg' : 'text-2xl'}`}>
+                        <h2 className="font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent text-lg">
                           Sort By
                         </h2>
-                        {!isMobile && (
-                          <p className="text-sm text-gray-500 mt-1">
-                            Choose how to sort your job listings
-                          </p>
-                        )}
                       </div>
                     </div>
                     
                     {/* Close Button */}
                     <motion.button
-                      whileHover={!isMobile ? { scale: 1.1, rotate: 90 } : {}}
                       whileTap={{ scale: 0.9 }}
                       onClick={() => setShowSortDropdown(false)}
-                      className={`${isMobile ? 'p-2' : 'p-2'} rounded-xl bg-gray-100 ${isMobile ? 'active:bg-gray-200' : 'hover:bg-gray-200'} text-gray-600 ${isMobile ? 'active:text-gray-900' : 'hover:text-gray-900'} transition-colors`}
+                      className="p-2 rounded-xl bg-gray-100 active:bg-gray-200 text-gray-600 active:text-gray-900 transition-colors"
                       aria-label="Close modal"
                     >
                       <X className="w-5 h-5" />
@@ -4231,7 +4319,7 @@ function JobsPageContent() {
                 </div>
 
                 {/* Modal Content */}
-                <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-4 pb-20' : 'px-4 sm:px-6 md:px-8 pb-6'}`}>
+                <div className="flex-1 overflow-y-auto px-4 pb-20">
                   <div className="space-y-1">
                     {[
                       { value: 'relevance', icon: '✅', label: 'Relevance' },
@@ -4250,14 +4338,14 @@ function JobsPageContent() {
                           setSortBy(option.value)
                           setShowSortDropdown(false)
                         }}
-                        className={`w-full flex items-center gap-3 ${isMobile ? 'px-4 py-3' : 'px-4 py-2.5'} rounded-lg transition-colors text-left ${
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
                           sortBy === option.value 
                             ? 'bg-primary-50 text-primary-700' 
                             : 'bg-transparent hover:bg-gray-50 text-gray-900 active:bg-gray-100'
                         }`}
                       >
                         <span className="text-base">{option.icon}</span>
-                        <span className={`flex-1 ${isMobile ? 'text-sm' : 'text-sm'}`}>{option.label}</span>
+                        <span className="flex-1 text-sm">{option.label}</span>
                         {sortBy === option.value && (
                           <div className="w-5 h-5 bg-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
                             <svg
@@ -4741,8 +4829,8 @@ function JobsPageContent() {
               </div>
 
               {/* Modal Content */}
-              <div className="flex-1 overflow-y-auto px-4 pb-24">
-                <div className="space-y-3">
+              <div className="flex-1 overflow-y-auto px-4 pb-20" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+                <div className="pt-8">
                   {/* Jobs by State Option */}
                   <Link href="/jobs-by-state" onClick={() => setShowQuickAccessDropdown(false)}>
                     <motion.button
@@ -4764,8 +4852,8 @@ function JobsPageContent() {
                     </motion.button>
                   </Link>
 
-                  {/* Divider */}
-                  <div className="h-px bg-gray-200 my-2" />
+                  {/* Spacing between options */}
+                  <div className="h-6" />
 
                   {/* Nursing Specialties Option */}
                   <Link href="/nursing-specialties" onClick={() => setShowQuickAccessDropdown(false)}>
@@ -4795,7 +4883,7 @@ function JobsPageContent() {
       </AnimatePresence>
 
       {/* Job Listings - Modern Card Grid */}
-      <main className={`flex-1 ${isMobile ? 'px-0 pb-20' : 'max-w-7xl mx-auto px-4 py-6'} w-full`} style={isMobile ? { position: 'relative', zIndex: 1 } : {}}>
+      <main className={`flex-1 ${isMobile ? 'px-0 pb-20' : 'max-w-7xl mx-auto px-4 py-6'} w-full`} style={isMobile ? { position: 'relative', zIndex: 1, paddingTop: '0px' } : {}}>
         {filteredJobs.length === 0 ? (
           <div className="text-center py-16">
             <div className="max-w-md mx-auto">
@@ -4808,9 +4896,7 @@ function JobsPageContent() {
           </div>
         ) : (
           <>
-            {/* Spacer for mobile to account for sticky "showing jobs" wrapper */}
-            {isMobile && <div className="h-16"></div>}
-            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${isMobile ? 'px-4 pt-2 pb-4' : 'px-4 sm:px-6 lg:px-8'}`}>
+            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${isMobile ? 'px-4 pt-4 pb-4' : 'px-0'}`}>
               {filteredJobs.map((job, index) => (
             <a
               key={job.id}

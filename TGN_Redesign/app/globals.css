@@ -30,6 +30,18 @@
     position: relative;
   }
   
+  /* Hide homepage content when checking or showing onboarding (mobile only) */
+  @media (max-width: 1023px) {
+    body[data-onboarding-checking="true"] main,
+    body[data-onboarding-checking="true"] > * > main,
+    body[data-onboarding-active="true"] main,
+    body[data-onboarding-active="true"] > * > main {
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+  }
+  
   /* Ensure bottom navigation stays fixed on mobile */
   @media (max-width: 1023px) {
     html, body {

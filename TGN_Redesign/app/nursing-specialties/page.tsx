@@ -13,13 +13,17 @@ import {
   Sparkles,
   ArrowRight,
   GraduationCap,
-  ChevronRight
+  ChevronRight,
+  ChevronLeft,
+  X
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import MobileBottomNav from '@/components/MobileBottomNav'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useRef, useEffect } from 'react'
 
 interface Specialty {
   id: string
@@ -414,19 +418,101 @@ export const specialties: Specialty[] = [
 export default function NursingSpecialtiesPage() {
   const isMobile = useIsMobile()
   const [searchQuery, setSearchQuery] = useState('')
+  const mobileHeaderRef = useRef<HTMLDivElement>(null)
+  const [mobileHeaderHeight, setMobileHeaderHeight] = useState(200)
 
   const filteredSpecialties = specialties.filter(specialty =>
     specialty.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     specialty.description.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  // Measure mobile header height for accurate spacing
+  useEffect(() => {
+    if (isMobile && mobileHeaderRef.current) {
+      const updateHeaderHeight = () => {
+        if (mobileHeaderRef.current) {
+          const height = mobileHeaderRef.current.offsetHeight || 200
+          setMobileHeaderHeight(height)
+        }
+      }
+      
+      updateHeaderHeight()
+      window.addEventListener('resize', updateHeaderHeight)
+      
+      return () => {
+        window.removeEventListener('resize', updateHeaderHeight)
+      }
+    }
+  }, [isMobile, searchQuery])
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className={`min-h-screen flex flex-col ${isMobile ? 'bg-white' : 'bg-gray-50'}`}>
       <Navigation />
 
-      {/* Header Section */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 pt-32 pb-8">
+      {/* Mobile Header - Fixed */}
+      {isMobile && (
+        <div
+          ref={mobileHeaderRef}
+          className="fixed top-0 left-0 right-0 bg-white z-50 border-b border-gray-200"
+          style={{
+            top: `calc(56px + env(safe-area-inset-top, 0px))`,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <div className="px-4 pt-4 pb-4">
+            {/* Back Button and Title Row */}
+            <div className="flex items-center gap-3 mb-3">
+              <Link href="/jobs">
+                <motion.button
+                  className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 active:bg-gray-200 transition-colors flex-shrink-0"
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <ChevronLeft className="w-5 h-5 text-gray-700" />
+                </motion.button>
+              </Link>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl font-bold text-gray-900">
+                  Nursing Specialties
+                </h1>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {filteredSpecialties.length} {filteredSpecialties.length === 1 ? 'specialty' : 'specialties'} available
+                </p>
+              </div>
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative bg-gray-50 rounded-lg border border-gray-200 p-0 flex items-center gap-0">
+              <div className="relative flex-1 flex items-center gap-2.5 px-3 py-2.5">
+                <Search className="w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search specialties..."
+                  className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-base"
+                  style={{ fontSize: '16px' }}
+                />
+                {searchQuery && (
+                  <motion.button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors flex-shrink-0"
+                    whileTap={{ scale: 0.9 }}
+                    aria-label="Clear search"
+                  >
+                    <X className="w-3 h-3 text-white" />
+                  </motion.button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Header Section */}
+      {!isMobile && (
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 pt-32 pb-8">
           {/* Breadcrumb */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -491,33 +577,71 @@ export default function NursingSpecialtiesPage() {
                 placeholder="Search nursing specialties..."
                 className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500"
               />
+              {searchQuery && (
+                <motion.button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors flex-shrink-0"
+                  whileTap={{ scale: 0.9 }}
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4 text-white" />
+                </motion.button>
+              )}
             </div>
           </motion.div>
+          </div>
         </div>
-      </div>
+      )}
 
-      <main className="pb-16">
+      {/* Spacer for Fixed Mobile Header */}
+      {isMobile && (
+        <div 
+          style={{
+            height: `calc(56px + ${mobileHeaderHeight}px + env(safe-area-inset-top, 0px) + 8px)`,
+            minHeight: `calc(56px + ${mobileHeaderHeight}px + env(safe-area-inset-top, 0px) + 8px)`,
+          }}
+        />
+      )}
 
+      <main 
+        className={`flex-1 ${isMobile ? 'px-0' : ''} ${isMobile ? 'pb-0' : 'pb-16'} w-full`}
+        style={isMobile ? {
+          position: 'relative',
+          zIndex: 1,
+          paddingTop: '0px',
+          paddingBottom: '0px',
+        } : {}}
+      >
         {/* Specialties Grid */}
-        <section className="py-16 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.div
-              initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="mb-8"
-            >
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {filteredSpecialties.length} {filteredSpecialties.length === 1 ? 'Specialty' : 'Specialties'} Found
-              </h2>
-              <p className="text-gray-600">
-                {searchQuery ? `Search results for "${searchQuery}"` : 'Browse all available nursing specialties'}
-              </p>
-            </motion.div>
+        <section className={`${isMobile ? '' : 'py-16 bg-gray-50'}`}>
+          <div className={`${isMobile ? '' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'}`}>
+            {!isMobile && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="mb-8"
+              >
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  {filteredSpecialties.length} {filteredSpecialties.length === 1 ? 'Specialty' : 'Specialties'} Found
+                </h2>
+                <p className="text-gray-600">
+                  {searchQuery ? `Search results for "${searchQuery}"` : 'Browse all available nursing specialties'}
+                </p>
+              </motion.div>
+            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredSpecialties.map((specialty, index) => (
+            {filteredSpecialties.length === 0 && searchQuery ? null : (
+              <div 
+                className={`${isMobile ? 'grid grid-cols-2 gap-3 px-4 pt-4' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'}`}
+                style={isMobile ? {
+                  paddingBottom: '0px',
+                  marginBottom: '0px',
+                } : {}}
+              >
+                {filteredSpecialties.map((specialty, index) => (
                 <motion.div
                   key={specialty.id}
                   initial={{ opacity: 1, y: 0 }}
@@ -525,12 +649,13 @@ export default function NursingSpecialtiesPage() {
                   viewport={{ once: true, margin: '-50px' }}
                   transition={{ duration: 0.2 }}
                   whileHover={isMobile ? undefined : { y: -4, scale: 1.02 }}
+                  whileTap={isMobile ? { scale: 0.98 } : undefined}
                   className="group h-full"
                 >
                   <Link href={`/nursing-specialties/${specialty.slug}`} className="block h-full">
-                    <div className="bg-white rounded-2xl border-2 border-gray-200 h-full flex flex-col transition-all duration-300 shadow-sm hover:shadow-xl overflow-hidden relative">
+                    <div className={`${isMobile ? 'bg-white rounded-2xl border border-gray-200 shadow-sm active:shadow-md' : 'bg-white rounded-2xl border-2 border-gray-200 shadow-sm hover:shadow-xl'} h-full flex flex-col transition-all duration-300 overflow-hidden relative`}>
                       {/* Image Section */}
-                      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary-100 to-primary-200">
+                      <div className={`${isMobile ? 'relative h-32' : 'relative h-48'} overflow-hidden bg-gradient-to-br from-primary-100 to-primary-200`}>
                         <Image
                           src={getSpecialtyImageUrl(specialty.slug, specialty.name)}
                           alt={specialty.name}
@@ -548,55 +673,55 @@ export default function NursingSpecialtiesPage() {
                       </div>
 
                       {/* Content Section */}
-                      <div className="p-6 flex-1 flex flex-col">
+                      <div className={`${isMobile ? 'p-3' : 'p-6'} flex-1 flex flex-col`}>
                         {/* Title */}
-                        <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-primary-600 transition-colors leading-tight">
+                        <h3 className={`${isMobile ? 'text-sm' : 'text-xl'} font-bold text-gray-900 ${isMobile ? 'mb-1' : 'mb-3'} ${!isMobile ? 'group-hover:text-primary-600 transition-colors' : ''} leading-tight line-clamp-2`}>
                           {specialty.name}
                         </h3>
 
-                        {/* Description */}
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-3 flex-1 leading-relaxed">
-                          {specialty.description}
-                        </p>
+                        {/* Description - Hidden on mobile */}
+                        {!isMobile && (
+                          <p className="text-gray-600 text-sm mb-4 line-clamp-3 flex-1 leading-relaxed">
+                            {specialty.description}
+                          </p>
+                        )}
 
-                        {/* Read More Link */}
-                        <div className="flex items-center text-primary-600 font-semibold text-sm mt-auto pt-2 group-hover:gap-2 transition-all">
-                          <span>Read more</span>
-                          <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                        </div>
+                        {/* Read More Link - Hidden on mobile */}
+                        {!isMobile && (
+                          <div className="flex items-center text-primary-600 font-semibold text-sm mt-auto pt-2 group-hover:gap-2 transition-all">
+                            <span>Read more</span>
+                            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                          </div>
+                        )}
                       </div>
                     </div>
                   </Link>
                 </motion.div>
               ))}
-            </div>
+              </div>
+            )}
 
-            {filteredSpecialties.length === 0 && (
+            {filteredSpecialties.length === 0 && searchQuery && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-16"
+                className={`${isMobile ? 'flex flex-col items-center justify-center min-h-[60vh] px-4' : 'text-center py-16'}`}
               >
-                <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-gray-700 mb-2">
+                <Search className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-400 mx-auto mb-4`} />
+                <h3 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-700 mb-2 text-center`}>
                   No specialties found
                 </h3>
-                <p className="text-gray-500 mb-6">
-                  Try adjusting your search terms
+                <p className={`${isMobile ? 'text-sm' : ''} text-gray-500 mb-6 text-center`}>
+                  We couldn't find any specialties matching "{searchQuery}". Try a different search term.
                 </p>
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="text-primary-600 font-semibold hover:text-primary-700"
-                >
-                  Clear search
-                </button>
               </motion.div>
             )}
           </div>
         </section>
       </main>
 
-      <Footer />
+      {!isMobile && <Footer />}
+      {isMobile && <MobileBottomNav />}
     </div>
   )
 }

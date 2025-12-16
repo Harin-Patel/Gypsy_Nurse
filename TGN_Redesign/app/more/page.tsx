@@ -1,6 +1,7 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Building2,
   ChevronRight,
@@ -139,6 +140,7 @@ const profileSections = [
 export default function MorePage() {
   const isMobile = useIsMobile()
   const { isAuthenticated, logout } = useAuth()
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   const handleItemClick = (href: string) => {
     if (href.startsWith('#')) {
@@ -147,6 +149,11 @@ export default function MorePage() {
       element?.scrollIntoView({ behavior: 'smooth' })
     }
     // For actual hrefs, Link component will handle navigation
+  }
+
+  const handleLogout = () => {
+    setShowLogoutConfirm(false)
+    logout('/login')
   }
 
   const renderSection = (items: typeof forEmployersItems, sectionTitle: string) => (
@@ -382,7 +389,7 @@ export default function MorePage() {
             <div className="mb-8">
               {isMobile ? (
                 <button
-                  onClick={() => logout('/login')}
+                  onClick={() => setShowLogoutConfirm(true)}
                   className="w-full active:scale-[0.98]"
                 >
                   <div 
@@ -443,8 +450,113 @@ export default function MorePage() {
         {renderSection(forEmployersItems, 'For Employers')}
       </div>
 
-      {/* Bottom Navigation */}
-      <MobileBottomNav />
+      {/* Bottom Navigation - Hide when logout confirmation is shown */}
+      {!showLogoutConfirm && <MobileBottomNav />}
+
+      {/* Logout Confirmation Modal - Mobile Only */}
+      {isMobile && (
+        <AnimatePresence>
+          {showLogoutConfirm && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+                onClick={() => setShowLogoutConfirm(false)}
+              />
+
+              {/* Modal Container - Centered */}
+              <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 pointer-events-none">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                  transition={{ duration: 0.3, type: "spring" }}
+                  className="w-full max-w-md pointer-events-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Glassmorphic Card */}
+                  <div className="relative bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
+                    {/* Gradient Border Effect */}
+                    <div className="absolute inset-0 rounded-3xl p-[2px] bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600 opacity-20 pointer-events-none" />
+                    
+                    {/* Card Content */}
+                    <div className="relative bg-white rounded-3xl p-8">
+                      {/* Icon with Gradient Background */}
+                      <div className="flex justify-center mb-6">
+                        <motion.div
+                          animate={{ 
+                            scale: [1, 1.1, 1],
+                            rotate: [0, 5, -5, 0]
+                          }}
+                          transition={{ 
+                            duration: 2,
+                            repeat: Infinity,
+                            repeatDelay: 1
+                          }}
+                          className="relative"
+                        >
+                          <div className="absolute inset-0 bg-red-100 rounded-2xl blur-xl opacity-60" />
+                          <div className="relative w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <LogOut className="w-8 h-8 text-white" />
+                          </div>
+                        </motion.div>
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="text-2xl font-bold text-center mb-2 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                        Log Out
+                      </h3>
+                      <p className="text-center text-gray-600 mb-6">
+                        Are you sure you want to log out from your account?
+                      </p>
+
+                      {/* Decorative Divider */}
+                      <div className="mb-6 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-3">
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setShowLogoutConfirm(false)}
+                          className="flex-1 px-6 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold transition-all shadow-sm"
+                        >
+                          Cancel
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={handleLogout}
+                          className="relative flex-1 px-6 py-3.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-semibold transition-all shadow-lg overflow-hidden group"
+                        >
+                          {/* Shine Effect */}
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                            animate={{
+                              x: ['-200%', '200%']
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              repeatDelay: 1,
+                              ease: "easeInOut"
+                            }}
+                          />
+                          <span className="relative z-10">Log Out</span>
+                        </motion.button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            </>
+          )}
+        </AnimatePresence>
+      )}
     </div>
   )
 }

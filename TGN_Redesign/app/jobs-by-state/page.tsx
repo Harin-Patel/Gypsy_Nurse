@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   MapPin, 
   Search,
   ChevronRight,
+  ChevronLeft,
   Briefcase,
   Building2,
   Clock,
@@ -17,11 +18,16 @@ import {
   ThumbsDown,
   X,
   AlertCircle,
-  ArrowLeft
+  ArrowLeft,
+  Star,
+  Sun
 } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import MobileBottomNav from '@/components/MobileBottomNav'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import toast from 'react-hot-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import {
@@ -37,6 +43,19 @@ import {
   removeBookmarkedJob
 } from '@/utils/jobStorage'
 import { SAMPLE_JOBS, Job } from '../jobs/page'
+import { getFacilityImageWithFallback } from '@/utils/stateImages'
+
+// Format date with year
+const formatDateWithYear = (date: string | undefined): string => {
+  if (!date) return ''
+  // Check if date already has a year (contains comma followed by 4 digits)
+  if (/\d{4}/.test(date)) {
+    return date
+  }
+  // Add current year if not present
+  const currentYear = new Date().getFullYear()
+  return `${date}, ${currentYear}`
+}
 
 // All 50 US States
 const US_STATES = [
@@ -120,19 +139,30 @@ const getStateImageUrl = (stateName: string) => {
   return `https://static.thegypsynurse.com/2019/12/${formattedName}-1.jpg.webp`
 }
 
+// Get consistent fallback image URL for a state (deterministic based on state name)
+const getFallbackImageUrl = (stateName: string) => {
+  // Use a deterministic hash based on state name to ensure same fallback image
+  const stateHash = stateName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  // Use Unsplash with a deterministic seed based on state name
+  return `https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&h=600&fit=crop&seed=${stateHash}`
+}
+
 // State Card Component with Admin Portal hover animation
 const StateCard = ({ 
   state, 
   index, 
   jobCount, 
-  onSelect 
+  onSelect,
+  isMobile = false
 }: { 
   state: string
   index: number
   jobCount: number
   onSelect: () => void
+  isMobile?: boolean
 }) => {
   const [isHovered, setIsHovered] = useState(false)
+  const [imageError, setImageError] = useState(false)
   
   return (
     <motion.button
@@ -140,14 +170,19 @@ const StateCard = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.02, duration: 0.4 }}
-      whileHover={{ y: -8, scale: 1.02 }}
+      whileHover={!isMobile ? { y: -8, scale: 1.02 } : undefined}
       whileTap={{ scale: 0.98 }}
       className="relative group cursor-pointer h-full"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => !isMobile && setIsHovered(true)}
+      onMouseLeave={() => !isMobile && setIsHovered(false)}
     >
-      {/* Glass Card - Same as Admin Portal */}
-      <div className="relative bg-white rounded-xl overflow-hidden shadow-md border-2 border-gray-200 h-full flex flex-col">
+      {/* Glass Card - Mobile Native Style */}
+      <div className={`relative bg-white ${isMobile ? 'rounded-2xl' : 'rounded-xl'} overflow-hidden ${isMobile ? 'shadow-lg border border-gray-200' : 'shadow-md border-2 border-gray-200'} h-full flex flex-col ${isMobile ? 'active:shadow-xl' : ''}`}
+        style={isMobile ? {
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        } : {}}
+      >
         {/* Glass Hover Effect - Same as Admin Portal */}
         <motion.div
           className="absolute -inset-1 bg-white/70 backdrop-blur-xl rounded-xl border border-primary-200/50 shadow-lg -z-10 overflow-hidden"
@@ -185,15 +220,15 @@ const StateCard = ({
         {/* State Image */}
         <div className="relative aspect-video overflow-hidden">
           <img
-            src={getStateImageUrl(state)}
+            src={imageError ? getFallbackImageUrl(state) : getStateImageUrl(state)}
             alt={`${state} landscape`}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             loading="lazy"
-            onError={(e) => {
-              // Fallback to a different image service if primary fails
-              const target = e.currentTarget as HTMLImageElement
-              const stateHash = state.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-              target.src = `https://picsum.photos/800/600?random=${stateHash + 1000}`
+            onError={() => {
+              // Use consistent fallback image if primary fails
+              if (!imageError) {
+                setImageError(true)
+              }
             }}
           />
           {/* Gradient Overlay */}
@@ -201,15 +236,15 @@ const StateCard = ({
           
           {/* Job Count Badge */}
           {jobCount > 0 && (
-            <div className="absolute top-2 right-2 px-2 py-1 bg-primary-600 text-white text-xs font-bold rounded-full shadow-lg z-10">
+            <div className={`absolute ${isMobile ? 'top-2 right-2' : 'top-2 right-2'} px-2 py-1 bg-primary-600 text-white ${isMobile ? 'text-[10px]' : 'text-xs'} font-bold rounded-full shadow-lg z-10`}>
               {jobCount} {jobCount === 1 ? 'job' : 'jobs'}
             </div>
           )}
         </div>
 
         {/* State Name */}
-        <div className="p-4 bg-white relative z-10">
-          <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary-600 transition-colors text-center">
+        <div className={`${isMobile ? 'p-3' : 'p-4'} bg-white relative z-10`}>
+          <h3 className={`${isMobile ? 'text-sm' : 'text-lg'} font-bold text-gray-900 ${!isMobile ? 'group-hover:text-primary-600' : ''} transition-colors text-center`}>
             {state}
           </h3>
         </div>
@@ -223,8 +258,119 @@ const getJobCountForState = (stateName: string) => {
   return SAMPLE_JOBS.filter(job => job.state.toLowerCase() === stateName.toLowerCase()).length
 }
 
+// Selected State Hero Component with consistent image handling
+const SelectedStateHero = ({ 
+  selectedState, 
+  jobs, 
+  isMobile 
+}: { 
+  selectedState: string
+  jobs: Job[]
+  isMobile: boolean
+}) => {
+  const [imageError, setImageError] = useState(false)
+  
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={selectedState}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.4 }}
+        className={`${isMobile ? 'bg-white w-full' : 'bg-gradient-to-br from-primary-50 via-purple-50 to-primary-50'} ${isMobile ? 'rounded-none' : 'rounded-2xl'} overflow-hidden ${isMobile ? 'shadow-none' : 'shadow-lg'} ${isMobile ? 'mb-0' : 'mb-8'}`}
+        style={isMobile ? {
+          margin: 0,
+          padding: 0,
+        } : {}}
+      >
+        <div className={`${isMobile ? 'flex flex-col w-full' : 'grid grid-cols-1 md:grid-cols-2'} ${isMobile ? 'gap-0' : 'gap-8'} ${isMobile ? 'p-0' : 'p-8'}`}>
+          {/* State Image */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className={`relative ${isMobile ? 'rounded-none w-full' : 'rounded-xl'} overflow-hidden ${isMobile ? '' : 'shadow-2xl'}`}
+            style={isMobile ? {
+              width: '100%',
+              margin: 0,
+            } : {}}
+          >
+            <div className={`${isMobile ? 'h-64' : 'aspect-video'} relative w-full`}>
+              <img
+                src={imageError ? getFallbackImageUrl(selectedState) : getStateImageUrl(selectedState)}
+                alt={`${selectedState} landscape`}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={() => {
+                  // Use consistent fallback image if primary fails
+                  if (!imageError) {
+                    setImageError(true)
+                  }
+                }}
+              />
+              {isMobile ? (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+              )}
+              <div className={`absolute bottom-0 left-0 right-0 ${isMobile ? 'p-4' : 'p-6'}`}>
+                <h2 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-white mb-2`}>{selectedState}</h2>
+                {isMobile ? (
+                  <div className="inline-flex items-center px-2.5 py-1 bg-primary-600/90 backdrop-blur-sm text-white text-xs font-bold rounded-full">
+                    {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'} available
+                  </div>
+                ) : (
+                  <p className="text-white/90">
+                    {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'} available
+                  </p>
+                )}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* State Info - Hidden on Mobile */}
+          {!isMobile && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+              className="space-y-4 flex items-center"
+            >
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/50 w-full">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Why {selectedState}?</h3>
+                <ul className="space-y-3 text-gray-700">
+                  <li className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <MapPin className="w-3.5 h-3.5 text-primary-600" />
+                    </div>
+                    <span>Diverse healthcare facilities across the state</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Briefcase className="w-3.5 h-3.5 text-primary-600" />
+                    </div>
+                    <span>Competitive travel nursing salaries</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Building2 className="w-3.5 h-3.5 text-primary-600" />
+                    </div>
+                    <span>Multiple specialty opportunities</span>
+                  </li>
+                </ul>
+              </div>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
 export default function JobsByStatePage() {
   const { isAuthenticated } = useAuth()
+  const isMobile = useIsMobile()
   const [selectedState, setSelectedState] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [jobs, setJobs] = useState<Job[]>([])
@@ -232,6 +378,8 @@ export default function JobsByStatePage() {
   const [likedJobs, setLikedJobs] = useState<string[]>([])
   const [dislikedJobs, setDislikedJobs] = useState<string[]>([])
   const [pendingJobs, setPendingJobs] = useState<string[]>([])
+  const mobileHeaderRef = useRef<HTMLDivElement>(null)
+  const [mobileHeaderHeight, setMobileHeaderHeight] = useState(200)
 
   // Load job status from localStorage on mount
   useEffect(() => {
@@ -242,6 +390,25 @@ export default function JobsByStatePage() {
       setPendingJobs(getPendingJobs())
     }
   }, [])
+
+  // Measure mobile header height for accurate spacing
+  useEffect(() => {
+    if (isMobile && mobileHeaderRef.current) {
+      const updateHeaderHeight = () => {
+        if (mobileHeaderRef.current) {
+          const height = mobileHeaderRef.current.offsetHeight || 200
+          setMobileHeaderHeight(height)
+        }
+      }
+      
+      updateHeaderHeight()
+      window.addEventListener('resize', updateHeaderHeight)
+      
+      return () => {
+        window.removeEventListener('resize', updateHeaderHeight)
+      }
+    }
+  }, [isMobile, selectedState, searchQuery])
 
   // Filter jobs by selected state
   useEffect(() => {
@@ -315,223 +482,548 @@ export default function JobsByStatePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className={`min-h-screen flex flex-col ${isMobile ? 'bg-white' : 'bg-gray-50'}`}>
       <Navigation />
 
-      {/* Header Section */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 pt-32 pb-8">
-          {/* Breadcrumb */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-3 mb-6"
-          >
-            <Link href="/" className="group">
-              <span className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors relative">
-                Home
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 group-hover:w-full transition-all duration-300"></span>
-              </span>
-            </Link>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-            <Link href="/jobs" className="group">
-              <span className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors relative">
-                Jobs
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 group-hover:w-full transition-all duration-300"></span>
-              </span>
-            </Link>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-50/80 backdrop-blur-md border border-primary-200/60 rounded-full">
-              <MapPin className="w-3.5 h-3.5 text-primary-600" />
-              <span className="text-sm font-semibold text-primary-700">
-                Jobs by State
-              </span>
-            </div>
-          </motion.div>
+      {/* Mobile Header Wrapper - Fixed at Top (Native App Behavior) */}
+      {isMobile && (
+        <div 
+          ref={mobileHeaderRef}
+          className="fixed left-0 right-0 bg-white z-[99]"
+          style={{ 
+            position: 'fixed', 
+            top: `calc(56px + env(safe-area-inset-top, 0px))`, 
+            zIndex: 99,
+            backgroundColor: '#ffffff',
+            width: '100%',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          {/* Mobile Header Content */}
+          <div className="px-4 pt-4 pb-4">
+            {!selectedState ? (
+              <>
+                {/* Back Button and Title Row - Only show when no state selected */}
+                <div className="flex items-center gap-3 mb-3">
+                  <Link href="/jobs">
+                    <motion.button
+                      className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 active:bg-gray-200 transition-colors -ml-1"
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <ChevronLeft className="w-5 h-5 text-gray-700" />
+                    </motion.button>
+                  </Link>
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-xl font-bold text-gray-900">
+                      Find Jobs by State
+                    </h1>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {(() => {
+                        const filteredCount = US_STATES.filter(state => {
+                          if (!searchQuery || !isMobile) return true
+                          const query = searchQuery.toLowerCase()
+                          return state.toLowerCase().includes(query)
+                        }).length
+                        return `${filteredCount} ${filteredCount === 1 ? 'state' : 'states'} available`
+                      })()}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Search Bar - Only show when no state selected */}
+                <div className="relative bg-gray-50 rounded-lg border border-gray-200 p-0 flex items-center gap-0 mb-3">
+                  <div className="relative flex-1 flex items-center gap-2.5 px-3 py-2.5">
+                    <Search className="w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search states..."
+                      className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-base"
+                      style={{ fontSize: '16px' }}
+                    />
+                    {searchQuery && (
+                      <motion.button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors flex-shrink-0"
+                        whileTap={{ scale: 0.9 }}
+                        aria-label="Clear search"
+                      >
+                        <X className="w-3 h-3 text-white" />
+                      </motion.button>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Back Button and Title Row - When state is selected */}
+                <div className="flex items-center gap-3 mb-3">
+                  <motion.button
+                    onClick={() => {
+                      setSelectedState(null)
+                      setSearchQuery('')
+                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }}
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 active:bg-gray-200 transition-colors flex-shrink-0"
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <ChevronLeft className="w-5 h-5 text-gray-700" />
+                  </motion.button>
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-xl font-bold text-gray-900">
+                      Jobs in {selectedState}
+                    </h1>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'} available
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Search Bar - Only show when state is selected */}
+                <div className={`relative ${isMobile ? 'bg-gray-50 rounded-lg border border-gray-200' : 'bg-white rounded-2xl shadow-md border border-gray-200'} ${isMobile ? 'p-0' : 'p-3'} flex items-center ${isMobile ? 'gap-0' : 'gap-2'} mb-3`}>
+                  {!isMobile && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary-50/30 via-transparent to-purple-50/30 opacity-0 hover:opacity-100 transition-opacity duration-500" />
+                  )}
+                  <div className={`relative flex-1 flex items-center ${isMobile ? 'gap-2.5 px-3 py-2.5' : 'gap-3 px-3 py-2.5'}`}>
+                    <Search className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-gray-400`} />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search jobs..."
+                      className={`flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 ${isMobile ? 'text-base' : 'text-base'}`}
+                      style={{ fontSize: '16px' }}
+                    />
+                    {searchQuery && (
+                      <motion.button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className={`flex items-center justify-center ${isMobile ? 'w-5 h-5' : 'w-6 h-6'} rounded-full bg-gray-300 hover:bg-gray-400 transition-colors flex-shrink-0`}
+                        whileTap={{ scale: 0.9 }}
+                        aria-label="Clear search"
+                      >
+                        <X className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-white`} />
+                      </motion.button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
-          {/* Title */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-3xl md:text-4xl font-bold text-gray-900 mb-2"
-          >
-            Find Travel Nursing Jobs by State
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-gray-600 mb-6"
-          >
-            {selectedState 
-              ? `Showing jobs in ${selectedState}` 
-              : 'Explore nursing opportunities across all 50 states'}
-          </motion.p>
-
-          {/* Search Bar - Only show when state is selected */}
-          {selectedState && (
+      {/* Desktop Header Section */}
+      {!isMobile && (
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 pt-32 pb-8">
+            {/* Breadcrumb */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="relative bg-white rounded-xl shadow-md border border-gray-200 p-2 flex items-center gap-2"
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center gap-3 mb-6"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-primary-50/30 via-transparent to-purple-50/30 opacity-0 hover:opacity-100 transition-opacity duration-500" />
-              <div className="relative flex-1 flex items-center gap-3 px-4 py-2">
-                <Search className="w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search jobs in selected state..."
-                  className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500"
-                />
+              <Link href="/" className="group">
+                <span className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors relative">
+                  Home
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 group-hover:w-full transition-all duration-300"></span>
+                </span>
+              </Link>
+              <ChevronRight className="w-4 h-4 text-gray-400" />
+              <Link href="/jobs" className="group">
+                <span className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors relative">
+                  Jobs
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 group-hover:w-full transition-all duration-300"></span>
+                </span>
+              </Link>
+              <ChevronRight className="w-4 h-4 text-gray-400" />
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-50/80 backdrop-blur-md border border-primary-200/60 rounded-full">
+                <MapPin className="w-3.5 h-3.5 text-primary-600" />
+                <span className="text-sm font-semibold text-primary-700">
+                  Jobs by State
+                </span>
               </div>
             </motion.div>
-          )}
+
+            {/* Title */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-3xl md:text-4xl font-bold text-gray-900 mb-2"
+            >
+              Find Travel Nursing Jobs by State
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="text-gray-600 mb-6"
+            >
+              {selectedState 
+                ? `Showing jobs in ${selectedState}` 
+                : 'Explore nursing opportunities across all 50 states'}
+            </motion.p>
+
+            {/* Search Bar - Only show when state is selected */}
+            {selectedState && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="relative bg-white rounded-xl shadow-md border border-gray-200 p-2 flex items-center gap-2"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-primary-50/30 via-transparent to-purple-50/30 opacity-0 hover:opacity-100 transition-opacity duration-500" />
+                <div className="relative flex-1 flex items-center gap-3 px-4 py-2">
+                  <Search className="w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search jobs in selected state..."
+                    className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Spacer for Fixed Mobile Header - Accounts for Navigation (56px) + Header height + Safe area */}
+      {isMobile && (
+        <div 
+          style={{
+            height: `calc(56px + ${mobileHeaderHeight}px + env(safe-area-inset-top, 0px) + 8px)`,
+            minHeight: `calc(56px + ${mobileHeaderHeight}px + env(safe-area-inset-top, 0px) + 8px)`,
+          }}
+        />
+      )}
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
+      <main 
+        className={`flex-1 ${isMobile ? 'px-0' : 'max-w-7xl mx-auto px-4'} ${isMobile ? 'pb-0' : 'py-8'} w-full`}
+        style={isMobile ? {
+          position: 'relative',
+          zIndex: 1,
+          paddingTop: '0px',
+          paddingBottom: '0px',
+        } : {}}
+      >
         {!selectedState ? (
           /* State Cards Grid */
           <>
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Select a State</h2>
-              <p className="text-gray-600">Click on any state to view available jobs</p>
-            </div>
+            {!isMobile && (
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Select a State</h2>
+                <p className="text-gray-600">Click on any state to view available jobs</p>
+              </div>
+            )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {US_STATES.map((state, index) => {
-                const jobCount = getJobCountForState(state)
+            {(() => {
+              const filteredStates = US_STATES.filter(state => {
+                if (!searchQuery || !isMobile) return true
+                const query = searchQuery.toLowerCase()
+                return state.toLowerCase().includes(query)
+              })
+
+              if (filteredStates.length === 0 && searchQuery && isMobile) {
                 return (
-                  <StateCard
-                    key={state}
-                    state={state}
-                    index={index}
-                    jobCount={jobCount}
-                    onSelect={() => {
-                      setSelectedState(state)
-                      // Scroll to top smoothly
-                      window.scrollTo({ top: 0, behavior: 'smooth' })
-                    }}
-                  />
+                  <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+                    <MapPin className="w-12 h-12 text-gray-400 mb-4" />
+                    <h3 className="text-xl font-bold text-gray-700 mb-2 text-center">
+                      No states found
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-6 text-center">
+                      We couldn't find any states matching "{searchQuery}". Try a different search term.
+                    </p>
+                  </div>
                 )
-              })}
-            </div>
+              }
+
+              return (
+                <div className={`${isMobile ? 'grid grid-cols-2 gap-3 px-4 pt-4' : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6'}`}
+                  style={isMobile ? {
+                    paddingBottom: '0px',
+                    marginBottom: '0px',
+                  } : {}}
+                >
+                  {filteredStates.map((state, index) => {
+                    const jobCount = getJobCountForState(state)
+                    return (
+                      <StateCard
+                        key={state}
+                        state={state}
+                        index={index}
+                        jobCount={jobCount}
+                        isMobile={isMobile}
+                        onSelect={() => {
+                          setSelectedState(state)
+                          // Scroll to top smoothly
+                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                        }}
+                      />
+                    )
+                  })}
+                </div>
+              )
+            })()}
           </>
         ) : (
           /* Selected State View with Jobs */
           <>
-            {/* Back Button */}
-            <motion.button
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              onClick={() => {
-                setSelectedState(null)
-                setSearchQuery('')
-                window.scrollTo({ top: 0, behavior: 'smooth' })
-              }}
-              className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium mb-6 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span>Back to All States</span>
-            </motion.button>
-
-            {/* Selected State Hero Section */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={selectedState}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4 }}
-                className="bg-gradient-to-br from-primary-50 via-purple-50 to-primary-50 rounded-2xl overflow-hidden shadow-lg mb-8"
+            {/* Desktop Back Button */}
+            {!isMobile && (
+              <motion.button
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                onClick={() => {
+                  setSelectedState(null)
+                  setSearchQuery('')
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                }}
+                className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium mb-6 transition-colors"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
-                  {/* State Image */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="relative rounded-xl overflow-hidden shadow-2xl"
-                  >
-                    <div className="aspect-video relative">
-                      <img
-                        src={getStateImageUrl(selectedState)}
-                        alt={`${selectedState} landscape`}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          // Fallback to a different image service if primary fails
-                          const target = e.currentTarget as HTMLImageElement
-                          const stateHash = selectedState.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-                          target.src = `https://picsum.photos/800/600?random=${stateHash + 1000}`
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                      <div className="absolute bottom-0 left-0 right-0 p-6">
-                        <h2 className="text-3xl font-bold text-white mb-2">{selectedState}</h2>
-                        <p className="text-white/90">
-                          {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'} available
-                        </p>
-                      </div>
-                    </div>
-                  </motion.div>
+                <ArrowLeft className="w-5 h-5" />
+                <span>Back to All States</span>
+              </motion.button>
+            )}
 
-                  {/* State Info */}
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="space-y-4 flex items-center"
-                  >
-                    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/50 w-full">
-                      <h3 className="text-xl font-bold text-gray-900 mb-4">Why {selectedState}?</h3>
-                      <ul className="space-y-3 text-gray-700">
-                        <li className="flex items-start gap-3">
-                          <div className="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <MapPin className="w-3.5 h-3.5 text-primary-600" />
-                          </div>
-                          <span>Diverse healthcare facilities across the state</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <div className="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <Briefcase className="w-3.5 h-3.5 text-primary-600" />
-                          </div>
-                          <span>Competitive travel nursing salaries</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <div className="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <Building2 className="w-3.5 h-3.5 text-primary-600" />
-                          </div>
-                          <span>Multiple specialty opportunities</span>
-                        </li>
-                      </ul>
-                    </div>
-                  </motion.div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Job Listings */}
-            {jobs.length > 0 ? (
+            {/* Mobile: Native App Style State Details */}
+            {isMobile ? (
               <>
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    Available Jobs in {selectedState}
-                  </h3>
-                  <p className="text-gray-600">
-                    Showing {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'}
-                  </p>
-                </div>
+                <div data-state-details="true" style={{ display: 'none' }} />
+                {/* Job Listings - Native App Style */}
+                {jobs.length > 0 ? (
+                  <div className="px-4 pt-4 pb-4 space-y-3">
+                    {jobs.map((job, index) => (
+                      <a
+                        key={job.id}
+                        href={`/jobs/${job.id}`}
+                        className="block no-underline"
+                      >
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ 
+                            duration: 0.4, 
+                            delay: index * 0.05,
+                            ease: [0.25, 0.46, 0.45, 0.94]
+                          }}
+                          className="group relative bg-white/95 backdrop-blur-2xl rounded-2xl overflow-hidden flex flex-col cursor-pointer h-full shadow-xl border border-gray-200/50 transition-all duration-300"
+                          style={{
+                            backdropFilter: 'saturate(180%) blur(20px)',
+                            WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+                          }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          {/* Facility Image Header */}
+                          <div className="relative h-44 overflow-hidden">
+                            <img
+                              src={getFacilityImageWithFallback(job.facilityImage, job.state)}
+                              alt={job.facilityName}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                            
+                            {/* Gradient Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 pointer-events-none" />
+                            
+                            {/* Featured Tag */}
+                            {job.featured && (
+                              <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 rounded-md border border-amber-200 z-10">
+                                <Star className="w-3 h-3 text-amber-600 fill-amber-600" />
+                                <span className="text-xs font-semibold text-amber-900">Featured</span>
+                              </div>
+                            )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {jobs.map((job, index) => (
-                    <Link key={job.id} href={`/jobs/${job.id}`}>
+                            {/* Action Buttons */}
+                            {isAuthenticated && !pendingJobs.includes(job.id) && (
+                              <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+                                <motion.button
+                                  type="button"
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    toggleLikeJob(job.id)
+                                  }}
+                                  style={{ pointerEvents: 'auto', zIndex: 20 }}
+                                  className={`p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg ${
+                                    likedJobs.includes(job.id)
+                                      ? 'bg-primary-500 text-white'
+                                      : 'bg-white/30 text-white'
+                                  }`}
+                                >
+                                  <ThumbsUp className={`w-4 h-4 ${likedJobs.includes(job.id) ? 'fill-white' : 'text-white'}`} />
+                                </motion.button>
+
+                                <motion.button
+                                  type="button"
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    toggleDislikeJob(job.id)
+                                  }}
+                                  style={{ pointerEvents: 'auto', zIndex: 20 }}
+                                  className={`p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg ${
+                                    dislikedJobs.includes(job.id)
+                                      ? 'bg-primary-500 text-white'
+                                      : 'bg-white/30 text-white'
+                                  }`}
+                                >
+                                  <ThumbsDown className={`w-4 h-4 ${dislikedJobs.includes(job.id) ? 'fill-white' : 'text-white'}`} />
+                                </motion.button>
+
+                                <motion.button
+                                  type="button"
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    toggleSaveJob(job.id)
+                                  }}
+                                  style={{ pointerEvents: 'auto', zIndex: 20 }}
+                                  className={`p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg ${
+                                    savedJobs.includes(job.id)
+                                      ? 'bg-primary-500 text-white'
+                                      : 'bg-white/30 text-white'
+                                  }`}
+                                >
+                                  <Bookmark className={`w-4 h-4 ${savedJobs.includes(job.id) ? 'fill-white' : 'text-white'}`} />
+                                </motion.button>
+                              </div>
+                            )}
+
+                            {/* PENDING Badge */}
+                            {pendingJobs.includes(job.id) && (
+                              <div className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-50 rounded-md border border-orange-200 z-10">
+                                <AlertCircle className="w-3 h-3 text-orange-600" />
+                                <span className="text-xs font-semibold text-orange-900">Pending</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Card Body */}
+                          <div className="p-4 sm:p-5 bg-white/80 backdrop-blur-sm flex-1 flex flex-col">
+                            {/* Title and Days Ago */}
+                            <div className="flex items-center justify-between mb-1.5 gap-2">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 break-words leading-tight">
+                                  {job.licenseSpecialty || job.title}
+                                </h3>
+                              </div>
+                              {job.daysAgo !== undefined && (
+                                <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0 self-start pt-0.5">
+                                  {job.daysAgo} {job.daysAgo === 1 ? 'day' : 'days'} ago
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Location */}
+                            <div className="mb-2 flex items-center gap-1.5">
+                              <MapPin className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                              <p className="text-xs text-gray-700">
+                                {job.location}, {job.state}
+                              </p>
+                            </div>
+
+                            {/* Details - Three Rows */}
+                            <div className="space-y-2 mb-3">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                                <div>
+                                  <p className="text-xs text-gray-500">Start Date</p>
+                                  <p className="text-xs font-semibold text-gray-900">{formatDateWithYear(job.startDate || job.postedDate)}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <Sun className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                                <div>
+                                  <p className="text-xs text-gray-500">Shift</p>
+                                  <p className="text-xs font-semibold text-gray-900">{job.shift} • {job.shiftHours}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <Building2 className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                                <div>
+                                  <p className="text-xs text-gray-500">Agency</p>
+                                  <p className="text-xs font-semibold text-gray-900">{job.staffingCompany}</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Pay Display */}
+                            <div className="mt-auto pt-3 border-t border-gray-200">
+                              <div className="flex items-center justify-end gap-2">
+                                <div className="text-right">
+                                  <p className="text-xs text-gray-500">Weekly Pay</p>
+                                  <div className="flex items-baseline justify-end gap-1">
+                                    <span className="text-xl font-bold text-gray-900">{job.payPerWeek}</span>
+                                    <span className="text-sm font-medium text-gray-600">/week</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={`${isMobile ? 'flex flex-col items-center justify-center min-h-[60vh]' : 'px-4 pt-6 pb-4 text-center py-16'}`}>
+                    <div className={`${isMobile ? 'flex items-center justify-center' : 'inline-flex items-center justify-center'} w-20 h-20 rounded-full bg-gray-100 mb-4`}>
+                      <Briefcase className="w-10 h-10 text-gray-400" />
+                    </div>
+                    <h3 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-900 mb-2 text-center`}>
+                      No jobs found in {selectedState}
+                    </h3>
+                    <p className={`${isMobile ? 'text-sm' : ''} text-gray-600 mb-6 text-center`}>
+                      {searchQuery ? 'Try adjusting your search terms' : 'Check back soon for new opportunities'}
+                    </p>
+                    {searchQuery && (
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setSearchQuery('')}
+                        className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-all"
+                      >
+                        Clear Search
+                      </motion.button>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {/* Desktop: Original Layout */}
+                <SelectedStateHero 
+                  selectedState={selectedState}
+                  jobs={jobs}
+                  isMobile={isMobile}
+                />
+
+                {/* Job Listings */}
+                {jobs.length > 0 ? (
+                  <>
+                    <div className="mb-6">
+                      <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                        Available Jobs in {selectedState}
+                      </h3>
+                      <p className="text-gray-600">
+                        Showing {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {jobs.map((job, index) => (
+                        <Link key={job.id} href={`/jobs/${job.id}`}>
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -586,7 +1078,7 @@ export default function JobsByStatePage() {
                         </motion.div>
 
                         {/* Card Header */}
-                        <div className="relative p-5 border-b border-gray-100">
+                        <div className={`relative ${isMobile ? 'p-4' : 'p-5'} border-b border-gray-100`}>
                           <div className="flex items-start justify-between gap-3 mb-3">
                             <motion.div
                               className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg flex items-center justify-center"
@@ -793,10 +1285,10 @@ export default function JobsByStatePage() {
                         </div>
                       </motion.div>
                     </Link>
-                  ))}
-                </div>
-              </>
-            ) : (
+                      ))}
+                    </div>
+                  </>
+                ) : (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -823,11 +1315,14 @@ export default function JobsByStatePage() {
                 )}
               </motion.div>
             )}
+              </>
+            )}
           </>
         )}
       </main>
 
-      <Footer />
+      {!isMobile && <Footer />}
+      {isMobile && !selectedState && <MobileBottomNav />}
     </div>
   )
 }

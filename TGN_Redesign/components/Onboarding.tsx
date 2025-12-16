@@ -80,7 +80,7 @@ const onboardingSlides: OnboardingSlide[] = [
 ]
 
 export default function Onboarding() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
@@ -114,6 +114,12 @@ export default function Onboarding() {
     
     setMounted(true)
     
+    // Wait for auth to finish loading before making decision
+    // This prevents showing onboarding incorrectly after logout when app is restarted
+    if (isLoading) {
+      return
+    }
+    
     // Check if onboarding was already completed
     if (typeof window !== 'undefined') {
       const onboardingCompleted = localStorage.getItem('onboarding_completed')
@@ -124,7 +130,7 @@ export default function Onboarding() {
       // Only show onboarding if:
       // 1. User is on mobile
       // 2. Onboarding hasn't been completed
-      // 3. User is not authenticated
+      // 3. User is not authenticated (and auth has finished loading)
       if (mobile && !onboardingCompleted && !isAuthenticated) {
         // Keep shouldShowOnboarding true and set attribute
         setShouldShowOnboarding(true)
@@ -141,7 +147,7 @@ export default function Onboarding() {
         
         return () => clearTimeout(timer)
       } else {
-        // Hide onboarding if user becomes authenticated
+        // Hide onboarding if user becomes authenticated or onboarding was completed
         setShouldShowOnboarding(false)
         setIsVisible(false)
         document.body.removeAttribute('data-onboarding-active')
@@ -161,7 +167,7 @@ export default function Onboarding() {
       document.body.style.position = ''
       document.body.style.width = ''
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, isLoading])
 
   // Don't render anything on server to avoid hydration mismatch
   // Only render after component has mounted on client
@@ -308,14 +314,14 @@ export default function Onboarding() {
         >
           {/* Skip Button */}
           <div 
-            className="absolute right-4 z-10"
+            className="absolute right-3 sm:right-4 z-10"
             style={{
               top: 'calc(env(safe-area-inset-top) + 0.75rem)',
             }}
           >
             <button
               onClick={handleSkip}
-              className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white/80 backdrop-blur-md rounded-full border border-gray-200/50 shadow-sm active:bg-white/90"
+              className="px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 md:py-2.5 text-xs sm:text-sm font-medium text-gray-600 bg-white/80 backdrop-blur-md rounded-full border border-gray-200/50 shadow-sm active:bg-white/90"
             >
               Skip
             </button>
@@ -370,15 +376,15 @@ export default function Onboarding() {
                   )}
 
                   {/* Content Section */}
-                  <div className="px-8 pt-8 pb-4 flex-1 flex flex-col justify-center relative z-10">
-                    <div className="w-full max-w-md mx-auto text-center space-y-6">
+                  <div className="px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 flex-1 flex flex-col justify-center relative z-10">
+                    <div className="w-full max-w-md mx-auto text-center space-y-4 sm:space-y-6">
                       {/* Title */}
-                      <h2 className="text-3xl font-bold text-gray-900 leading-tight">
+                      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight px-2">
                         {currentSlideData.title}
                       </h2>
 
                       {/* Description */}
-                      <p className="text-base text-gray-600 leading-relaxed px-2">
+                      <p className="text-sm sm:text-base text-gray-600 leading-relaxed px-2 sm:px-4">
                         {currentSlideData.description}
                       </p>
                     </div>
@@ -389,9 +395,9 @@ export default function Onboarding() {
 
             {/* Bottom Navigation */}
             <div 
-              className="px-8 pb-8 space-y-6"
+              className="px-4 sm:px-6 md:px-8 pb-6 sm:pb-8 space-y-4 sm:space-y-6"
               style={{
-                paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))',
+                paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))',
               }}
             >
               {/* Progress Dots */}
@@ -410,15 +416,15 @@ export default function Onboarding() {
               </div>
 
               {/* Navigation Buttons */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
                 {/* Previous Button - Circular icon button */}
                 {currentSlide > 0 && (
                   <button
                     onClick={handlePrevious}
-                    className="w-16 h-16 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm active:bg-gray-50"
+                    className="w-14 h-14 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm active:bg-gray-50"
                     aria-label="Previous"
                   >
-                    <ChevronLeft className="w-7 h-7 text-gray-700" />
+                    <ChevronLeft className="w-6 h-6 sm:w-6 sm:h-6 md:w-7 md:h-7 text-gray-700" />
                   </button>
                 )}
 
@@ -427,9 +433,8 @@ export default function Onboarding() {
                   onClick={handleNext}
                   className={`${
                     currentSlide > 0 ? 'flex-1' : 'w-full'
-                  } h-16 bg-primary-600 text-white font-black rounded-full flex items-center justify-center text-xl leading-tight shadow-lg active:bg-primary-700`}
+                  } h-14 sm:h-14 md:h-16 bg-primary-600 text-white font-black rounded-full flex items-center justify-center text-lg sm:text-lg md:text-xl leading-tight shadow-lg active:bg-primary-700`}
                   style={{
-                    fontSize: '1.25rem',
                     fontWeight: 800,
                     letterSpacing: '-0.01em',
                   }}

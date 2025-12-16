@@ -49,7 +49,11 @@ export default function Navigation() {
   // Get page title for mobile
   const getPageTitle = () => {
     if (pathname === '/') return 'Home'
-    if (pathname?.startsWith('/jobs')) return 'Jobs'
+    if (pathname === '/jobs' || pathname === '/jobs-by-state' || pathname === '/nursing-specialties') return 'Jobs'
+    if (pathname?.startsWith('/jobs/')) return 'Job Details'
+    if (pathname?.startsWith('/jobs-by-state')) return 'Jobs'
+    if (pathname?.startsWith('/nursing-specialties/')) return 'Specialty Details'
+    if (pathname?.startsWith('/nursing-specialties')) return 'Jobs'
     if (pathname?.startsWith('/resources')) return 'Resources'
     if (pathname?.startsWith('/events')) return 'Events'
     if (pathname?.startsWith('/more')) return 'More'

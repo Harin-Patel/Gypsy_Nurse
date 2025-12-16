@@ -39,17 +39,63 @@ export default function MobileBottomNav() {
   const [activeSection, setActiveSection] = useState<string | null>(null)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [hideOnStateDetails, setHideOnStateDetails] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  // Check if we're on jobs-by-state page with a selected state
+  useEffect(() => {
+    if (pathname === '/jobs-by-state' && typeof window !== 'undefined') {
+      const checkStateSelected = () => {
+        // Check if state details marker exists in the DOM
+        const stateDetailsMarker = document.querySelector('[data-state-details="true"]')
+        setHideOnStateDetails(stateDetailsMarker !== null)
+      }
+      
+      // Check immediately
+      checkStateSelected()
+      
+      // Use MutationObserver to watch for changes
+      const observer = new MutationObserver(checkStateSelected)
+      const targetNode = document.body
+      if (targetNode) {
+        observer.observe(targetNode, { 
+          childList: true, 
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['data-state-details']
+        })
+      }
+      
+      // Also check periodically as a fallback
+      const interval = setInterval(checkStateSelected, 100)
+      
+      return () => {
+        observer.disconnect()
+        clearInterval(interval)
+      }
+    } else {
+      setHideOnStateDetails(false)
+    }
+  }, [pathname])
+
   // Don't show on desktop
   if (!isMobile) return null
+
+  // Hide on state details page
+  if (hideOnStateDetails) return null
 
   // Don't show on certain pages (login, register, etc.)
   const hiddenPages = ['/login', '/register', '/agency-login', '/agency-register', '/recruiter-login', '/admin-login', '/forgot-password', '/profile']
   if (hiddenPages.some(page => pathname?.startsWith(page))) return null
+
+  // Hide on job details page (e.g., /jobs/123)
+  if (pathname?.startsWith('/jobs/') && pathname !== '/jobs' && pathname !== '/jobs-by-state') return null
+
+  // Hide on specialty detail page (e.g., /nursing-specialties/acute-care-nurse-practitioner)
+  if (pathname?.startsWith('/nursing-specialties/') && pathname !== '/nursing-specialties') return null
 
   const handleLogout = () => {
     setShowLogoutConfirm(false)
@@ -104,7 +150,7 @@ export default function MobileBottomNav() {
       label: 'Jobs',
       icon: Briefcase,
       href: '/jobs',
-      active: pathname?.startsWith('/jobs'),
+      active: pathname?.startsWith('/jobs') || pathname?.startsWith('/jobs-by-state') || pathname?.startsWith('/nursing-specialties'),
     },
     {
       id: 'resources',
@@ -175,6 +221,7 @@ export default function MobileBottomNav() {
         pointerEvents: 'none',
         margin: 0,
         padding: 0,
+        display: showLogoutConfirm ? 'none' : 'block',
       }}
     >
       {/* Bottom Navigation Bar */}
@@ -504,13 +551,15 @@ export default function MobileBottomNav() {
   
   return (
     <>
-      {/* Spacer in normal flow */}
-      <div 
-        className="lg:hidden"
-        style={{
-          height: `calc(5rem + env(safe-area-inset-bottom))`,
-        }}
-      />
+      {/* Spacer in normal flow - Hide when logout confirmation is shown */}
+      {!showLogoutConfirm && (
+        <div 
+          className="lg:hidden"
+          style={{
+            height: `calc(5rem + env(safe-area-inset-bottom))`,
+          }}
+        />
+      )}
       {/* Portal bottom nav directly to body to ensure it's not affected by any parent containers */}
       {createPortal(bottomNavContent, portalTarget)}
     </>

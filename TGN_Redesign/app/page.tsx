@@ -12,9 +12,11 @@ import InstagramFeed from '@/components/InstagramFeed'
 import Resources from '@/components/Resources'
 import Blog from '@/components/Blog'
 import Footer from '@/components/Footer'
+import { useIsMobile } from '@/hooks/useIsMobile'
 // import { useDisableBodyScroll } from '@/utils/useDisableBodyScroll'
 
 export default function Home() {
+  const isMobile = useIsMobile()
   // const [showChristmasModal, setShowChristmasModal] = useState(false)
   // const [isMobile, setIsMobile] = useState(false)
   
@@ -67,13 +69,20 @@ export default function Home() {
       <Navigation />
       <Hero />
       <FeaturedJobs />
-      {/* Hidden sections - accessible via top menu bar */}
-      {/* <Events /> */}
-      {/* <Employers /> */}
-      <InstagramFeed />
-      {/* <Resources /> */}
-      <Blog />
-      <Footer />
+      {/* Events section - Mobile only */}
+      {isMobile && <Events />}
+      {/* Follow Our Journey section - Mobile only */}
+      {isMobile && <InstagramFeed />}
+      {/* Employers section - Mobile only */}
+      {isMobile && <Employers />}
+      {/* Resources section - Mobile only */}
+      {isMobile && <Resources />}
+      {/* Blog section - Mobile only */}
+      {isMobile && <Blog />}
+      {/* Instagram Feed - Desktop only */}
+      {!isMobile && <InstagramFeed />}
+      {/* Footer - Desktop only */}
+      {!isMobile && <Footer />}
 
       {/* Christmas Event Modal - Hidden */}
       {/* <AnimatePresence>

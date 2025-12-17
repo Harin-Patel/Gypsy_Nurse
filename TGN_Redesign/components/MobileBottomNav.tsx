@@ -177,16 +177,37 @@ export default function MobileBottomNav() {
 
   const handleSectionClick = (section: typeof navSections[0]) => {
     if (section.href) {
-      // Navigate to href using router for client-side navigation
-      router.push(section.href)
+      // Optimize navigation for faster redirect - apply to all tabs
+      if (pathname !== section.href) {
+        // Use replace for faster navigation without adding to history
+        router.replace(section.href)
+        // Scroll to top immediately
+        window.scrollTo({ top: 0, behavior: 'instant' })
+      } else {
+        // If already on the same page, just scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
     } else if (section.children) {
-      // For Resources, Events, and More, navigate to full page
+      // For Resources, Events, and More, navigate to full page with optimization
+      let targetPath = ''
       if (section.id === 'resources') {
-        router.push('/resources')
+        targetPath = '/resources'
       } else if (section.id === 'events') {
-        router.push('/events')
+        targetPath = '/events'
       } else if (section.id === 'more') {
-        router.push('/more')
+        targetPath = '/more'
+      }
+      
+      if (targetPath) {
+        if (pathname !== targetPath) {
+          // Use replace for faster navigation
+          router.replace(targetPath)
+          // Scroll to top immediately
+          window.scrollTo({ top: 0, behavior: 'instant' })
+        } else {
+          // If already on the same page, just scroll to top
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+        }
       } else {
         // For other sections, toggle bottom sheet
         setActiveSection(activeSection === section.id ? null : section.id)

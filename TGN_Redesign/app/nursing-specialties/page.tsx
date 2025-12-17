@@ -24,6 +24,7 @@ import Footer from '@/components/Footer'
 import MobileBottomNav from '@/components/MobileBottomNav'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { useRef, useEffect } from 'react'
+import { SAMPLE_JOBS } from '../jobs/page'
 
 interface Specialty {
   id: string
@@ -98,6 +99,92 @@ export const SPECIALTY_IMAGE_URLS: Record<string, string> = {
 const getSpecialtyImageUrl = (slug: string, name: string): string => {
   // Return specialty-specific URL if available, otherwise use default
   return SPECIALTY_IMAGE_URLS[slug] || SPECIALTY_IMAGE_URLS.default
+}
+
+// Get job count for a specialty
+const getJobCountForSpecialty = (slug: string, specialtyName: string): number => {
+  // Mapping between specialty names/slugs and job licenseSpecialty values
+  const specialtyToJobMapping: Record<string, string[]> = {
+    'emergency-room-travel-nurse': ['Emergency Room', 'Emergency Department', 'ER', 'ED'],
+    'icu-nurse': ['ICU', 'Intensive Care', 'Critical Care'],
+    'critical-care-nurse': ['ICU', 'Intensive Care', 'Critical Care', 'CCU'],
+    'cardiac-icu-nurse': ['Cardiac ICU', 'Cardiac Intensive Care', 'CVICU', 'CICU'],
+    'pediatric-nurse': ['Pediatric', 'Peds', 'Pediatrics'],
+    'neonatal-travel-nurse': ['NICU', 'Neonatal', 'Neonatal ICU'],
+    'nicu-nurse': ['NICU', 'Neonatal', 'Neonatal ICU'],
+    'labor-and-delivery-nurse': ['Labor and Delivery', 'L&D', 'Labor & Delivery', 'OB'],
+    'or-nurse': ['OR', 'Operating Room', 'Surgery', 'Surgical'],
+    'surgical-nurse': ['OR', 'Operating Room', 'Surgery', 'Surgical'],
+    'medical-surgical': ['Medical-Surgical', 'Med-Surg', 'Med Surg'],
+    'oncology-nurse': ['Oncology', 'Cancer', 'Oncology Unit'],
+    'telemetry-nurse': ['Telemetry', 'Tele', 'Cardiac Telemetry'],
+    'trauma-nurse': ['Trauma', 'Trauma Center', 'Trauma Unit'],
+    'psychiatric-nurse': ['Psychiatric', 'Psych', 'Mental Health', 'Behavioral Health'],
+    'rehab-travel-nurse': ['Rehabilitation', 'Rehab', 'Physical Therapy'],
+    'home-health-nurse': ['Home Health', 'Home Care'],
+    'hospice-nurse': ['Hospice', 'Palliative Care'],
+    'travel-dialysis-nurse': ['Dialysis', 'Renal', 'Kidney'],
+    'orthopedic-nurse': ['Orthopedic', 'Ortho', 'Orthopedics'],
+    'neurology-nurse': ['Neurology', 'Neuro', 'Neurological'],
+  }
+  
+  const specialtyNameLower = specialtyName.toLowerCase()
+  let matchingKeywords: string[] = []
+  
+  // Check if we have a direct mapping
+  if (specialtyToJobMapping[slug]) {
+    matchingKeywords = specialtyToJobMapping[slug].map(k => k.toLowerCase())
+  } else {
+    // Generate keywords from specialty name
+    matchingKeywords.push(specialtyNameLower)
+    
+    // Remove common suffixes
+    if (specialtyNameLower.includes('travel nurse')) {
+      matchingKeywords.push(specialtyNameLower.replace(' travel nurse', '').trim())
+    }
+    if (specialtyNameLower.includes(' nurse')) {
+      matchingKeywords.push(specialtyNameLower.replace(' nurse', '').trim())
+    }
+    
+    // Add individual significant words
+    specialtyNameLower.split(' ').forEach(word => {
+      if (word.length > 3 && !['travel', 'nurse', 'and', 'the', 'care'].includes(word)) {
+        matchingKeywords.push(word)
+      }
+    })
+    
+    // Add slug variations
+    matchingKeywords.push(slug.replace(/-/g, ' '))
+  }
+  
+  // Remove duplicates and filter
+  const uniqueKeywords = [...new Set(matchingKeywords)].filter(k => k.length > 2)
+  
+  // Filter jobs based on licenseSpecialty field
+  const filtered = SAMPLE_JOBS.filter(job => {
+    if (!job.licenseSpecialty) return false
+    
+    // Extract specialty from licenseSpecialty (format: "RN - Emergency Room")
+    const parts = job.licenseSpecialty.split(' - ')
+    const jobSpecialty = parts.length > 1 ? parts.slice(1).join(' - ').toLowerCase() : job.licenseSpecialty.toLowerCase()
+    const jobTitle = job.title.toLowerCase()
+    
+    // Check for matches in specialty field
+    const matchesSpecialty = uniqueKeywords.some(keyword => {
+      const keywordLower = keyword.toLowerCase()
+      return jobSpecialty.includes(keywordLower) || keywordLower.includes(jobSpecialty) || 
+             jobSpecialty === keywordLower
+    })
+    
+    // Check for matches in title
+    const matchesTitle = uniqueKeywords.some(keyword => 
+      jobTitle.includes(keyword.toLowerCase())
+    )
+    
+    return matchesSpecialty || matchesTitle
+  })
+  
+  return filtered.length
 }
 
 export const specialties: Specialty[] = [
@@ -670,6 +757,16 @@ export default function NursingSpecialtiesPage() {
                           }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent pointer-events-none" />
+                        
+                        {/* Job Count Badge */}
+                        {(() => {
+                          const jobCount = getJobCountForSpecialty(specialty.slug, specialty.name)
+                          return jobCount > 0 ? (
+                            <div className={`absolute ${isMobile ? 'top-2 right-2' : 'top-2 right-2'} px-2 py-1 bg-primary-600 text-white ${isMobile ? 'text-[10px]' : 'text-xs'} font-bold rounded-full shadow-lg z-10`}>
+                              {jobCount} {jobCount === 1 ? 'job' : 'jobs'}
+                            </div>
+                          ) : null
+                        })()}
                       </div>
 
                       {/* Content Section */}

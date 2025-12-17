@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import toast from 'react-hot-toast'
 import { getProfilePhotoWithFallback } from '@/utils/profilePhoto'
+import { specialties } from '@/app/nursing-specialties/page'
 
 export default function Navigation() {
   const pathname = usePathname()
@@ -49,11 +50,12 @@ export default function Navigation() {
   // Get page title for mobile
   const getPageTitle = () => {
     if (pathname === '/') return 'Home'
-    if (pathname === '/jobs' || pathname === '/jobs-by-state' || pathname === '/nursing-specialties') return 'Jobs'
+    // Check specific detail pages first (more specific paths)
     if (pathname?.startsWith('/jobs/')) return 'Job Details'
+    // Then check list pages
+    if (pathname === '/jobs' || pathname === '/jobs-by-state' || pathname === '/nursing-specialties') return 'Jobs'
     if (pathname?.startsWith('/jobs-by-state')) return 'Jobs'
-    if (pathname?.startsWith('/nursing-specialties/')) return 'Specialty Details'
-    if (pathname?.startsWith('/nursing-specialties')) return 'Jobs'
+    if (pathname?.startsWith('/nursing-specialties/')) return 'Jobs'
     if (pathname?.startsWith('/resources')) return 'Resources'
     if (pathname?.startsWith('/events')) return 'Events'
     if (pathname?.startsWith('/more')) return 'More'
@@ -264,15 +266,18 @@ export default function Navigation() {
       <nav
         className={`fixed top-0 left-0 right-0 w-full z-[100] transition-all duration-300 ${
           isMobile
-            ? 'bg-white border-b border-gray-200 shadow-sm py-1.5'
+            ? 'bg-white border-b border-gray-200 shadow-sm'
             : isScrolled 
               ? 'bg-white/80 backdrop-blur-2xl shadow-2xl py-1.5' 
               : 'bg-white/90 backdrop-blur-xl shadow-lg py-2'
         }`}
-        style={!isMobile ? {
+        style={isMobile ? {
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: '0.375rem',
+        } : {
           backdropFilter: 'saturate(180%) blur(20px)',
           WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-        } : {}}
+        }}
       >
         <div className={`max-w-7xl mx-auto ${isMobile ? 'px-4' : 'px-4 sm:px-6 lg:px-8'}`}>
           {isMobile ? (

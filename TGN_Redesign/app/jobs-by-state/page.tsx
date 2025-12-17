@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useSearchParams } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import MobileBottomNav from '@/components/MobileBottomNav'
@@ -43,6 +44,7 @@ import {
   removeBookmarkedJob
 } from '@/utils/jobStorage'
 import { SAMPLE_JOBS, Job } from '../jobs/page'
+import { formatShiftHoursForMobile } from '@/utils/jobData'
 import { getFacilityImageWithFallback } from '@/utils/stateImages'
 
 // Format date with year
@@ -371,6 +373,7 @@ const SelectedStateHero = ({
 export default function JobsByStatePage() {
   const { isAuthenticated } = useAuth()
   const isMobile = useIsMobile()
+  const searchParams = useSearchParams()
   const [selectedState, setSelectedState] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [jobs, setJobs] = useState<Job[]>([])
@@ -390,6 +393,15 @@ export default function JobsByStatePage() {
       setPendingJobs(getPendingJobs())
     }
   }, [])
+
+  // Handle URL parameter for state selection (when navigating back from job details)
+  useEffect(() => {
+    const stateParam = searchParams?.get('state')
+    if (stateParam && US_STATES.includes(stateParam)) {
+      setSelectedState(stateParam)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }, [searchParams])
 
   // Measure mobile header height for accurate spacing
   useEffect(() => {
@@ -696,6 +708,7 @@ export default function JobsByStatePage() {
       {/* Spacer for Fixed Mobile Header - Accounts for Navigation (56px) + Header height + Safe area */}
       {isMobile && (
         <div 
+          className="bg-white"
           style={{
             height: `calc(56px + ${mobileHeaderHeight}px + env(safe-area-inset-top, 0px) + 8px)`,
             minHeight: `calc(56px + ${mobileHeaderHeight}px + env(safe-area-inset-top, 0px) + 8px)`,
@@ -705,12 +718,13 @@ export default function JobsByStatePage() {
 
       {/* Main Content */}
       <main 
-        className={`flex-1 ${isMobile ? 'px-0' : 'max-w-7xl mx-auto px-4'} ${isMobile ? 'pb-0' : 'py-8'} w-full`}
+        className={`flex-1 ${isMobile ? 'px-0 bg-white' : 'max-w-7xl mx-auto px-4'} ${isMobile ? 'pb-0' : 'py-8'} w-full`}
         style={isMobile ? {
           position: 'relative',
           zIndex: 1,
           paddingTop: '0px',
           paddingBottom: '0px',
+          backgroundColor: '#ffffff',
         } : {}}
       >
         {!selectedState ? (
@@ -796,209 +810,172 @@ export default function JobsByStatePage() {
             {isMobile ? (
               <>
                 <div data-state-details="true" style={{ display: 'none' }} />
-                {/* Job Listings - Native App Style */}
-                {jobs.length > 0 ? (
-                  <div className="px-4 pt-4 pb-4 space-y-3">
-                    {jobs.map((job, index) => (
-                      <a
-                        key={job.id}
-                        href={`/jobs/${job.id}`}
-                        className="block no-underline"
-                      >
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ 
-                            duration: 0.4, 
-                            delay: index * 0.05,
-                            ease: [0.25, 0.46, 0.45, 0.94]
-                          }}
-                          className="group relative bg-white/95 backdrop-blur-2xl rounded-2xl overflow-hidden flex flex-col cursor-pointer h-full shadow-xl border border-gray-200/50 transition-all duration-300"
-                          style={{
-                            backdropFilter: 'saturate(180%) blur(20px)',
-                            WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-                          }}
-                          whileTap={{ scale: 0.98 }}
+                {/* Job Listings - Compact Native Style */}
+                <div className="px-4 pt-4 pb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Available Jobs</h2>
+                  {jobs.length > 0 ? (
+                    <div className="space-y-3">
+                      {jobs.map((job, index) => (
+                        <Link
+                          key={job.id}
+                          href={`/jobs/${job.id}?from=state&state=${encodeURIComponent(selectedState || '')}`}
+                          className="block no-underline"
                         >
-                          {/* Facility Image Header */}
-                          <div className="relative h-44 overflow-hidden">
-                            <img
-                              src={getFacilityImageWithFallback(job.facilityImage, job.state)}
-                              alt={job.facilityName}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                            />
-                            
-                            {/* Gradient Overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 pointer-events-none" />
-                            
-                            {/* Featured Tag */}
-                            {job.featured && (
-                              <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 rounded-md border border-amber-200 z-10">
-                                <Star className="w-3 h-3 text-amber-600 fill-amber-600" />
-                                <span className="text-xs font-semibold text-amber-900">Featured</span>
-                              </div>
-                            )}
-
-                            {/* Action Buttons */}
-                            {isAuthenticated && !pendingJobs.includes(job.id) && (
-                              <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
-                                <motion.button
-                                  type="button"
-                                  whileTap={{ scale: 0.9 }}
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    toggleLikeJob(job.id)
-                                  }}
-                                  style={{ pointerEvents: 'auto', zIndex: 20 }}
-                                  className={`p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg ${
-                                    likedJobs.includes(job.id)
-                                      ? 'bg-primary-500 text-white'
-                                      : 'bg-white/30 text-white'
-                                  }`}
-                                >
-                                  <ThumbsUp className={`w-4 h-4 ${likedJobs.includes(job.id) ? 'fill-white' : 'text-white'}`} />
-                                </motion.button>
-
-                                <motion.button
-                                  type="button"
-                                  whileTap={{ scale: 0.9 }}
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    toggleDislikeJob(job.id)
-                                  }}
-                                  style={{ pointerEvents: 'auto', zIndex: 20 }}
-                                  className={`p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg ${
-                                    dislikedJobs.includes(job.id)
-                                      ? 'bg-primary-500 text-white'
-                                      : 'bg-white/30 text-white'
-                                  }`}
-                                >
-                                  <ThumbsDown className={`w-4 h-4 ${dislikedJobs.includes(job.id) ? 'fill-white' : 'text-white'}`} />
-                                </motion.button>
-
-                                <motion.button
-                                  type="button"
-                                  whileTap={{ scale: 0.9 }}
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    toggleSaveJob(job.id)
-                                  }}
-                                  style={{ pointerEvents: 'auto', zIndex: 20 }}
-                                  className={`p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg ${
-                                    savedJobs.includes(job.id)
-                                      ? 'bg-primary-500 text-white'
-                                      : 'bg-white/30 text-white'
-                                  }`}
-                                >
-                                  <Bookmark className={`w-4 h-4 ${savedJobs.includes(job.id) ? 'fill-white' : 'text-white'}`} />
-                                </motion.button>
-                              </div>
-                            )}
-
-                            {/* PENDING Badge */}
-                            {pendingJobs.includes(job.id) && (
-                              <div className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-50 rounded-md border border-orange-200 z-10">
-                                <AlertCircle className="w-3 h-3 text-orange-600" />
-                                <span className="text-xs font-semibold text-orange-900">Pending</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Card Body */}
-                          <div className="p-4 sm:p-5 bg-white/80 backdrop-blur-sm flex-1 flex flex-col">
-                            {/* Title and Days Ago */}
-                            <div className="flex items-center justify-between mb-1.5 gap-2">
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ 
+                              duration: 0.3, 
+                              delay: index * 0.03,
+                            }}
+                            className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md active:bg-gray-50 transition-all"
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            {/* Card Body */}
+                            <div className="p-4 flex gap-4">
+                              {/* Left Content */}
                               <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 break-words leading-tight">
-                                  {job.licenseSpecialty || job.title}
-                                </h3>
-                              </div>
-                              {job.daysAgo !== undefined && (
-                                <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0 self-start pt-0.5">
-                                  {job.daysAgo} {job.daysAgo === 1 ? 'day' : 'days'} ago
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Location */}
-                            <div className="mb-2 flex items-center gap-1.5">
-                              <MapPin className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
-                              <p className="text-xs text-gray-700">
-                                {job.location}, {job.state}
-                              </p>
-                            </div>
-
-                            {/* Details - Three Rows */}
-                            <div className="space-y-2 mb-3">
-                              <div className="flex items-center gap-2">
-                                <Calendar className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
-                                <div>
-                                  <p className="text-xs text-gray-500">Start Date</p>
-                                  <p className="text-xs font-semibold text-gray-900">{formatDateWithYear(job.startDate || job.postedDate)}</p>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <Sun className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
-                                <div>
-                                  <p className="text-xs text-gray-500">Shift</p>
-                                  <p className="text-xs font-semibold text-gray-900">{job.shift} • {job.shiftHours}</p>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <Building2 className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
-                                <div>
-                                  <p className="text-xs text-gray-500">Agency</p>
-                                  <p className="text-xs font-semibold text-gray-900">{job.staffingCompany}</p>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Pay Display */}
-                            <div className="mt-auto pt-3 border-t border-gray-200">
-                              <div className="flex items-center justify-end gap-2">
-                                <div className="text-right">
-                                  <p className="text-xs text-gray-500">Weekly Pay</p>
-                                  <div className="flex items-baseline justify-end gap-1">
-                                    <span className="text-xl font-bold text-gray-900">{job.payPerWeek}</span>
-                                    <span className="text-sm font-medium text-gray-600">/week</span>
+                                {/* Header Row */}
+                                <div className="mb-3">
+                                  <h3 className="text-[15px] font-semibold text-gray-900 line-clamp-2 mb-1.5">
+                                    {job.licenseSpecialty || job.title}
+                                  </h3>
+                                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                                    <span className="truncate">{job.location}, {job.state}</span>
                                   </div>
                                 </div>
+
+                                {/* Details Grid */}
+                                <div className="grid grid-cols-2 gap-2 mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                      <p className="text-xs text-gray-500 truncate">Start Date</p>
+                                      <p className="text-xs font-semibold text-gray-900 truncate">{formatDateWithYear(job.startDate || job.postedDate)}</p>
+                                    </div>
+                                  </div>
+                        <div className="flex items-center gap-2">
+                          <Sun className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-xs text-gray-500 truncate">Shift</p>
+                            <p className="text-xs font-semibold text-gray-900 truncate">
+                              {job.shift}{job.shiftHours ? ` • ${formatShiftHoursForMobile(job.shiftHours)}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                                  <div className="flex items-center gap-2">
+                                    <Building2 className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                      <p className="text-xs text-gray-500 truncate">Agency</p>
+                                      <p className="text-xs font-semibold text-gray-900 truncate">{job.staffingCompany}</p>
+                                    </div>
+                                  </div>
+                                  {job.daysAgo !== undefined && (
+                                    <div className="flex items-center gap-2">
+                                      <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                                      <div className="min-w-0">
+                                        <p className="text-xs text-gray-500 truncate">Posted</p>
+                                        <p className="text-xs font-semibold text-gray-900 truncate">{job.daysAgo} {job.daysAgo === 1 ? 'day' : 'days'} ago</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Right Side - Facility Image & Actions */}
+                              <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                                {/* Facility Image */}
+                                <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-gray-100 shadow-sm">
+                                  <img
+                                    src={getFacilityImageWithFallback(job.facilityImage, job.state)}
+                                    alt={job.facilityName}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                  />
+                                  {/* Featured Badge */}
+                                  {job.featured && (
+                                    <div className="absolute top-0 right-0 inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 rounded-bl-lg rounded-tr-lg shadow-sm">
+                                      <Star className="w-2.5 h-2.5 text-white fill-white" />
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Action Buttons */}
+                                {isAuthenticated && !pendingJobs.includes(job.id) && (
+                                  <div className="flex items-center gap-1">
+                                    <motion.button
+                                      type="button"
+                                      whileTap={{ scale: 0.9 }}
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        toggleLikeJob(job.id)
+                                      }}
+                                      className={`p-1.5 rounded-lg transition-colors ${
+                                        likedJobs.includes(job.id)
+                                          ? 'bg-primary-100 text-primary-600'
+                                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                                      }`}
+                                    >
+                                      <ThumbsUp className={`w-3.5 h-3.5 ${likedJobs.includes(job.id) ? 'fill-current' : ''}`} />
+                                    </motion.button>
+                                    <motion.button
+                                      type="button"
+                                      whileTap={{ scale: 0.9 }}
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        toggleSaveJob(job.id)
+                                      }}
+                                      className={`p-1.5 rounded-lg transition-colors ${
+                                        savedJobs.includes(job.id)
+                                          ? 'bg-primary-100 text-primary-600'
+                                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                                      }`}
+                                    >
+                                      <Bookmark className={`w-3.5 h-3.5 ${savedJobs.includes(job.id) ? 'fill-current' : ''}`} />
+                                    </motion.button>
+                                  </div>
+                                )}
+
+                                {/* PENDING Badge */}
+                                {pendingJobs.includes(job.id) && (
+                                  <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-50 rounded-md border border-orange-200">
+                                    <AlertCircle className="w-3 h-3 text-orange-600" />
+                                    <span className="text-xs font-semibold text-orange-900">Pending</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          </div>
-                        </motion.div>
-                      </a>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={`${isMobile ? 'flex flex-col items-center justify-center min-h-[60vh]' : 'px-4 pt-6 pb-4 text-center py-16'}`}>
-                    <div className={`${isMobile ? 'flex items-center justify-center' : 'inline-flex items-center justify-center'} w-20 h-20 rounded-full bg-gray-100 mb-4`}>
-                      <Briefcase className="w-10 h-10 text-gray-400" />
+
+                            {/* Pay Row - Full Width */}
+                            <div className="px-4 pb-4 pt-3 border-t border-gray-100 flex justify-end">
+                              <div className="text-right">
+                                <p className="text-xs text-gray-500 mb-1">Weekly Pay</p>
+                                <div className="flex items-baseline justify-end gap-1">
+                                  <span className="text-xl font-bold text-gray-900">{job.payPerWeek}</span>
+                                  <span className="text-sm font-medium text-gray-600">/week</span>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        </Link>
+                      ))}
                     </div>
-                    <h3 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-900 mb-2 text-center`}>
-                      No jobs found in {selectedState}
-                    </h3>
-                    <p className={`${isMobile ? 'text-sm' : ''} text-gray-600 mb-6 text-center`}>
-                      {searchQuery ? 'Try adjusting your search terms' : 'Check back soon for new opportunities'}
-                    </p>
-                    {searchQuery && (
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setSearchQuery('')}
-                        className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-all"
-                      >
-                        Clear Search
-                      </motion.button>
-                    )}
-                  </div>
-                )}
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 min-h-[40vh]">
+                      <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-3">
+                        <Briefcase className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <p className="text-sm text-gray-600 text-center px-4">
+                        {searchQuery 
+                          ? `No jobs found matching "${searchQuery}" in ${selectedState}`
+                          : `We don't have any jobs available in ${selectedState} at the moment.`}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
               <>
@@ -1205,7 +1182,7 @@ export default function JobsByStatePage() {
                                 <Clock className="w-4 h-4 text-gray-400" />
                                 <span>{job.shift}</span>
                               </div>
-                              <span className="text-xs text-gray-500">{job.shiftHours}</span>
+                              <span className="text-xs text-gray-500">{formatShiftHoursForMobile(job.shiftHours)}</span>
                             </div>
 
                             <div className="flex items-center justify-between">

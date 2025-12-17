@@ -26,29 +26,110 @@ export default function Hero() {
   }
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-      {/* Background Image with Overlay */}
-      <div className="absolute inset-0">
-        {/* Background Image with Parallax Effect */}
-        <motion.div 
-          initial={isMobile ? { scale: 1 } : { scale: 1.1 }}
-          animate={{ scale: 1 }}
-          transition={isMobile ? { duration: 0 } : { duration: 1.5, ease: "easeOut" }}
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url('/travel-nurse-mobile.png')`,
-          }}
-        >
-          {/* Dark Gradient Overlay for White Text Readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/70 via-40% to-gray-900/40"></div>
-          
-          {/* Subtle Brand Tint */}
-          <div className="absolute inset-0 bg-primary-900/20"></div>
-        </motion.div>
-        
-        {/* Animated Accents - Hidden on Mobile */}
-        {!isMobile && (
-          <>
+    <section className={`relative ${isMobile ? '' : 'min-h-screen'} flex items-center justify-center overflow-hidden ${isMobile ? 'pt-0' : 'pt-20'}`}>
+      {isMobile ? (
+        <>
+          {/* Mobile: Native App Style Based on Best Practices */}
+          <div className="relative w-full bg-white">
+            <div 
+              className="px-4 pt-6 pb-5"
+              style={{
+                paddingTop: `calc(56px + env(safe-area-inset-top, 0px) + 24px)`,
+              }}
+            >
+              {/* Header Section - Native App Style */}
+              <div className="mb-6">
+                <h1 className="text-[28px] font-bold text-gray-900 mb-1.5 leading-[1.15] tracking-tight">
+                  Manage your{' '}
+                  <span className="text-primary-600">entire travel</span> career, here.
+                </h1>
+                <p className="text-[15px] text-gray-600 leading-[1.5]">
+                  Join the <span className="font-bold text-gray-900">#1 travel nursing</span> community. Discover opportunities, connect with peers, and access unlimited resources.
+                </p>
+              </div>
+
+              {/* Search Section - Native App Style */}
+              <form
+                onSubmit={handleSearch}
+                className="space-y-3 mb-5"
+              >
+                {/* Job Search Input */}
+                <div className="relative w-full flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus-within:bg-white focus-within:border-primary-500 focus-within:shadow-sm transition-all">
+                  <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Job title, keywords..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-[16px] font-normal"
+                  />
+                </div>
+                
+                {/* Location Input */}
+                <div className="relative w-full flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus-within:bg-white focus-within:border-primary-500 focus-within:shadow-sm transition-all">
+                  <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="City, state, or zip..."
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="flex-1 bg-transparent border-none outline-none text-gray-900 placeholder-gray-500 text-[16px] font-normal"
+                  />
+                </div>
+
+                {/* Search Button */}
+                <button
+                  type="submit"
+                  className="w-full bg-primary-600 text-white py-3.5 px-4 font-semibold text-[16px] rounded-xl active:bg-primary-700 transition-colors shadow-sm"
+                  style={{ touchAction: 'manipulation' }}
+                >
+                  Search Jobs
+                </button>
+              </form>
+
+              {/* Quick Actions - Hidden on Mobile */}
+              {/* <div className="flex gap-3">
+                <button
+                  onClick={() => router.push('/jobs-by-state')}
+                  className="flex-1 px-4 py-3 bg-gray-50 rounded-xl text-sm font-medium text-gray-900 border border-gray-200 active:bg-gray-100 transition-colors"
+                  style={{ touchAction: 'manipulation' }}
+                >
+                  Browse by State
+                </button>
+                <button
+                  onClick={() => router.push('/nursing-specialties')}
+                  className="flex-1 px-4 py-3 bg-gray-50 rounded-xl text-sm font-medium text-gray-900 border border-gray-200 active:bg-gray-100 transition-colors"
+                  style={{ touchAction: 'manipulation' }}
+                >
+                  View Specialties
+                </button>
+              </div> */}
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Desktop: Original Design */}
+          {/* Background Image with Overlay */}
+          <div className="absolute inset-0">
+            {/* Background Image with Parallax Effect */}
+            <motion.div 
+              initial={{ scale: 1.1 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 1.5, ease: "easeOut" }}
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+              style={{
+                backgroundImage: `url('/travel-nurse-mobile.png')`,
+              }}
+            >
+              {/* Dark Gradient Overlay for White Text Readability */}
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/70 via-40% to-gray-900/40"></div>
+              
+              {/* Subtle Brand Tint */}
+              <div className="absolute inset-0 bg-primary-900/20"></div>
+            </motion.div>
+            
+            {/* Animated Accents */}
             <motion.div
               animate={{
                 scale: [1, 1.2, 1],
@@ -73,16 +154,12 @@ export default function Hero() {
               }}
               className="absolute bottom-20 right-10 w-96 h-96 bg-primary-200/20 rounded-full blur-3xl"
             />
-          </>
-        )}
-        
-        {/* Decorative Shapes */}
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-gradient-to-br from-primary-400/10 to-accent-400/10 rounded-full blur-2xl"></div>
-        <div className="absolute bottom-1/3 left-1/3 w-48 h-48 bg-gradient-to-tr from-accent-300/10 to-primary-300/10 rounded-full blur-2xl"></div>
-        
-        {/* Floating Healthcare Icons - Hidden on Mobile */}
-        {!isMobile && (
-          <>
+            
+            {/* Decorative Shapes */}
+            <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-gradient-to-br from-primary-400/10 to-accent-400/10 rounded-full blur-2xl"></div>
+            <div className="absolute bottom-1/3 left-1/3 w-48 h-48 bg-gradient-to-tr from-accent-300/10 to-primary-300/10 rounded-full blur-2xl"></div>
+            
+            {/* Floating Healthcare Icons */}
             <motion.div
               animate={{ y: [0, -20, 0], opacity: [0.3, 0.5, 0.3] }}
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
@@ -113,213 +190,211 @@ export default function Hero() {
                 <path d="m9 12 2 2 4-4"></path>
               </svg>
             </motion.div>
-          </>
-        )}
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 min-h-[calc(100vh-6rem)]">
-        <div className="grid lg:grid-cols-2 gap-16 xl:gap-24 items-start h-full pt-8">
-          {/* Left Content */}
-          <div className="space-y-8">
-            <motion.div
-              initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={isMobile ? { duration: 0 } : { delay: 0.2 }}
-              className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-white/30"
-            >
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-              <span className="text-sm font-medium text-white">
-                600,000+ Active Travel Nurses
-              </span>
-            </motion.div>
-
-            <motion.h1
-              initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={isMobile ? { duration: 0 } : { delay: 0.3 }}
-              className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white"
-            >
-              Manage your{' '}
-              <span className="text-primary-400">entire travel</span> career, here.
-            </motion.h1>
-
-            <motion.p
-              initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={isMobile ? { duration: 0 } : { delay: 0.4 }}
-              className="text-xl text-gray-200 leading-relaxed"
-            >
-              Join the #1 travel nursing community. Discover opportunities, connect with peers, and access unlimited resources.
-            </motion.p>
-
-            {/* Search Bar */}
-            <motion.form
-              initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={isMobile ? { duration: 0 } : { delay: 0.5 }}
-              onSubmit={handleSearch}
-              className="bg-white/95 backdrop-blur-lg rounded-2xl p-2 flex flex-col sm:flex-row gap-2 shadow-xl border border-white/20"
-            >
-              <div className="flex-1 flex items-center space-x-2 px-4">
-                <Search className="text-gray-500" size={20} />
-                <input
-                  type="text"
-                  placeholder="Job title, keywords..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 bg-transparent border-none outline-none py-3 text-gray-900 placeholder-gray-500"
-                />
-              </div>
-              
-              <div className="flex-1 flex items-center space-x-2 px-4 border-t sm:border-t-0 sm:border-l border-gray-300">
-                <MapPin className="text-gray-500" size={20} />
-                <input
-                  type="text"
-                  placeholder="City, state, or zip..."
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="flex-1 bg-transparent border-none outline-none py-3 text-gray-900 placeholder-gray-500"
-                />
-              </div>
-
-              <motion.button
-                whileHover={isMobile ? undefined : { scale: 1.05 }}
-                whileTap={isMobile ? { scale: 0.98 } : { scale: 0.95 }}
-                type="submit"
-                className="btn-primary flex items-center justify-center space-x-2"
-              >
-                <span>Search Jobs</span>
-                <ArrowRight size={20} />
-              </motion.button>
-            </motion.form>
-
-            {/* Stats */}
-            <motion.div
-              initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={isMobile ? { duration: 0 } : { delay: 0.6 }}
-              className="grid grid-cols-3 gap-6 pt-6"
-            >
-              {[
-                { value: '10K+', label: 'Active Jobs' },
-                { value: '500+', label: 'Employers' },
-                { value: '4.9★', label: 'Rating' },
-              ].map((stat, index) => (
-                <motion.div
-                  key={index}
-                  whileHover={isMobile ? undefined : { scale: 1.05 }}
-                  className="text-center"
-                >
-                  <div className="text-3xl font-bold text-primary-400">{stat.value}</div>
-                  <div className="text-sm text-gray-300 mt-1">{stat.label}</div>
-                </motion.div>
-              ))}
-            </motion.div>
           </div>
 
-          {/* Right Content - Floating Cards */}
-          <div className="relative hidden xl:block">
-            <div className="relative w-full h-[600px]">
-              {/* Floating Card 1 */}
-              <motion.div
-                animate={isMobile ? { y: 0 } : { y: [0, -20, 0] }}
-                transition={isMobile ? { duration: 0 } : { duration: 4, repeat: Infinity }}
-                className="absolute top-0 left-0 glass-effect rounded-2xl p-6 w-64 shadow-2xl"
-              >
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
-                    <Briefcase className="text-white" size={24} />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-800">ER RN</div>
-                    <div className="text-sm text-gray-500">Las Vegas, NV</div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Weekly Pay</span>
-                    <span className="font-semibold text-primary-600">$2,850</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Duration</span>
-                    <span className="font-semibold">13 weeks</span>
-                  </div>
-                </div>
-              </motion.div>
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 min-h-[calc(100vh-6rem)]">
+            <div className="grid lg:grid-cols-2 gap-16 xl:gap-24 items-start h-full pt-8">
+              {/* Left Content */}
+              <div className="space-y-8">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-white/30"
+                >
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                  <span className="text-sm font-medium text-white">
+                    600,000+ Active Travel Nurses
+                  </span>
+                </motion.div>
 
-              {/* Floating Card 2 */}
-              <motion.div
-                animate={isMobile ? { y: 0 } : { y: [0, 20, 0] }}
-                transition={isMobile ? { duration: 0 } : { duration: 5, repeat: Infinity, delay: 0.5 }}
-                className="absolute top-40 right-0 glass-effect rounded-2xl p-6 w-64 shadow-2xl"
-              >
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-accent-500 to-accent-600 rounded-lg flex items-center justify-center">
-                    <Briefcase className="text-white" size={24} />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-800">ICU RN</div>
-                    <div className="text-sm text-gray-500">Miami, FL</div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Weekly Pay</span>
-                    <span className="font-semibold text-primary-600">$3,100</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Duration</span>
-                    <span className="font-semibold">8 weeks</span>
-                  </div>
-                </div>
-              </motion.div>
+                <motion.h1
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white"
+                >
+                  Manage your{' '}
+                  <span className="text-primary-400">entire travel</span> career, here.
+                </motion.h1>
 
-              {/* Floating Card 3 */}
-              <motion.div
-                animate={isMobile ? { y: 0 } : { y: [0, -15, 0] }}
-                transition={isMobile ? { duration: 0 } : { duration: 4.5, repeat: Infinity, delay: 1 }}
-                className="absolute bottom-0 left-1/2 -translate-x-1/2 glass-effect rounded-2xl p-6 w-64 shadow-2xl"
-              >
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                    <Briefcase className="text-white" size={24} />
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-xl text-gray-200 leading-relaxed"
+                >
+                  Join the #1 travel nursing community. Discover opportunities, connect with peers, and access unlimited resources.
+                </motion.p>
+
+                {/* Search Bar */}
+                <motion.form
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  onSubmit={handleSearch}
+                  className="bg-white/95 backdrop-blur-lg rounded-2xl p-2 flex flex-col sm:flex-row gap-2 shadow-xl border border-white/20"
+                >
+                  <div className="flex-1 flex items-center space-x-2 px-4">
+                    <Search className="text-gray-500" size={20} />
+                    <input
+                      type="text"
+                      placeholder="Job title, keywords..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="flex-1 bg-transparent border-none outline-none py-3 text-gray-900 placeholder-gray-500"
+                    />
                   </div>
-                  <div>
-                    <div className="font-semibold text-gray-800">Med-Surg RN</div>
-                    <div className="text-sm text-gray-500">Chicago, IL</div>
+                  
+                  <div className="flex-1 flex items-center space-x-2 px-4 border-t sm:border-t-0 sm:border-l border-gray-300">
+                    <MapPin className="text-gray-500" size={20} />
+                    <input
+                      type="text"
+                      placeholder="City, state, or zip..."
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      className="flex-1 bg-transparent border-none outline-none py-3 text-gray-900 placeholder-gray-500"
+                    />
                   </div>
+
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    type="submit"
+                    className="btn-primary flex items-center justify-center space-x-2"
+                  >
+                    <span>Search Jobs</span>
+                    <ArrowRight size={20} />
+                  </motion.button>
+                </motion.form>
+
+                {/* Stats */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="grid grid-cols-3 gap-6 pt-6"
+                >
+                  {[
+                    { value: '10K+', label: 'Active Jobs' },
+                    { value: '500+', label: 'Employers' },
+                    { value: '4.9★', label: 'Rating' },
+                  ].map((stat, index) => (
+                    <motion.div
+                      key={index}
+                      whileHover={{ scale: 1.05 }}
+                      className="text-center"
+                    >
+                      <div className="text-3xl font-bold text-primary-400">{stat.value}</div>
+                      <div className="text-sm text-gray-300 mt-1">{stat.label}</div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </div>
+
+              {/* Right Content - Floating Cards */}
+              <div className="relative hidden xl:block">
+                <div className="relative w-full h-[600px]">
+                  {/* Floating Card 1 */}
+                  <motion.div
+                    animate={{ y: [0, -20, 0] }}
+                    transition={{ duration: 4, repeat: Infinity }}
+                    className="absolute top-0 left-0 glass-effect rounded-2xl p-6 w-64 shadow-2xl"
+                  >
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
+                        <Briefcase className="text-white" size={24} />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-800">ER RN</div>
+                        <div className="text-sm text-gray-500">Las Vegas, NV</div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Weekly Pay</span>
+                        <span className="font-semibold text-primary-600">$2,850</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Duration</span>
+                        <span className="font-semibold">13 weeks</span>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Floating Card 2 */}
+                  <motion.div
+                    animate={{ y: [0, 20, 0] }}
+                    transition={{ duration: 5, repeat: Infinity, delay: 0.5 }}
+                    className="absolute top-40 right-0 glass-effect rounded-2xl p-6 w-64 shadow-2xl"
+                  >
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-accent-500 to-accent-600 rounded-lg flex items-center justify-center">
+                        <Briefcase className="text-white" size={24} />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-800">ICU RN</div>
+                        <div className="text-sm text-gray-500">Miami, FL</div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Weekly Pay</span>
+                        <span className="font-semibold text-primary-600">$3,100</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Duration</span>
+                        <span className="font-semibold">8 weeks</span>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Floating Card 3 */}
+                  <motion.div
+                    animate={{ y: [0, -15, 0] }}
+                    transition={{ duration: 4.5, repeat: Infinity, delay: 1 }}
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 glass-effect rounded-2xl p-6 w-64 shadow-2xl"
+                  >
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                        <Briefcase className="text-white" size={24} />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-800">Med-Surg RN</div>
+                        <div className="text-sm text-gray-500">Chicago, IL</div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Weekly Pay</span>
+                        <span className="font-semibold text-primary-600">$2,650</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Duration</span>
+                        <span className="font-semibold">13 weeks</span>
+                      </div>
+                    </div>
+                  </motion.div>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Weekly Pay</span>
-                    <span className="font-semibold text-primary-600">$2,650</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Duration</span>
-                    <span className="font-semibold">13 weeks</span>
-                  </div>
-                </div>
-              </motion.div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Scroll Indicator - Hidden on Mobile */}
-      {!isMobile && (
-        <motion.div
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2"
-        >
-          <div className="w-6 h-10 border-2 border-white/60 rounded-full flex justify-center pt-2 backdrop-blur-sm">
-            <motion.div
-              animate={{ y: [0, 12, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="w-1 h-3 bg-white rounded-full"
-            />
-          </div>
-        </motion.div>
+          {/* Scroll Indicator */}
+          <motion.div
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="absolute bottom-10 left-1/2 -translate-x-1/2"
+          >
+            <div className="w-6 h-10 border-2 border-white/60 rounded-full flex justify-center pt-2 backdrop-blur-sm">
+              <motion.div
+                animate={{ y: [0, 12, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="w-1 h-3 bg-white rounded-full"
+              />
+            </div>
+          </motion.div>
+        </>
       )}
     </section>
   )

@@ -12,6 +12,7 @@ import { getFacilityImageWithFallback } from '@/utils/stateImages'
 import { useAuth } from '@/contexts/AuthContext'
 import { getLikedJobs, getDislikedJobs, getBookmarkedJobs, getPendingJobs, addLikedJob, removeLikedJob, addDislikedJob, removeDislikedJob, addBookmarkedJob, removeBookmarkedJob } from '@/utils/jobStorage'
 import { Job, SAMPLE_JOBS } from '@/app/jobs/page'
+import { formatShiftHoursForMobile } from '@/utils/jobData'
 
 // Seeded random function for consistent positioning
 function seededRandom(seed: number) {
@@ -3555,7 +3556,7 @@ export default function AgencyProfilePage() {
                               <Sun className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
                               <div>
                                 <p className="text-xs text-gray-500">Shift</p>
-                                <p className="text-xs font-semibold text-gray-900">{job.shift} • {job.shiftHours}</p>
+                                <p className="text-xs font-semibold text-gray-900">{job.shift} • {formatShiftHoursForMobile(job.shiftHours)}</p>
                               </div>
                             </div>
 

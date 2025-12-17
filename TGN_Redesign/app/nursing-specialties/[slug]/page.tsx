@@ -1,10 +1,11 @@
 'use client'
 
-import { use, useState, useEffect } from 'react'
+import { use, useState, useEffect, useRef } from 'react'
 import { Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { 
   ChevronRight,
+  ChevronLeft,
   Briefcase,
   GraduationCap,
   DollarSign,
@@ -19,15 +20,50 @@ import {
   Users,
   Sparkles,
   Award,
-  TrendingUp
+  TrendingUp,
+  Search,
+  X,
+  ThumbsUp,
+  ThumbsDown,
+  Bookmark,
+  AlertCircle,
+  Star,
+  Calendar,
+  Sun
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
+import MobileBottomNav from '@/components/MobileBottomNav'
+import { useIsMobile } from '@/hooks/useIsMobile'
+import { useAuth } from '@/contexts/AuthContext'
+import {
+  getLikedJobs,
+  getDislikedJobs,
+  getBookmarkedJobs,
+  getPendingJobs,
+  addLikedJob,
+  removeLikedJob,
+  addDislikedJob,
+  removeDislikedJob,
+  addBookmarkedJob,
+  removeBookmarkedJob
+} from '@/utils/jobStorage'
 import { SPECIALTY_IMAGE_URLS, specialties } from '../page'
 import { SAMPLE_JOBS, Job } from '@/app/jobs/page'
 import { getFacilityImageWithFallback } from '@/utils/stateImages'
+
+// Format date with year
+const formatDateWithYear = (date: string | undefined): string => {
+  if (!date) return ''
+  if (/\d{4}/.test(date)) {
+    return date
+  }
+  const currentYear = new Date().getFullYear()
+  return `${date}, ${currentYear}`
+}
 
 interface SpecialtyDetail {
   slug: string
@@ -411,44 +447,201 @@ function SpecialtyDetailContent({ params }: { params: Promise<{ slug: string }> 
   const unwrappedParams = use(params)
   const slug = unwrappedParams?.slug || ''
   const specialty = getSpecialtyDetail(slug)
+  const router = useRouter()
+  const isMobile = useIsMobile()
+  const { isAuthenticated } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
-  
-  // Filter jobs by specialty
+  const [savedJobs, setSavedJobs] = useState<string[]>([])
+  const [likedJobs, setLikedJobs] = useState<string[]>([])
+  const [dislikedJobs, setDislikedJobs] = useState<string[]>([])
+  const [pendingJobs, setPendingJobs] = useState<string[]>([])
+  const mobileHeaderRef = useRef<HTMLDivElement>(null)
+  const [mobileHeaderHeight, setMobileHeaderHeight] = useState(80)
+
+  // Load job status from localStorage on mount
   useEffect(() => {
-    if (!slug) {
+    if (typeof window !== 'undefined') {
+      setSavedJobs(getBookmarkedJobs())
+      setLikedJobs(getLikedJobs())
+      setDislikedJobs(getDislikedJobs())
+      setPendingJobs(getPendingJobs())
+    }
+  }, [])
+
+  // Measure mobile header height for accurate spacing
+  useEffect(() => {
+    if (isMobile && mobileHeaderRef.current) {
+      const updateHeaderHeight = () => {
+        if (mobileHeaderRef.current) {
+          const height = mobileHeaderRef.current.offsetHeight || 200
+          setMobileHeaderHeight(height)
+        }
+      }
+      
+      updateHeaderHeight()
+      window.addEventListener('resize', updateHeaderHeight)
+      
+      return () => {
+        window.removeEventListener('resize', updateHeaderHeight)
+      }
+    }
+  }, [isMobile])
+
+  // Job interaction handlers
+  const toggleLikeJob = (jobId: string) => {
+    if (likedJobs.includes(jobId)) {
+      removeLikedJob(jobId)
+      setLikedJobs(prev => prev.filter(id => id !== jobId))
+    } else {
+      addLikedJob(jobId)
+      setLikedJobs(prev => [...prev, jobId])
+      if (dislikedJobs.includes(jobId)) {
+        removeDislikedJob(jobId)
+        setDislikedJobs(prev => prev.filter(id => id !== jobId))
+      }
+    }
+  }
+
+  const toggleDislikeJob = (jobId: string) => {
+    if (dislikedJobs.includes(jobId)) {
+      removeDislikedJob(jobId)
+      setDislikedJobs(prev => prev.filter(id => id !== jobId))
+    } else {
+      addDislikedJob(jobId)
+      setDislikedJobs(prev => [...prev, jobId])
+      if (likedJobs.includes(jobId)) {
+        removeLikedJob(jobId)
+        setLikedJobs(prev => prev.filter(id => id !== jobId))
+      }
+    }
+  }
+
+  const toggleSaveJob = (jobId: string) => {
+    if (savedJobs.includes(jobId)) {
+      removeBookmarkedJob(jobId)
+      setSavedJobs(prev => prev.filter(id => id !== jobId))
+    } else {
+      addBookmarkedJob(jobId)
+      setSavedJobs(prev => [...prev, jobId])
+    }
+  }
+  
+  // Filter jobs by specialty dynamically
+  useEffect(() => {
+    if (!slug || !specialty) {
       setLoading(false)
       return
     }
 
-    const specialtyName = specialty?.name.toLowerCase() || ''
-    const specialtyKeywords = [
-      specialtyName,
-      slug.replace(/-/g, ' '),
-      slug.replace(/-/g, ''),
-      ...(specialtyName ? specialtyName.split(' ') : [])
-    ].filter(Boolean)
+    setLoading(true)
     
-    if (specialtyKeywords.length === 0) {
-      setJobs([])
-      setLoading(false)
-      return
+    // Mapping between specialty names/slugs and job licenseSpecialty values
+    const specialtyToJobMapping: Record<string, string[]> = {
+      'emergency-room-travel-nurse': ['Emergency Room', 'Emergency Department', 'ER', 'ED'],
+      'icu-nurse': ['ICU', 'Intensive Care', 'Critical Care'],
+      'critical-care-nurse': ['ICU', 'Intensive Care', 'Critical Care', 'CCU'],
+      'cardiac-icu-nurse': ['Cardiac ICU', 'Cardiac Intensive Care', 'CVICU', 'CICU'],
+      'pediatric-nurse': ['Pediatric', 'Peds', 'Pediatrics'],
+      'neonatal-travel-nurse': ['NICU', 'Neonatal', 'Neonatal ICU'],
+      'nicu-nurse': ['NICU', 'Neonatal', 'Neonatal ICU'],
+      'labor-and-delivery-nurse': ['Labor and Delivery', 'L&D', 'Labor & Delivery', 'OB'],
+      'or-nurse': ['OR', 'Operating Room', 'Surgery', 'Surgical'],
+      'surgical-nurse': ['OR', 'Operating Room', 'Surgery', 'Surgical'],
+      'medical-surgical': ['Medical-Surgical', 'Med-Surg', 'Med Surg'],
+      'oncology-nurse': ['Oncology', 'Cancer', 'Oncology Unit'],
+      'telemetry-nurse': ['Telemetry', 'Tele', 'Cardiac Telemetry'],
+      'trauma-nurse': ['Trauma', 'Trauma Center', 'Trauma Unit'],
+      'psychiatric-nurse': ['Psychiatric', 'Psych', 'Mental Health', 'Behavioral Health'],
+      'rehab-travel-nurse': ['Rehabilitation', 'Rehab', 'Physical Therapy'],
+      'home-health-nurse': ['Home Health', 'Home Care'],
+      'hospice-nurse': ['Hospice', 'Palliative Care'],
+      'travel-dialysis-nurse': ['Dialysis', 'Renal', 'Kidney'],
+      'orthopedic-nurse': ['Orthopedic', 'Ortho', 'Orthopedics'],
+      'neurology-nurse': ['Neurology', 'Neuro', 'Neurological'],
     }
     
-    const filtered = SAMPLE_JOBS.filter(job => {
-      const jobTitle = job.title.toLowerCase()
-      const jobSpecialty = job.licenseSpecialty?.toLowerCase() || ''
-      const jobLocation = job.location?.toLowerCase() || ''
+    // Get specialty name variations
+    const specialtyName = specialty.name.toLowerCase()
+    let matchingKeywords: string[] = []
+    
+    // Check if we have a direct mapping
+    if (specialtyToJobMapping[slug]) {
+      matchingKeywords = specialtyToJobMapping[slug].map(k => k.toLowerCase())
+    } else {
+      // Generate keywords from specialty name
+      matchingKeywords.push(specialtyName)
       
-      // Check if job matches any specialty keyword
-      return specialtyKeywords.some(keyword => 
-        keyword.length > 2 && (
-          jobTitle.includes(keyword) || 
-          jobSpecialty.includes(keyword) ||
-          jobLocation.includes(keyword)
-        )
+      // Remove common suffixes
+      if (specialtyName.includes('travel nurse')) {
+        matchingKeywords.push(specialtyName.replace(' travel nurse', '').trim())
+      }
+      if (specialtyName.includes(' nurse')) {
+        matchingKeywords.push(specialtyName.replace(' nurse', '').trim())
+      }
+      
+      // Add individual significant words
+      specialtyName.split(' ').forEach(word => {
+        if (word.length > 3 && !['travel', 'nurse', 'and', 'the', 'care'].includes(word)) {
+          matchingKeywords.push(word)
+        }
+      })
+      
+      // Add slug variations
+      matchingKeywords.push(slug.replace(/-/g, ' '))
+    }
+    
+    // Remove duplicates and filter
+    const uniqueKeywords = [...new Set(matchingKeywords)].filter(k => k.length > 2)
+    
+    // Filter jobs based on licenseSpecialty field (format: "RN - Emergency Room")
+    let filtered = SAMPLE_JOBS.filter(job => {
+      if (!job.licenseSpecialty) return false
+      
+      // Extract specialty from licenseSpecialty (format: "RN - Emergency Room")
+      const parts = job.licenseSpecialty.split(' - ')
+      const jobSpecialty = parts.length > 1 ? parts.slice(1).join(' - ').toLowerCase() : job.licenseSpecialty.toLowerCase()
+      const jobTitle = job.title.toLowerCase()
+      
+      // Check for matches in specialty field
+      const matchesSpecialty = uniqueKeywords.some(keyword => {
+        const keywordLower = keyword.toLowerCase()
+        return jobSpecialty.includes(keywordLower) || keywordLower.includes(jobSpecialty) || 
+               jobSpecialty === keywordLower
+      })
+      
+      // Check for matches in title
+      const matchesTitle = uniqueKeywords.some(keyword => 
+        jobTitle.includes(keyword.toLowerCase())
       )
+      
+      return matchesSpecialty || matchesTitle
+    })
+    
+    // Sort by relevance (exact specialty matches first)
+    filtered = filtered.sort((a, b) => {
+      const aSpecialty = a.licenseSpecialty.split(' - ').slice(1).join(' - ').toLowerCase()
+      const bSpecialty = b.licenseSpecialty.split(' - ').slice(1).join(' - ').toLowerCase()
+      
+      // Check for exact or close matches
+      const aExactMatch = uniqueKeywords.some(k => {
+        const kLower = k.toLowerCase()
+        return aSpecialty === kLower || aSpecialty.includes(kLower) || kLower.includes(aSpecialty)
+      })
+      const bExactMatch = uniqueKeywords.some(k => {
+        const kLower = k.toLowerCase()
+        return bSpecialty === kLower || bSpecialty.includes(kLower) || kLower.includes(bSpecialty)
+      })
+      
+      if (aExactMatch && !bExactMatch) return -1
+      if (!aExactMatch && bExactMatch) return 1
+      
+      // Secondary sort: featured jobs first
+      if (a.featured && !b.featured) return -1
+      if (!a.featured && b.featured) return 1
+      
+      return 0
     })
     
     setJobs(filtered)
@@ -474,9 +667,43 @@ function SpecialtyDetailContent({ params }: { params: Promise<{ slug: string }> 
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
       <Navigation />
 
-      {/* Header Section */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 pt-32 pb-6">
+      {/* Mobile Header - Fixed at top */}
+      {isMobile && (
+        <div 
+          ref={mobileHeaderRef}
+          className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200"
+          style={{
+            paddingTop: 'env(safe-area-inset-top, 0px)',
+            top: '56px', // Below Navigation
+          }}
+        >
+          <div className="px-4 py-3">
+            {/* Back Button and Title Row */}
+            <div className="flex items-center gap-3">
+              <motion.button
+                onClick={() => router.push('/nursing-specialties')}
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 active:bg-gray-200 transition-colors flex-shrink-0"
+                whileTap={{ scale: 0.95 }}
+              >
+                <ChevronLeft className="w-5 h-5 text-gray-700" />
+              </motion.button>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl font-bold text-gray-900">
+                  {specialty.name}
+                </h1>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'} available
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Header Section */}
+      {!isMobile && (
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 pt-32 pb-6">
           {/* Breadcrumb */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -563,12 +790,265 @@ function SpecialtyDetailContent({ params }: { params: Promise<{ slug: string }> 
               </motion.div>
             </div>
           </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Mobile Hero Section - Full Width Image */}
+      {isMobile && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          className="relative w-full overflow-hidden bg-white"
+          style={{
+            marginTop: `calc(56px + ${mobileHeaderHeight}px + env(safe-area-inset-top, 0px))`,
+          }}
+        >
+          <div className="relative h-64 w-full overflow-hidden">
+            <img
+              src={imageUrl}
+              alt={specialty.name}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+          </div>
+        </motion.div>
+      )}
 
       {/* Main Content */}
-      <main className="flex-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className={`flex-1 ${isMobile ? 'px-0' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12'}`}
+        style={isMobile ? {
+          position: 'relative',
+          zIndex: 1,
+          paddingTop: '0px',
+          paddingBottom: '0px',
+        } : {}}
+      >
+        {isMobile ? (
+          <>
+            {/* Mobile: Native App Style Specialty Details */}
+            <div data-specialty-details="true" style={{ display: 'none' }} />
+            
+            {/* About Section - Seamless Native Style */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="px-4 pt-6 pb-6"
+            >
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">About {specialty.name}</h2>
+              <p className="text-gray-600 leading-relaxed text-[15px]">
+                {specialty.overview}
+              </p>
+            </motion.div>
+
+            {/* Roles & Responsibilities - Seamless Native Style */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.15 }}
+              className="px-4 pb-6 border-t border-gray-100"
+            >
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 pt-6">{specialty.rolesAndResponsibilities.title}</h2>
+              <div className="space-y-3">
+                {specialty.rolesAndResponsibilities.content.slice(0, 3).map((item, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary-600 mt-2 flex-shrink-0" />
+                    <p className="text-gray-600 leading-relaxed text-[15px] flex-1">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Benefits - Seamless Native Style */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="px-4 pb-6 border-t border-gray-100"
+            >
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 pt-6">Why Choose This Specialty</h2>
+              <ul className="space-y-3">
+                {specialty.benefits.content.slice(0, 4).map((item, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-600 text-[15px] flex-1">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+
+            {/* Job Listings - Compact Native Style */}
+            <div className="px-4 pt-4 pb-6 border-t border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 pt-6">Available Jobs</h2>
+              {jobs.length > 0 ? (
+                <div className="space-y-3">
+                  {jobs.map((job, index) => (
+                  <Link
+                    key={job.id}
+                    href={`/jobs/${job.id}?from=specialty&specialty=${slug}`}
+                    className="block no-underline"
+                  >
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ 
+                        duration: 0.3, 
+                        delay: index * 0.03,
+                      }}
+                      className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md active:bg-gray-50 transition-all"
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {/* Card Body */}
+                      <div className="p-4 flex gap-4">
+                        {/* Left Content */}
+                        <div className="flex-1 min-w-0">
+                          {/* Header Row */}
+                          <div className="mb-3">
+                            <h3 className="text-[15px] font-semibold text-gray-900 line-clamp-2 mb-1.5">
+                              {job.licenseSpecialty || job.title}
+                            </h3>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                              <span className="truncate">{job.location}, {job.state}</span>
+                            </div>
+                          </div>
+
+                      {/* Details Grid */}
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-xs text-gray-500 truncate">Start Date</p>
+                            <p className="text-xs font-semibold text-gray-900 truncate">{formatDateWithYear(job.startDate || job.postedDate)}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Sun className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-xs text-gray-500 truncate">Shift</p>
+                            <p className="text-xs font-semibold text-gray-900 truncate">
+                              {job.shift}{job.shiftHours ? ` • ${formatShiftHoursForMobile(job.shiftHours)}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-xs text-gray-500 truncate">Agency</p>
+                            <p className="text-xs font-semibold text-gray-900 truncate">{job.staffingCompany}</p>
+                          </div>
+                        </div>
+                        {job.daysAgo !== undefined && (
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-gray-500 truncate">Posted</p>
+                              <p className="text-xs font-semibold text-gray-900 truncate">{job.daysAgo} {job.daysAgo === 1 ? 'day' : 'days'} ago</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                        </div>
+
+                        {/* Right Side - Facility Image & Actions */}
+                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                          {/* Facility Image */}
+                          <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-gray-100 shadow-sm">
+                            <img
+                              src={getFacilityImageWithFallback(job.facilityImage, job.state)}
+                              alt={job.facilityName}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                            {/* Featured Badge */}
+                            {job.featured && (
+                              <div className="absolute top-0 right-0 inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 rounded-bl-lg rounded-tr-lg shadow-sm">
+                                <Star className="w-2.5 h-2.5 text-white fill-white" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action Buttons */}
+                          {isAuthenticated && !pendingJobs.includes(job.id) && (
+                            <div className="flex items-center gap-1">
+                              <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.9 }}
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  toggleLikeJob(job.id)
+                                }}
+                                className={`p-1.5 rounded-lg transition-colors ${
+                                  likedJobs.includes(job.id)
+                                    ? 'bg-primary-100 text-primary-600'
+                                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                                }`}
+                              >
+                                <ThumbsUp className={`w-3.5 h-3.5 ${likedJobs.includes(job.id) ? 'fill-current' : ''}`} />
+                              </motion.button>
+                              <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.9 }}
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  toggleSaveJob(job.id)
+                                }}
+                                className={`p-1.5 rounded-lg transition-colors ${
+                                  savedJobs.includes(job.id)
+                                    ? 'bg-primary-100 text-primary-600'
+                                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                                }`}
+                              >
+                                <Bookmark className={`w-3.5 h-3.5 ${savedJobs.includes(job.id) ? 'fill-current' : ''}`} />
+                              </motion.button>
+                            </div>
+                          )}
+
+                          {/* PENDING Badge */}
+                          {pendingJobs.includes(job.id) && (
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-50 rounded-md border border-orange-200">
+                              <AlertCircle className="w-3 h-3 text-orange-600" />
+                              <span className="text-xs font-semibold text-orange-900">Pending</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Pay Row - Full Width */}
+                      <div className="px-4 pb-4 pt-3 border-t border-gray-100 flex justify-end">
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500 mb-1">Weekly Pay</p>
+                          <div className="flex items-baseline justify-end gap-1">
+                            <span className="text-xl font-bold text-gray-900">{job.payPerWeek}</span>
+                            <span className="text-sm font-medium text-gray-600">/week</span>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-3">
+                    <Briefcase className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-sm text-gray-600 text-center">
+                    We don't have any {specialty.name} jobs available at the moment.
+                  </p>
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Desktop Content */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Quick Stats Cards */}
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -996,10 +1476,16 @@ function SpecialtyDetailContent({ params }: { params: Promise<{ slug: string }> 
               </div>
             </div>
           </motion.section>
-        </div>
+            </div>
+          </>
+        )}
       </main>
 
-      <Footer />
+      {/* Footer - Desktop only */}
+      {!isMobile && <Footer />}
+      
+      {/* Mobile Bottom Nav */}
+      {isMobile && <MobileBottomNav />}
     </div>
   )
 }

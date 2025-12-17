@@ -64,6 +64,7 @@ import {
 import { getFacilityImageWithFallback } from '@/utils/stateImages'
 import { useDisableBodyScroll } from '@/utils/useDisableBodyScroll'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { formatShiftHoursForMobile } from '@/utils/jobData'
 
 export interface Job {
   id: string
@@ -1585,9 +1586,25 @@ function JobsPageContent() {
 
                 {/* Explore Jobs Button */}
                 <motion.button
-                  onClick={() => setShowQuickAccessDropdown(!showQuickAccessDropdown)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setShowQuickAccessDropdown(!showQuickAccessDropdown)
+                  }}
+                  onTouchStart={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setShowQuickAccessDropdown(!showQuickAccessDropdown)
+                  }}
                   whileTap={{ scale: 0.98 }}
                   className="relative flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 rounded-xl text-sm font-medium text-gray-900 active:bg-gray-100 transition-colors"
+                  style={{ 
+                    pointerEvents: 'auto', 
+                    position: 'relative', 
+                    zIndex: 100,
+                    touchAction: 'manipulation',
+                    WebkitTapHighlightColor: 'transparent'
+                  }}
                 >
                   <MapPin className="w-4 h-4 text-gray-700" />
                   <span>Explore Jobs</span>
@@ -1634,6 +1651,9 @@ function JobsPageContent() {
                     aria-label="Sort by"
                   >
                     <ArrowUpDown className="w-5 h-5" />
+                    {sortBy !== 'relevance' && (
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary-600 rounded-full border-2 border-white shadow-sm" />
+                    )}
                   </motion.button>
                 </div>
               </div>
@@ -4322,15 +4342,15 @@ function JobsPageContent() {
                 <div className="flex-1 overflow-y-auto px-4 pb-20">
                   <div className="space-y-1">
                     {[
-                      { value: 'relevance', icon: '✅', label: 'Relevance' },
-                      { value: 'salary-high-to-low', icon: '💰', label: 'Salary: High to Low' },
-                      { value: 'salary-low-to-high', icon: '💰', label: 'Salary: Low to High' },
-                      { value: 'date-newest', icon: '📅', label: 'Date: Newest First' },
-                      { value: 'date-oldest', icon: '📅', label: 'Date: Oldest First' },
-                      { value: 'title-a-z', icon: '📝', label: 'Title: A-Z' },
-                      { value: 'title-z-a', icon: '📝', label: 'Title: Z-A' },
-                      { value: 'facility-a-z', icon: '🏥', label: 'Facility: A-Z' },
-                      { value: 'facility-z-a', icon: '🏥', label: 'Facility: Z-A' },
+                      { value: 'relevance', label: 'Relevance' },
+                      { value: 'salary-high-to-low', label: 'Salary: High to Low' },
+                      { value: 'salary-low-to-high', label: 'Salary: Low to High' },
+                      { value: 'date-newest', label: 'Date: Newest First' },
+                      { value: 'date-oldest', label: 'Date: Oldest First' },
+                      { value: 'title-a-z', label: 'Title: A-Z' },
+                      { value: 'title-z-a', label: 'Title: Z-A' },
+                      { value: 'facility-a-z', label: 'Facility: A-Z' },
+                      { value: 'facility-z-a', label: 'Facility: Z-A' },
                     ].map((option, idx) => (
                       <button
                         key={option.value}
@@ -4338,14 +4358,13 @@ function JobsPageContent() {
                           setSortBy(option.value)
                           setShowSortDropdown(false)
                         }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                        className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
                           sortBy === option.value 
                             ? 'bg-primary-50 text-primary-700' 
                             : 'bg-transparent hover:bg-gray-50 text-gray-900 active:bg-gray-100'
                         }`}
                       >
-                        <span className="text-base">{option.icon}</span>
-                        <span className="flex-1 text-sm">{option.label}</span>
+                        <span className="flex-1 text-sm font-medium">{option.label}</span>
                         {sortBy === option.value && (
                           <div className="w-5 h-5 bg-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
                             <svg
@@ -5070,7 +5089,7 @@ function JobsPageContent() {
                     <Sun className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
                     <div>
                       <p className="text-xs text-gray-500">Shift</p>
-                      <p className="text-xs font-semibold text-gray-900">{job.shift} • {job.shiftHours}</p>
+                      <p className="text-xs font-semibold text-gray-900">{job.shift} • {isMobile ? formatShiftHoursForMobile(job.shiftHours) : job.shiftHours}</p>
                     </div>
                   </div>
 

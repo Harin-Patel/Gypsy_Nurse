@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { MapPin, DollarSign, ArrowRight, Bookmark, ThumbsUp, ThumbsDown, Star, AlertCircle, Calendar, Briefcase, Sun, Building2 } from 'lucide-react'
+import { MapPin, DollarSign, ArrowRight, Bookmark, ThumbsUp, ThumbsDown, Star, AlertCircle, Calendar, Briefcase, Sun, Building2, Clock } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import Link from 'next/link'
@@ -21,6 +21,7 @@ import {
   removeBookmarkedJob
 } from '@/utils/jobStorage'
 import { getFacilityImageWithFallback } from '@/utils/stateImages'
+import { formatShiftHoursForMobile } from '@/utils/jobData'
 
 interface Job {
   id: string
@@ -193,64 +194,203 @@ export default function FeaturedJobs() {
   }
 
   return (
-    <section id="jobs" className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <motion.div
-          initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-          whileInView={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={isMobile ? { duration: 0 } : { duration: 0.6 }}
-          className="text-center mb-16"
-        >
-          <motion.div
-            initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={isMobile ? { duration: 0 } : {}}
-            className="inline-block mb-4"
-          >
-            <span className="px-4 py-2 bg-primary-100 text-primary-500 rounded-full text-sm font-semibold">
+    <section id="jobs" className={`${isMobile ? 'py-6' : 'py-20'} bg-white`}>
+      <div className={`max-w-7xl mx-auto ${isMobile ? 'px-4' : 'px-4 sm:px-6 lg:px-8'}`}>
+        {/* Section Header - Native Mobile Style */}
+        {isMobile ? (
+          <div className="mb-5">
+            <h2 className="text-[22px] font-bold text-gray-900 mb-1 leading-[1.2]">
               Featured Opportunities
-            </span>
+            </h2>
+            <p className="text-[14px] text-gray-600 leading-[1.4]">
+              Top-paying travel nursing positions
+            </p>
+          </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="inline-block mb-4"
+            >
+              <span className="px-4 py-2 bg-primary-100 text-primary-500 rounded-full text-sm font-semibold">
+                Featured Opportunities
+              </span>
+            </motion.div>
+            
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              Discover Your Next <span className="gradient-text">Adventure</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Explore top-paying travel nursing positions across the country
+            </p>
           </motion.div>
-          
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Discover Your Next <span className="gradient-text">Adventure</span>
-          </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Explore top-paying travel nursing positions across the country
-          </p>
-        </motion.div>
+        )}
 
         {/* Jobs Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {jobs.map((job, index) => (
-            <a
-              key={job.id}
-              href={`/jobs/${job.id}`}
-              className="block h-full no-underline"
-            >
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ 
-                  duration: 0.4, 
-                  delay: index * 0.1,
-                  ease: [0.25, 0.46, 0.45, 0.94]
-                }}
-                className="group relative bg-white/95 backdrop-blur-2xl rounded-2xl overflow-hidden flex flex-col cursor-pointer h-full shadow-xl border border-gray-200/50 hover:border-primary-300/50 transition-all duration-300"
-                style={{
-                  backdropFilter: 'saturate(180%) blur(20px)',
-                  WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-                }}
-                whileHover={{
-                  y: -4,
-                  scale: 1.02,
-                  boxShadow: '0 20px 40px rgba(127, 40, 96, 0.15)',
-                  transition: { duration: 0.3, ease: "easeOut" }
-                }}
+        {isMobile ? (
+          <div 
+            className="flex overflow-x-auto space-x-4 pb-4 -mx-4 px-4 mb-6 scrollbar-hide items-stretch" 
+            style={{ 
+              scrollbarWidth: 'none', 
+              msOverflowStyle: 'none', 
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-x'
+            }}
+          >
+            {jobs.map((job, index) => (
+              <Link
+                key={job.id}
+                href={`/jobs/${job.id}`}
+                className="block no-underline flex-shrink-0 w-[280px]"
+                style={{ touchAction: 'manipulation', userSelect: 'none' }}
               >
+                <div
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm active:bg-gray-50 transition-all overflow-hidden"
+                  style={{ touchAction: 'manipulation' }}
+                >
+                  {/* Horizontal Layout: Image + Content */}
+                  <div className="flex gap-3 p-3">
+                    {/* Facility Image - Square */}
+                    <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                      <img
+                        src={getFacilityImageWithFallback(job.facilityImage, job.state)}
+                        alt={job.facilityName}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      {/* Featured Badge */}
+                      {job.featured && (
+                        <div className="absolute top-0 right-0 inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 rounded-bl-lg rounded-tr-lg shadow-sm">
+                          <Star className="w-2.5 h-2.5 text-white fill-white" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 flex flex-col">
+                      {/* Title */}
+                      <h3 className="text-[15px] font-semibold text-gray-900 line-clamp-2 mb-1.5 leading-tight">
+                        {job.licenseSpecialty || job.title}
+                      </h3>
+
+                      {/* Location */}
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
+                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">{job.location}, {job.state}</span>
+                      </div>
+
+                      {/* Key Details - Compact */}
+                      <div className="space-y-1.5 mb-3">
+                        <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                          <Sun className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                          <span className="truncate">{job.shift}{job.shiftHours ? ` • ${formatShiftHoursForMobile(job.shiftHours)}` : ''}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                          <Building2 className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                          <span className="truncate">{job.staffingCompany}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Full Width Separator - Extends to Left Edge */}
+                  <div className="w-full border-t border-gray-100" style={{ marginLeft: '-12px', marginRight: '-12px', width: 'calc(100% + 24px)' }}></div>
+
+                  {/* Pay - Right Aligned with Increased Area */}
+                  <div className="px-3 py-3">
+                    <div className="flex items-baseline justify-end gap-1">
+                      <span className="text-lg font-bold text-gray-900">{job.payPerWeek}</span>
+                      <span className="text-xs text-gray-500">/week</span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons - Bottom Row */}
+                  {isAuthenticated && !pendingJobs.includes(job.id) && (
+                    <div className="px-3 pb-3 pt-2 border-t border-gray-100 flex items-center justify-end gap-2">
+                      <motion.button
+                        type="button"
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          toggleLikeJob(job.id)
+                        }}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          likedJobs.includes(job.id)
+                            ? 'bg-primary-100 text-primary-600'
+                            : 'bg-gray-100 text-gray-400'
+                        }`}
+                      >
+                        <ThumbsUp className={`w-4 h-4 ${likedJobs.includes(job.id) ? 'fill-current' : ''}`} />
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          toggleSaveJob(job.id)
+                        }}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          savedJobs.includes(job.id)
+                            ? 'bg-primary-100 text-primary-600'
+                            : 'bg-gray-100 text-gray-400'
+                        }`}
+                      >
+                        <Bookmark className={`w-4 h-4 ${savedJobs.includes(job.id) ? 'fill-current' : ''}`} />
+                      </motion.button>
+                    </div>
+                  )}
+
+                  {/* PENDING Badge - Bottom */}
+                  {pendingJobs.includes(job.id) && (
+                    <div className="px-3 pb-3 pt-2 border-t border-gray-100">
+                      <div className="inline-flex items-center gap-1 px-2 py-1 bg-orange-50 rounded-md border border-orange-200">
+                        <AlertCircle className="w-3 h-3 text-orange-600" />
+                        <span className="text-xs font-semibold text-orange-900">Pending</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {jobs.map((job, index) => (
+              <Link
+                key={job.id}
+                href={`/jobs/${job.id}`}
+                className="block h-full no-underline"
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ 
+                    duration: 0.4, 
+                    delay: index * 0.1,
+                    ease: [0.25, 0.46, 0.45, 0.94]
+                  }}
+                  className="group relative bg-white/95 backdrop-blur-2xl rounded-2xl overflow-hidden flex flex-col cursor-pointer h-full shadow-xl border border-gray-200/50 hover:border-primary-300/50 transition-all duration-300"
+                  style={{
+                    backdropFilter: 'saturate(180%) blur(20px)',
+                    WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+                  }}
+                  whileHover={{
+                    y: -4,
+                    scale: 1.02,
+                    boxShadow: '0 20px 40px rgba(127, 40, 96, 0.15)',
+                    transition: { duration: 0.3, ease: "easeOut" }
+                  }}
+                >
                 {/* Facility Image Header with Gradient Overlay */}
                 <div className="relative h-44 overflow-hidden">
                   <img
@@ -423,29 +563,43 @@ export default function FeaturedJobs() {
                   </div>
                 </div>
               </motion.div>
-            </a>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* View All Button */}
-        <motion.div
-          initial={isMobile ? { opacity: 1 } : { opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={isMobile ? { duration: 0 } : {}}
-          className="text-center"
-        >
-          <Link href="/jobs">
-          <motion.button
-            whileHover={isMobile ? undefined : { scale: 1.05 }}
-            whileTap={isMobile ? { scale: 0.98 } : { scale: 0.95 }}
-            className="btn-secondary inline-flex items-center space-x-2"
+        {isMobile ? (
+          <div className="text-center">
+            <Link href="/jobs">
+              <button
+                className="w-full py-3 px-4 bg-gray-50 rounded-xl text-sm font-medium text-gray-900 border border-gray-200 active:bg-gray-100 transition-colors inline-flex items-center justify-center gap-2"
+                style={{ touchAction: 'manipulation' }}
+              >
+                <span>View All Jobs</span>
+                <ArrowRight size={16} />
+              </button>
+            </Link>
+          </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center"
           >
-            <span>View All Jobs</span>
-            <ArrowRight size={20} />
-          </motion.button>
-          </Link>
-        </motion.div>
+            <Link href="/jobs">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="btn-secondary inline-flex items-center space-x-2"
+              >
+                <span>View All Jobs</span>
+                <ArrowRight size={20} />
+              </motion.button>
+            </Link>
+          </motion.div>
+        )}
       </div>
     </section>
   )

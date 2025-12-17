@@ -20,6 +20,7 @@ import {
   getJobById,
   jobToBookmarkedJob
 } from '@/utils/jobData'
+import { formatShiftHoursForMobile } from '@/utils/jobData'
 import { getFacilityImageWithFallback } from '@/utils/stateImages'
 
 interface BookmarkedJob {
@@ -350,7 +351,7 @@ export default function BookmarksPage() {
                               <Sun className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
                               <div>
                                 <p className="text-xs text-gray-500">Shift</p>
-                                <p className="text-xs font-semibold text-gray-900">{job.shift}{job.shiftHours ? ` • ${job.shiftHours}` : ''}</p>
+                                <p className="text-xs font-semibold text-gray-900">{job.shift}{job.shiftHours ? ` • ${formatShiftHoursForMobile(job.shiftHours)}` : ''}</p>
                               </div>
                             </div>
                           )}

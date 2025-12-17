@@ -58,6 +58,7 @@ import {
 import { getFacilityImageWithFallback } from '@/utils/stateImages'
 import { Job, SAMPLE_JOBS } from '../page'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { formatShiftHoursForMobile } from '@/utils/jobData'
 
 interface JobDetails {
   id: string
@@ -732,9 +733,13 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
   const { isAuthenticated } = useAuth()
   const isMobile = useIsMobile()
   
-  // Check if user came from applications or bookmarks page
+  // Check if user came from applications, bookmarks, specialty, or state page
   const fromApplications = searchParams?.get('from') === 'applications'
   const fromBookmarks = searchParams?.get('from') === 'bookmarks'
+  const fromSpecialty = searchParams?.get('from') === 'specialty'
+  const specialtySlug = searchParams?.get('specialty') || ''
+  const fromState = searchParams?.get('from') === 'state'
+  const stateName = searchParams?.get('state') || ''
   
   const job = unwrappedParams?.id ? SAMPLE_JOB_DATA[unwrappedParams.id] : null
   
@@ -1690,13 +1695,13 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-700">
         <h1 className="text-4xl font-bold mb-4">Job Not Found</h1>
         <p className="text-lg mb-8">The job you are looking for does not exist.</p>
-        <Link href={fromApplications ? "/applications" : fromBookmarks ? "/bookmarks" : "/jobs"}>
+        <Link href={fromSpecialty && specialtySlug ? `/nursing-specialties/${specialtySlug}` : fromState && stateName ? `/jobs-by-state?state=${encodeURIComponent(stateName)}` : fromApplications ? "/applications" : fromBookmarks ? "/bookmarks" : "/jobs"}>
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="px-6 py-3 bg-primary-600 text-white rounded-lg shadow-md hover:bg-primary-700 transition-colors"
           >
-            {fromApplications ? "Back to My Applications" : fromBookmarks ? "Back to My Bookmarks" : "Back to Job Listings"}
+            {fromSpecialty ? "Back to Specialty" : fromState ? "Back to State Jobs" : fromApplications ? "Back to My Applications" : fromBookmarks ? "Back to My Bookmarks" : "Back to Job Listings"}
           </motion.button>
         </Link>
       </div>
@@ -1743,24 +1748,35 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
 
                 {/* Back Button - Top Left */}
                 <div className={`absolute ${isMobile ? 'top-3 left-3' : 'top-4 left-4'} ${isMobile ? 'z-[110]' : 'z-20'}`}>
-                  <Link href={fromApplications ? "/applications" : fromBookmarks ? "/bookmarks" : "/jobs"}>
-                    <motion.button
-                      whileHover={isMobile ? {} : { scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className={`group ${isMobile ? 'w-10 h-10 rounded-lg bg-white/90' : 'w-12 h-12 rounded-xl'} transition-all duration-200 flex items-center justify-center`}
-                      style={isMobile ? {
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
-                      } : {
-                        background: 'rgba(255, 255, 255, 0.15)',
-                        backdropFilter: 'blur(20px) saturate(180%)',
-                        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                        border: '1px solid rgba(255, 255, 255, 0.3)',
-                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                      }}
-                    >
-                      <ArrowLeft className={`${isMobile ? 'w-5 h-5 text-gray-700' : 'w-5 h-5 text-white drop-shadow-lg transition-transform duration-200 group-hover:-translate-x-1'}`} />
-                    </motion.button>
-                  </Link>
+                  <motion.button
+                    onClick={() => {
+                      if (fromSpecialty && specialtySlug) {
+                        router.push(`/nursing-specialties/${specialtySlug}`)
+                      } else if (fromState && stateName) {
+                        router.push(`/jobs-by-state?state=${encodeURIComponent(stateName)}`)
+                      } else if (fromApplications) {
+                        router.push("/applications")
+                      } else if (fromBookmarks) {
+                        router.push("/bookmarks")
+                      } else {
+                        router.back()
+                      }
+                    }}
+                    whileHover={isMobile ? {} : { scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className={`group ${isMobile ? 'w-10 h-10 rounded-lg bg-white/90' : 'w-12 h-12 rounded-xl'} transition-all duration-200 flex items-center justify-center`}
+                    style={isMobile ? {
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+                    } : {
+                      background: 'rgba(255, 255, 255, 0.15)',
+                      backdropFilter: 'blur(20px) saturate(180%)',
+                      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                    }}
+                  >
+                    <ArrowLeft className={`${isMobile ? 'w-5 h-5 text-gray-700' : 'w-5 h-5 text-white drop-shadow-lg transition-transform duration-200 group-hover:-translate-x-1'}`} />
+                  </motion.button>
                 </div>
 
                 {/* Action Buttons - Top Right */}
@@ -3356,7 +3372,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                     <div className="mb-4 pb-4 border-b border-gray-200">
                       <p className="text-xs text-gray-500 mb-1">Shift</p>
                       <p className="text-sm text-gray-900">
-                        {job.shiftHours && `${job.shiftHours} `}{job.shift}
+                        {job.shiftHours && `${isMobile ? formatShiftHoursForMobile(job.shiftHours) : job.shiftHours} `}{job.shift}
                         {job.startDate && ` | ${formatDateWithYear(job.startDate)}`}
                       </p>
                     </div>

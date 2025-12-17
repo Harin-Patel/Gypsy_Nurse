@@ -52,173 +52,274 @@ export default function Events() {
   const regularEvents = events.filter(e => !e.featured)
 
   return (
-    <section id="events" className="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden">
-      {/* Background Decorations */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-primary-200 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-primary-300 rounded-full blur-3xl"></div>
-      </div>
+    <section id="events" className={`${isMobile ? 'py-8 bg-white' : 'py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 relative overflow-hidden'}`}>
+      {/* Background Decorations - Desktop Only */}
+      {!isMobile && (
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-primary-200 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-primary-300 rounded-full blur-3xl"></div>
+        </div>
+      )}
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <motion.div
-          initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={isMobile ? { duration: 0 } : { duration: 0.6 }}
-          className="text-center mb-16"
-        >
-          <motion.div
-            initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={isMobile ? { duration: 0 } : {}}
-            className="inline-flex items-center space-x-2 mb-4 px-4 py-2 bg-primary-100 rounded-full"
-          >
-            <Sparkles className="text-primary-600" size={16} />
-            <span className="text-sm font-semibold text-primary-600">
-              Upcoming Events
-            </span>
-          </motion.div>
-          
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Join Us at <span className="gradient-text">Amazing Events</span>
-          </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Network with fellow travel nurses, learn from experts, and advance your career
-          </p>
-        </motion.div>
+        {isMobile ? (
+          <>
+            {/* Mobile Header - Native App Style */}
+            <div className="mb-5">
+              <h2 className="text-[22px] font-bold text-gray-900 mb-1">
+                Upcoming Events
+              </h2>
+              <p className="text-[14px] text-gray-600 leading-relaxed">
+                Network with fellow travel nurses and advance your career
+              </p>
+            </div>
 
-        {/* Events Layout */}
-        <div className="grid lg:grid-cols-2 gap-8 mb-12">
-          {/* Featured Event - Large Card */}
-          {featuredEvent && (
+            {/* Mobile Events List - Native App Style */}
+            <div className="space-y-3 mb-5">
+              {/* All Events - Same Compact Style */}
+              {events.map((event, index) => (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm active:bg-gray-50 transition-all overflow-hidden"
+                >
+                  {/* Horizontal Layout: Image + Content */}
+                  <div className="flex gap-3 p-3">
+                    {/* Event Image */}
+                    <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                      <img
+                        src={event.image}
+                        alt={event.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      {/* Featured Badge - Only for featured events */}
+                      {event.featured && (
+                        <div className="absolute top-1 right-1">
+                          <div className="w-4 h-4 bg-primary-600 rounded-full flex items-center justify-center">
+                            <Sparkles size={8} className="text-white" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 relative">
+                      {/* Days Until - Top Right Corner */}
+                      <div className="absolute top-0 right-0 flex items-center gap-1">
+                        <span className="text-primary-600 font-bold text-sm">{event.daysUntil}</span>
+                        <span className="text-gray-500 text-[10px] font-medium">days left</span>
+                      </div>
+
+                      {/* Category Badge */}
+                      <div className="mb-1 pr-16">
+                        <span className="inline-flex items-center px-1.5 py-0.5 bg-primary-100 text-primary-600 rounded text-[10px] font-semibold">
+                          {event.category}
+                        </span>
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="text-[15px] font-semibold text-gray-900 line-clamp-1 mb-0.5 pr-16">
+                        {event.name}
+                      </h3>
+
+                      {/* Meta Info - Compact Row */}
+                      <div className="flex items-center gap-2.5 text-[11px] text-gray-500 mt-1.5">
+                        <div className="flex items-center gap-1">
+                          <Calendar size={10} className="text-gray-400 flex-shrink-0" />
+                          <span>{event.date}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <MapPin size={10} className="text-gray-400 flex-shrink-0" />
+                          <span className="truncate">{event.location}</span>
+                        </div>
+                      </div>
+
+                      {/* Attendees - Bottom */}
+                      <div className="flex items-center gap-1 text-[11px] text-gray-500 mt-2">
+                        <Users size={10} className="text-gray-400" />
+                        <span>{event.attendees}</span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Mobile CTA Button - Native Style */}
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              className="w-full bg-gray-50 text-gray-900 py-3.5 px-4 font-semibold text-[15px] rounded-xl border border-gray-200 active:bg-gray-100 transition-colors flex items-center justify-center gap-2"
+              style={{ touchAction: 'manipulation' }}
+            >
+              <span>Explore All Events</span>
+              <ArrowRight size={16} />
+            </motion.button>
+          </>
+        ) : (
+          <>
+            {/* Desktop Section Header */}
             <motion.div
-              initial={isMobile ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={isMobile ? { duration: 0 } : { duration: 0.6 }}
-              className="lg:row-span-2"
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16"
             >
               <motion.div
-                whileHover={isMobile ? undefined : { y: -8 }}
-                className="group relative bg-white rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 h-full"
-              >
-                {/* Featured Badge */}
-                <div className="absolute top-6 left-6 z-20 flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-full shadow-lg">
-                  <Sparkles size={16} />
-                  <span className="text-sm font-bold">Featured Event</span>
-                </div>
-
-                {/* Countdown Badge */}
-                <motion.div
-                  initial={isMobile ? { scale: 1 } : { scale: 0 }}
-                  whileInView={{ scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={isMobile ? { duration: 0 } : { delay: 0.3, type: 'spring' }}
-                  className="absolute top-6 right-6 z-20 bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-4 text-center shadow-xl"
-                >
-                  <div className="text-primary-600 font-bold text-3xl leading-none">{featuredEvent.daysUntil}</div>
-                  <div className="text-gray-600 text-xs mt-1 font-semibold">DAYS LEFT</div>
-                </motion.div>
-
-                {/* Image with Overlay */}
-                <div className="relative h-80 lg:h-96 overflow-hidden">
-                  <img 
-                    src={featuredEvent.image} 
-                    alt={featuredEvent.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-                  
-                  {/* Category Badge on Image */}
-                  <div className="absolute bottom-6 left-6">
-                    <span className="px-4 py-1.5 bg-white/20 backdrop-blur-md text-white rounded-full text-xs font-semibold border border-white/30">
-                      {featuredEvent.category}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-8">
-                  <h3 className="text-3xl font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
-                    {featuredEvent.name}
-                  </h3>
-                  <p className="text-primary-600 font-semibold mb-4">{featuredEvent.subtitle}</p>
-                  <p className="text-gray-600 mb-6 leading-relaxed">{featuredEvent.description}</p>
-
-                  {/* Event Details */}
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center space-x-3 text-gray-700">
-                      <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center">
-                        <Calendar className="text-primary-600" size={20} />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Date</p>
-                        <p className="font-semibold">{featuredEvent.date}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3 text-gray-700">
-                      <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center">
-                        <MapPin className="text-primary-600" size={20} />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Location</p>
-                        <p className="font-semibold">{featuredEvent.location}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3 text-gray-700">
-                      <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center">
-                        <Users className="text-primary-600" size={20} />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Expected Attendees</p>
-                        <p className="font-semibold">{featuredEvent.attendees} Nurses</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* CTA Button */}
-                  <motion.button
-                    whileHover={isMobile ? undefined : { scale: 1.02 }}
-                    whileTap={isMobile ? { scale: 0.98 } : { scale: 0.98 }}
-                    className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2 group"
-                  >
-                    <span>Register Now</span>
-                    <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
-                  </motion.button>
-                </div>
-
-                {/* Hover Glow Effect */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary-500/10 to-primary-600/10"></div>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-
-          {/* Regular Events - Smaller Cards */}
-          <div className="space-y-8">
-            {regularEvents.map((event, index) => (
-              <motion.div
-                key={event.id}
-                initial={isMobile ? { opacity: 1, x: 0 } : { opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                transition={isMobile ? { duration: 0 } : { duration: 0.6, delay: index * 0.1 }}
+                transition={{ duration: 0.6 }}
+                className="inline-flex items-center space-x-2 mb-4 px-4 py-2 bg-primary-100 rounded-full"
               >
+                <Sparkles className="text-primary-600" size={16} />
+                <span className="text-sm font-semibold text-primary-600">
+                  Upcoming Events
+                </span>
+              </motion.div>
+              
+              <h2 className="text-4xl md:text-5xl font-bold mb-4">
+                Join Us at <span className="gradient-text">Amazing Events</span>
+              </h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Network with fellow travel nurses, learn from experts, and advance your career
+              </p>
+            </motion.div>
+
+            {/* Desktop Events Layout */}
+            <div className="grid lg:grid-cols-2 gap-8 mb-12">
+              {/* Featured Event - Large Card */}
+              {featuredEvent && (
                 <motion.div
-                  whileHover={isMobile ? undefined : { x: 8 }}
-                  className="group relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 h-full"
+                  initial={{ opacity: 0, x: -30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6 }}
+                  className="lg:row-span-2"
                 >
-                  <div className="flex flex-col sm:flex-row h-full">
-                    {/* Image Section */}
-                    <div className="relative sm:w-48 h-48 sm:h-auto overflow-hidden flex-shrink-0">
+                  <motion.div
+                    whileHover={{ y: -8 }}
+                    className="group relative bg-white rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 h-full"
+                  >
+                    {/* Featured Badge */}
+                    <div className="absolute top-6 left-6 z-20 flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-full shadow-lg">
+                      <Sparkles size={16} />
+                      <span className="text-sm font-bold">Featured Event</span>
+                    </div>
+
+                    {/* Countdown Badge */}
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      whileInView={{ scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.3, type: 'spring' }}
+                      className="absolute top-6 right-6 z-20 bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-4 text-center shadow-xl"
+                    >
+                      <div className="text-primary-600 font-bold text-3xl leading-none">{featuredEvent.daysUntil}</div>
+                      <div className="text-gray-600 text-xs mt-1 font-semibold">DAYS LEFT</div>
+                    </motion.div>
+
+                    {/* Image with Overlay */}
+                    <div className="relative h-80 lg:h-96 overflow-hidden">
                       <img 
-                        src={event.image} 
-                      alt={event.name}
+                        src={featuredEvent.image} 
+                        alt={featuredEvent.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                      
+                      {/* Category Badge on Image */}
+                      <div className="absolute bottom-6 left-6">
+                        <span className="px-4 py-1.5 bg-white/20 backdrop-blur-md text-white rounded-full text-xs font-semibold border border-white/30">
+                          {featuredEvent.category}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-8">
+                      <h3 className="text-3xl font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
+                        {featuredEvent.name}
+                      </h3>
+                      <p className="text-primary-600 font-semibold mb-4">{featuredEvent.subtitle}</p>
+                      <p className="text-gray-600 mb-6 leading-relaxed">{featuredEvent.description}</p>
+
+                      {/* Event Details */}
+                      <div className="space-y-3 mb-6">
+                        <div className="flex items-center space-x-3 text-gray-700">
+                          <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center">
+                            <Calendar className="text-primary-600" size={20} />
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Date</p>
+                            <p className="font-semibold">{featuredEvent.date}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3 text-gray-700">
+                          <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center">
+                            <MapPin className="text-primary-600" size={20} />
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Location</p>
+                            <p className="font-semibold">{featuredEvent.location}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3 text-gray-700">
+                          <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center">
+                            <Users className="text-primary-600" size={20} />
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Expected Attendees</p>
+                            <p className="font-semibold">{featuredEvent.attendees} Nurses</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* CTA Button */}
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2 group"
+                      >
+                        <span>Register Now</span>
+                        <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
+                      </motion.button>
+                    </div>
+
+                    {/* Hover Glow Effect */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary-500/10 to-primary-600/10"></div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {/* Regular Events - Smaller Cards */}
+              <div className="space-y-8">
+                {regularEvents.map((event, index) => (
+                  <motion.div
+                    key={event.id}
+                    initial={{ opacity: 0, x: 30 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                  >
+                    <motion.div
+                      whileHover={{ x: 8 }}
+                      className="group relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 h-full"
+                    >
+                      <div className="flex flex-col sm:flex-row h-full">
+                        {/* Image Section */}
+                        <div className="relative sm:w-48 h-48 sm:h-auto overflow-hidden flex-shrink-0">
+                          <img 
+                            src={event.image} 
+                          alt={event.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-primary-600/80 to-primary-700/80 opacity-90"></div>
@@ -227,10 +328,10 @@ export default function Events() {
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="text-center">
                           <motion.div
-                            initial={isMobile ? { scale: 1 } : { scale: 0 }}
+                            initial={{ scale: 0 }}
                             whileInView={{ scale: 1 }}
                             viewport={{ once: true }}
-                            transition={isMobile ? { duration: 0 } : { delay: index * 0.1 + 0.3, type: 'spring' }}
+                            transition={{ delay: index * 0.1 + 0.3, type: 'spring' }}
                             className="text-white font-bold text-4xl"
                           >
                             {event.daysUntil}
@@ -275,8 +376,8 @@ export default function Events() {
 
                       {/* CTA */}
                       <motion.button
-                        whileHover={isMobile ? undefined : { scale: 1.05 }}
-                        whileTap={isMobile ? { scale: 0.98 } : { scale: 0.95 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         className="mt-4 self-start flex items-center space-x-1 text-primary-600 font-semibold text-sm group-hover:space-x-2 transition-all"
                       >
                         <span>Learn More</span>
@@ -295,23 +396,25 @@ export default function Events() {
           </div>
         </div>
 
-        {/* View All Events CTA */}
+        {/* Desktop View All Events CTA */}
         <motion.div
-          initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={isMobile ? { duration: 0 } : { delay: 0.3 }}
+          transition={{ delay: 0.3 }}
           className="text-center"
         >
           <motion.button
-            whileHover={isMobile ? undefined : { scale: 1.05 }}
-            whileTap={isMobile ? { scale: 0.98 } : { scale: 0.95 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="inline-flex items-center space-x-2 bg-white text-primary-600 px-8 py-4 rounded-xl font-bold border-2 border-primary-600 hover:bg-primary-600 hover:text-white transition-all shadow-lg hover:shadow-xl"
           >
             <span>Explore All Events</span>
             <ArrowRight size={20} />
           </motion.button>
         </motion.div>
+          </>
+        )}
       </div>
     </section>
   )

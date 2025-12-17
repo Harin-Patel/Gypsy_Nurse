@@ -5,6 +5,14 @@ import { SAMPLE_JOBS } from '@/app/jobs/page'
 // Re-export job data for use in other pages
 export { SAMPLE_JOBS }
 
+// Helper function to format shift hours for mobile (convert "12 Hours" to "12h")
+export function formatShiftHoursForMobile(shiftHours: string | undefined): string {
+  if (!shiftHours) return ''
+  
+  // Convert "12 Hours" to "12h", "8 Hours" to "8h", etc.
+  return shiftHours.replace(/\s*Hours?\s*/i, 'h').replace(/\s*Hour\s*/i, 'h')
+}
+
 interface Job {
   id: string
   title: string

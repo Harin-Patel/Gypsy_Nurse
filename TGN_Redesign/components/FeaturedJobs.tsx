@@ -312,44 +312,6 @@ export default function FeaturedJobs() {
                     </div>
                   </div>
 
-                  {/* Action Buttons - Bottom Row */}
-                  {isAuthenticated && !pendingJobs.includes(job.id) && (
-                    <div className="px-3 pb-3 pt-2 border-t border-gray-100 flex items-center justify-end gap-2">
-                      <motion.button
-                        type="button"
-                        whileTap={{ scale: 0.9 }}
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          toggleLikeJob(job.id)
-                        }}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          likedJobs.includes(job.id)
-                            ? 'bg-primary-100 text-primary-600'
-                            : 'bg-gray-100 text-gray-400'
-                        }`}
-                      >
-                        <ThumbsUp className={`w-4 h-4 ${likedJobs.includes(job.id) ? 'fill-current' : ''}`} />
-                      </motion.button>
-                      <motion.button
-                        type="button"
-                        whileTap={{ scale: 0.9 }}
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          toggleSaveJob(job.id)
-                        }}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          savedJobs.includes(job.id)
-                            ? 'bg-primary-100 text-primary-600'
-                            : 'bg-gray-100 text-gray-400'
-                        }`}
-                      >
-                        <Bookmark className={`w-4 h-4 ${savedJobs.includes(job.id) ? 'fill-current' : ''}`} />
-                      </motion.button>
-                    </div>
-                  )}
-
                   {/* PENDING Badge - Bottom */}
                   {pendingJobs.includes(job.id) && (
                     <div className="px-3 pb-3 pt-2 border-t border-gray-100">

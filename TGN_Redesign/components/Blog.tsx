@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Calendar, User, ArrowRight, Clock } from 'lucide-react'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useRouter } from 'next/navigation'
 
 const blogPosts = [
   {
@@ -39,6 +40,7 @@ const blogPosts = [
 
 export default function Blog() {
   const isMobile = useIsMobile()
+  const router = useRouter()
   return (
     <section id="blog" className={`${isMobile ? 'py-8 bg-white' : 'py-20 bg-gradient-to-br from-gray-50 to-white'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -111,6 +113,7 @@ export default function Blog() {
             {/* Mobile CTA Button - Native Style */}
             <motion.button
               whileTap={{ scale: 0.98 }}
+              onClick={() => router.push('/articles')}
               className="w-full bg-gray-50 text-gray-900 py-3.5 px-4 font-semibold text-[15px] rounded-xl border border-gray-200 active:bg-gray-100 transition-colors flex items-center justify-center gap-2"
               style={{ touchAction: 'manipulation' }}
             >

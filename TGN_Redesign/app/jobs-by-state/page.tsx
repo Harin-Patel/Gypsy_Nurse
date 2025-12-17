@@ -901,44 +901,6 @@ export default function JobsByStatePage() {
                                   )}
                                 </div>
 
-                                {/* Action Buttons */}
-                                {isAuthenticated && !pendingJobs.includes(job.id) && (
-                                  <div className="flex items-center gap-1">
-                                    <motion.button
-                                      type="button"
-                                      whileTap={{ scale: 0.9 }}
-                                      onClick={(e) => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                        toggleLikeJob(job.id)
-                                      }}
-                                      className={`p-1.5 rounded-lg transition-colors ${
-                                        likedJobs.includes(job.id)
-                                          ? 'bg-primary-100 text-primary-600'
-                                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                                      }`}
-                                    >
-                                      <ThumbsUp className={`w-3.5 h-3.5 ${likedJobs.includes(job.id) ? 'fill-current' : ''}`} />
-                                    </motion.button>
-                                    <motion.button
-                                      type="button"
-                                      whileTap={{ scale: 0.9 }}
-                                      onClick={(e) => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                        toggleSaveJob(job.id)
-                                      }}
-                                      className={`p-1.5 rounded-lg transition-colors ${
-                                        savedJobs.includes(job.id)
-                                          ? 'bg-primary-100 text-primary-600'
-                                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                                      }`}
-                                    >
-                                      <Bookmark className={`w-3.5 h-3.5 ${savedJobs.includes(job.id) ? 'fill-current' : ''}`} />
-                                    </motion.button>
-                                  </div>
-                                )}
-
                                 {/* PENDING Badge */}
                                 {pendingJobs.includes(job.id) && (
                                   <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-50 rounded-md border border-orange-200">
@@ -1076,7 +1038,7 @@ export default function JobsByStatePage() {
                                 </div>
                               )}
 
-                              {isAuthenticated && !pendingJobs.includes(job.id) && (
+                              {!isMobile && isAuthenticated && !pendingJobs.includes(job.id) && (
                                 <>
                                   <motion.button
                                     type="button"
@@ -1132,31 +1094,33 @@ export default function JobsByStatePage() {
                                 </>
                               )}
 
-                              <motion.button
-                                type="button"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                onClick={(e) => {
-                                  e.preventDefault()
-                                  e.stopPropagation()
-                                  toggleSaveJob(job.id)
-                                }}
-                                className={`relative p-2 rounded-lg transition-all ${
-                                  savedJobs.includes(job.id)
-                                    ? 'bg-primary-50 text-primary-600'
-                                    : 'bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600'
-                                }`}
-                              >
-                                <motion.div
-                                  animate={savedJobs.includes(job.id) ? {
-                                    scale: [1, 1.3, 1],
-                                    rotate: [0, -10, 10, 0]
-                                  } : {}}
-                                  transition={{ duration: 0.4, ease: "easeOut" }}
+                              {!isMobile && (
+                                <motion.button
+                                  type="button"
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    toggleSaveJob(job.id)
+                                  }}
+                                  className={`relative p-2 rounded-lg transition-all ${
+                                    savedJobs.includes(job.id)
+                                      ? 'bg-primary-50 text-primary-600'
+                                      : 'bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+                                  }`}
                                 >
-                                  <Bookmark className={`w-4 h-4 transition-all ${savedJobs.includes(job.id) ? 'fill-current' : ''}`} />
-                                </motion.div>
-                              </motion.button>
+                                  <motion.div
+                                    animate={savedJobs.includes(job.id) ? {
+                                      scale: [1, 1.3, 1],
+                                      rotate: [0, -10, 10, 0]
+                                    } : {}}
+                                    transition={{ duration: 0.4, ease: "easeOut" }}
+                                  >
+                                    <Bookmark className={`w-4 h-4 transition-all ${savedJobs.includes(job.id) ? 'fill-current' : ''}`} />
+                                  </motion.div>
+                                </motion.button>
+                              )}
                             </div>
                           </div>
 

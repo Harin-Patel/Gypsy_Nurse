@@ -1762,20 +1762,18 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         router.back()
                       }
                     }}
-                    whileHover={isMobile ? {} : { scale: 1.1 }}
+                    whileHover={isMobile ? { scale: 1.15, rotate: -5 } : { scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
-                    className={`group ${isMobile ? 'w-10 h-10 rounded-lg bg-white/90' : 'w-12 h-12 rounded-xl'} transition-all duration-200 flex items-center justify-center`}
-                    style={isMobile ? {
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
-                    } : {
+                    className={isMobile ? `p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg bg-white/30 text-white hover:bg-primary-500` : `group w-12 h-12 rounded-xl transition-all duration-200 flex items-center justify-center`}
+                    style={!isMobile ? {
                       background: 'rgba(255, 255, 255, 0.15)',
                       backdropFilter: 'blur(20px) saturate(180%)',
                       WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                       border: '1px solid rgba(255, 255, 255, 0.3)',
                       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                    }}
+                    } : {}}
                   >
-                    <ArrowLeft className={`${isMobile ? 'w-5 h-5 text-gray-700' : 'w-5 h-5 text-white drop-shadow-lg transition-transform duration-200 group-hover:-translate-x-1'}`} />
+                    <ArrowLeft className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5 text-white drop-shadow-lg transition-transform duration-200 group-hover:-translate-x-1'}`} />
                   </motion.button>
                 </div>
 
@@ -1786,7 +1784,7 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                     <motion.button
                       type="button"
                       disabled={isPending}
-                      whileHover={isMobile || isPending ? {} : { scale: 1.1 }}
+                      whileHover={isMobile ? (isPending ? {} : { scale: 1.15, rotate: 5 }) : (isPending ? {} : { scale: 1.1 })}
                       whileTap={{ scale: 0.9 }}
                       onClick={(e) => {
                         if (isPending) {
@@ -1798,14 +1796,8 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         e.stopPropagation()
                         handleLike()
                       }}
-                      className={`${isMobile ? 'w-9 h-9 rounded-lg' : 'w-12 h-12 rounded-xl'} transition-all flex items-center justify-center ${isPending ? 'cursor-not-allowed opacity-70' : ''}`}
-                      style={isMobile ? (isLiked ? {
-                        background: '#7F2860',
-                        boxShadow: '0 2px 8px rgba(127, 40, 96, 0.3)'
-                      } : {
-                        background: 'rgba(255, 255, 255, 0.95)',
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
-                      }) : (isLiked ? {
+                      className={isMobile ? `p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg ${isPending ? 'cursor-not-allowed opacity-70' : ''} ${isLiked ? 'bg-primary-500 text-white' : 'bg-white/30 text-white hover:bg-primary-500'}` : `${isPending ? 'cursor-not-allowed opacity-70' : ''} ${isMobile ? 'w-9 h-9 rounded-lg' : 'w-12 h-12 rounded-xl'} transition-all flex items-center justify-center`}
+                      style={!isMobile ? (isLiked ? {
                         background: isPending ? 'rgba(127, 40, 96, 0.6)' : 'rgba(127, 40, 96, 0.9)',
                         backdropFilter: 'blur(20px) saturate(180%)',
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
@@ -1817,16 +1809,16 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                         border: isPending ? '1px solid rgba(200, 200, 200, 0.5)' : '1px solid rgba(255, 255, 255, 0.3)',
                         boxShadow: isPending ? '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                      })}
+                      }) : {}}
                     >
-                      <ThumbsUp className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} ${isLiked ? 'fill-white text-white' : isPending ? (isMobile ? 'text-gray-400' : 'text-gray-300') : (isMobile ? 'text-gray-700' : 'text-white drop-shadow-lg')}`} />
+                      <ThumbsUp className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} ${isLiked ? 'fill-white text-white' : isPending ? (isMobile ? 'text-white' : 'text-gray-300') : (isMobile ? 'text-white' : 'text-white drop-shadow-lg')}`} />
                     </motion.button>
 
                     {/* Dislike Button */}
                     <motion.button
                       type="button"
                       disabled={isPending}
-                      whileHover={isMobile || isPending ? {} : { scale: 1.1 }}
+                      whileHover={isMobile ? (isPending ? {} : { scale: 1.15, rotate: -5 }) : (isPending ? {} : { scale: 1.1 })}
                       whileTap={{ scale: 0.9 }}
                       onClick={(e) => {
                         if (isPending) {
@@ -1838,14 +1830,8 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         e.stopPropagation()
                         handleDislike()
                       }}
-                      className={`${isMobile ? 'w-9 h-9 rounded-lg' : 'w-12 h-12 rounded-xl'} transition-all flex items-center justify-center ${isPending ? 'cursor-not-allowed opacity-70' : ''}`}
-                      style={isMobile ? (isDisliked ? {
-                        background: '#7F2860',
-                        boxShadow: '0 2px 8px rgba(127, 40, 96, 0.3)'
-                      } : {
-                        background: 'rgba(255, 255, 255, 0.95)',
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
-                      }) : (isDisliked ? {
+                      className={isMobile ? `p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg ${isPending ? 'cursor-not-allowed opacity-70' : ''} ${isDisliked ? 'bg-primary-500 text-white' : 'bg-white/30 text-white hover:bg-primary-500'}` : `${isPending ? 'cursor-not-allowed opacity-70' : ''} ${isMobile ? 'w-9 h-9 rounded-lg' : 'w-12 h-12 rounded-xl'} transition-all flex items-center justify-center`}
+                      style={!isMobile ? (isDisliked ? {
                         background: isPending ? 'rgba(127, 40, 96, 0.6)' : 'rgba(127, 40, 96, 0.9)',
                         backdropFilter: 'blur(20px) saturate(180%)',
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
@@ -1857,16 +1843,16 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                         border: isPending ? '1px solid rgba(200, 200, 200, 0.5)' : '1px solid rgba(255, 255, 255, 0.3)',
                         boxShadow: isPending ? '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                      })}
+                      }) : {}}
                     >
-                      <ThumbsDown className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} ${isDisliked ? 'fill-white text-white' : isPending ? (isMobile ? 'text-gray-400' : 'text-gray-300') : (isMobile ? 'text-gray-700' : 'text-white drop-shadow-lg')}`} />
+                      <ThumbsDown className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} ${isDisliked ? 'fill-white text-white' : isPending ? (isMobile ? 'text-white' : 'text-gray-300') : (isMobile ? 'text-white' : 'text-white drop-shadow-lg')}`} />
                     </motion.button>
 
                     {/* Bookmark Button */}
                     <motion.button
                       type="button"
                       disabled={isPending}
-                      whileHover={isMobile || isPending ? {} : { scale: 1.1 }}
+                      whileHover={isMobile ? (isPending ? {} : { scale: 1.15, rotate: -5 }) : (isPending ? {} : { scale: 1.1 })}
                       whileTap={{ scale: 0.9 }}
                       onClick={(e) => {
                         if (isPending) {
@@ -1878,14 +1864,8 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         e.stopPropagation()
                         handleSave()
                       }}
-                      className={`${isMobile ? 'w-9 h-9 rounded-lg' : 'w-12 h-12 rounded-xl'} transition-all flex items-center justify-center ${isPending ? 'cursor-not-allowed opacity-70' : ''}`}
-                      style={isMobile ? (isSaved ? {
-                        background: '#7F2860',
-                        boxShadow: '0 2px 8px rgba(127, 40, 96, 0.3)'
-                      } : {
-                        background: 'rgba(255, 255, 255, 0.95)',
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
-                      }) : (isSaved ? {
+                      className={isMobile ? `p-2.5 rounded-xl backdrop-blur-md transition-all shadow-lg ${isPending ? 'cursor-not-allowed opacity-70' : ''} ${isSaved ? 'bg-primary-500 text-white' : 'bg-white/30 text-white hover:bg-primary-500'}` : `${isPending ? 'cursor-not-allowed opacity-70' : ''} ${isMobile ? 'w-9 h-9 rounded-lg' : 'w-12 h-12 rounded-xl'} transition-all flex items-center justify-center`}
+                      style={!isMobile ? (isSaved ? {
                         background: isPending ? 'rgba(127, 40, 96, 0.6)' : 'rgba(127, 40, 96, 0.9)',
                         backdropFilter: 'blur(20px) saturate(180%)',
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
@@ -1897,9 +1877,9 @@ function JobDetailsContent({ params }: { params: Promise<{ id: string }> }) {
                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                         border: isPending ? '1px solid rgba(200, 200, 200, 0.5)' : '1px solid rgba(255, 255, 255, 0.3)',
                         boxShadow: isPending ? '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                      })}
+                      }) : {}}
                     >
-                      <Bookmark className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} ${isSaved ? 'fill-white text-white' : isPending ? (isMobile ? 'text-gray-400' : 'text-gray-300') : (isMobile ? 'text-gray-700' : 'text-white drop-shadow-lg')}`} />
+                      <Bookmark className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} ${isSaved ? 'fill-white text-white' : isPending ? (isMobile ? 'text-white' : 'text-gray-300') : (isMobile ? 'text-white' : 'text-white drop-shadow-lg')}`} />
                     </motion.button>
                   </div>
                 )}

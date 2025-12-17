@@ -1484,7 +1484,7 @@ function JobsPageContent() {
           className="fixed left-0 right-0 bg-white z-[99]"
           style={{ 
             position: 'fixed', 
-            top: `calc(56px + env(safe-area-inset-top, 0px))`, 
+            top: `calc(48px + 0.375rem + env(safe-area-inset-top, 0px))`, 
             zIndex: 99,
             backgroundColor: '#ffffff',
             width: '100%',
@@ -1492,11 +1492,9 @@ function JobsPageContent() {
         >
           {/* Mobile Header Content */}
           <div className="px-3 pt-3 pb-3">
-            <div className="flex items-center justify-between mb-3">
-              <h1 className="text-xl font-bold text-gray-900">
-                Find Your Next Job
-              </h1>
-            </div>
+            <h1 className="text-xl font-bold text-gray-900 leading-none mb-3">
+              Find Your Next Job
+            </h1>
             
             {/* Mobile Search Bar - Native App Style */}
             <div className="space-y-2">

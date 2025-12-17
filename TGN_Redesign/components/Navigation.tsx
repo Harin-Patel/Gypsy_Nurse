@@ -320,7 +320,13 @@ export default function Navigation() {
                     <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse" />
                   ) : isAuthenticated ? (
                     <button
-                      onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                      onClick={() => {
+                        if (isMobile) {
+                          router.push('/profile')
+                        } else {
+                          setShowProfileDropdown(!showProfileDropdown)
+                        }
+                      }}
                       className="relative"
                     >
                       {(profilePhoto || user?.avatar) ? (

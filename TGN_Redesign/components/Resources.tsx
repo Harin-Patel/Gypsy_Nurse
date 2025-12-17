@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { BookOpen, GraduationCap, Home, HelpCircle, FileText, Award, ArrowRight } from 'lucide-react'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useRouter } from 'next/navigation'
 
 const resources = [
   {
@@ -45,6 +46,7 @@ const resources = [
 
 export default function Resources() {
   const isMobile = useIsMobile()
+  const router = useRouter()
   return (
     <section id="resources" className={`${isMobile ? 'py-8 bg-white' : 'py-20 bg-white relative overflow-hidden'}`}>
       {/* Decorative Elements - Desktop Only */}
@@ -74,13 +76,15 @@ export default function Resources() {
                 {resources.map((resource, index) => {
                   const Icon = resource.icon
                   return (
-                    <motion.div
+                    <motion.button
                       key={resource.id}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.05 }}
                       whileTap={{ scale: 0.98 }}
+                      onClick={() => router.push('/resources')}
                       className="flex-shrink-0 w-[160px] bg-white rounded-xl border border-gray-200 shadow-sm active:bg-gray-50 transition-all p-4 flex flex-col items-center text-center"
+                      style={{ touchAction: 'manipulation' }}
                     >
                       {/* Icon */}
                       <div className={`w-14 h-14 ${resource.bgColor} rounded-xl flex items-center justify-center mb-3`}>
@@ -96,7 +100,7 @@ export default function Resources() {
                       <p className="text-[11px] text-gray-600 line-clamp-2 leading-snug">
                         {resource.description}
                       </p>
-                    </motion.div>
+                    </motion.button>
                   )
                 })}
               </div>

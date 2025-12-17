@@ -2739,7 +2739,7 @@ export default function ProfilePage() {
         )}
       </div>
 
-      <Footer />
+      {!isMobile && <Footer />}
 
       {/* Edit Profile Modal */}
       {showEditModal && (

@@ -76,6 +76,18 @@
     body > *:not([data-mobile-bottom-nav]) {
       transform: none !important;
     }
+    
+    /* Ensure toast notifications appear above bottom navigation */
+    /* Target react-hot-toast container and toast elements */
+    div[role="status"] {
+      z-index: 10001 !important;
+    }
+    
+    /* Target parent containers of toast elements */
+    div[role="status"] ~ *,
+    body > div:last-child {
+      z-index: 10000 !important;
+    }
   }
   
   #__next {

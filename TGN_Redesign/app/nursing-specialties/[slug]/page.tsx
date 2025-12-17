@@ -54,6 +54,7 @@ import {
 import { SPECIALTY_IMAGE_URLS, specialties } from '../page'
 import { SAMPLE_JOBS, Job } from '@/app/jobs/page'
 import { getFacilityImageWithFallback } from '@/utils/stateImages'
+import { formatShiftHoursForMobile } from '@/utils/jobData'
 
 // Format date with year
 const formatDateWithYear = (date: string | undefined): string => {
@@ -971,43 +972,6 @@ function SpecialtyDetailContent({ params }: { params: Promise<{ slug: string }> 
                             )}
                           </div>
 
-                          {/* Action Buttons */}
-                          {isAuthenticated && !pendingJobs.includes(job.id) && (
-                            <div className="flex items-center gap-1">
-                              <motion.button
-                                type="button"
-                                whileTap={{ scale: 0.9 }}
-                                onClick={(e) => {
-                                  e.preventDefault()
-                                  e.stopPropagation()
-                                  toggleLikeJob(job.id)
-                                }}
-                                className={`p-1.5 rounded-lg transition-colors ${
-                                  likedJobs.includes(job.id)
-                                    ? 'bg-primary-100 text-primary-600'
-                                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                                }`}
-                              >
-                                <ThumbsUp className={`w-3.5 h-3.5 ${likedJobs.includes(job.id) ? 'fill-current' : ''}`} />
-                              </motion.button>
-                              <motion.button
-                                type="button"
-                                whileTap={{ scale: 0.9 }}
-                                onClick={(e) => {
-                                  e.preventDefault()
-                                  e.stopPropagation()
-                                  toggleSaveJob(job.id)
-                                }}
-                                className={`p-1.5 rounded-lg transition-colors ${
-                                  savedJobs.includes(job.id)
-                                    ? 'bg-primary-100 text-primary-600'
-                                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                                }`}
-                              >
-                                <Bookmark className={`w-3.5 h-3.5 ${savedJobs.includes(job.id) ? 'fill-current' : ''}`} />
-                              </motion.button>
-                            </div>
-                          )}
 
                           {/* PENDING Badge */}
                           {pendingJobs.includes(job.id) && (

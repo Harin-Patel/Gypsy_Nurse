@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Calendar, MapPin, Users, Clock, ArrowRight, Sparkles } from 'lucide-react'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useRouter } from 'next/navigation'
 
 const events = [
   {
@@ -48,6 +49,7 @@ const events = [
 
 export default function Events() {
   const isMobile = useIsMobile()
+  const router = useRouter()
   const featuredEvent = events.find(e => e.featured)
   const regularEvents = events.filter(e => !e.featured)
 
@@ -152,6 +154,7 @@ export default function Events() {
             {/* Mobile CTA Button - Native Style */}
             <motion.button
               whileTap={{ scale: 0.98 }}
+              onClick={() => router.push('/events')}
               className="w-full bg-gray-50 text-gray-900 py-3.5 px-4 font-semibold text-[15px] rounded-xl border border-gray-200 active:bg-gray-100 transition-colors flex items-center justify-center gap-2"
               style={{ touchAction: 'manipulation' }}
             >

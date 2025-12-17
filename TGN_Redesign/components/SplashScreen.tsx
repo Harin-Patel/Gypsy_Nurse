@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 
 // Check if device is mobile immediately (client-side only)
 function checkIsMobileImmediate(): boolean {
@@ -11,11 +12,24 @@ function checkIsMobileImmediate(): boolean {
 }
 
 export default function SplashScreen() {
+  const pathname = usePathname()
   // Always start as visible - will be hidden if desktop or after timer
   const [isVisible, setIsVisible] = useState(true)
   const [isMobile, setIsMobile] = useState(true) // Default to true to show splash initially
 
   useEffect(() => {
+    // Check if we're on a job details page - if so, hide splash immediately
+    if (pathname?.startsWith('/jobs/') && pathname !== '/jobs') {
+      setIsVisible(false)
+      // Ensure body styles are reset
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = ''
+        document.body.style.position = ''
+        document.body.style.width = ''
+      }
+      return
+    }
+
     // Check mobile status immediately on mount
     const mobile = checkIsMobileImmediate()
     setIsMobile(mobile)
@@ -51,7 +65,7 @@ export default function SplashScreen() {
       document.body.style.position = originalPosition
       document.body.style.width = originalWidth
     }
-  }, [])
+  }, [pathname])
 
   // Don't show on desktop
   if (!isMobile) {

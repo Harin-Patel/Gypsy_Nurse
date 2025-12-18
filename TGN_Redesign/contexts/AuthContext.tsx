@@ -10,6 +10,15 @@ interface User {
   email: string
   avatar: string
   role: 'jobseeker' | 'recruiter' | 'admin' | 'agency'
+  profession?: string
+  specialty?: string
+  jobRole?: string
+  location?: {
+    city?: string
+    state?: string
+    region?: string
+  }
+  profileComplete?: boolean
 }
 
 interface AuthContextType {
@@ -20,6 +29,7 @@ interface AuthContextType {
   signup: (name: string, email: string, password: string, role: string) => Promise<{ success: boolean; error?: string }>
   logout: (redirectPath?: string) => void
   updateUser: (userData: Partial<User>) => void
+  isProfileComplete: () => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -196,8 +206,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateUser = (userData: Partial<User>) => {
     if (user) {
-      setUser({ ...user, ...userData })
+      const updatedUser = { ...user, ...userData }
+      // Only auto-mark profile as complete if profileComplete is not explicitly set in userData
+      // This allows onboarding flow to prevent premature completion
+      if (userData.profileComplete === undefined) {
+        if (updatedUser.profession && updatedUser.specialty && updatedUser.location) {
+          updatedUser.profileComplete = true
+        }
+      }
+      setUser(updatedUser)
+      // Note: localStorage is automatically saved via useEffect when user state changes
     }
+  }
+
+  const isProfileComplete = (): boolean => {
+    if (!user) return false
+    // Check the profileComplete flag first - if explicitly set, use that
+    // Otherwise, check if all required fields are present
+    if (user.profileComplete !== undefined) {
+      return user.profileComplete
+    }
+    return !!(user.profession && user.specialty && user.location)
   }
 
   const value: AuthContextType = {
@@ -207,7 +236,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     signup,
     logout,
-    updateUser
+    updateUser,
+    isProfileComplete
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -7,6 +7,7 @@ import MobileBottomNav from '@/components/MobileBottomNav'
 import ToastConfig from '@/components/ToastConfig'
 import SplashScreen from '@/components/SplashScreen'
 import Onboarding from '@/components/Onboarding'
+import ProfileOnboarding from '@/components/ProfileOnboarding'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -50,6 +51,7 @@ export default function RootLayout({
         <Providers>
           <SplashScreen />
           <Onboarding />
+          <ProfileOnboarding />
           {children}
           <MobileBottomNav />
           <Chatbot />

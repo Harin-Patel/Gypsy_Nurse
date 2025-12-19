@@ -766,6 +766,12 @@ function JobsPageContent() {
         job.licenseSpecialty.toLowerCase().includes(searchQuery.toLowerCase()) ||
         job.staffingCompany.toLowerCase().includes(searchQuery.toLowerCase())
       )
+      newAppliedFilters.push({
+        id: 'search',
+        type: 'search',
+        label: 'Search',
+        value: searchQuery
+      })
     }
 
     // City filter (also searches in state field for location-based searches)
@@ -1107,6 +1113,9 @@ function JobsPageContent() {
 
     // Update filter state - the useEffect will automatically apply filters
     switch (filter.type) {
+      case 'search':
+        setSearchQuery('')
+        break
       case 'city':
         setFilterCity('')
         break
@@ -4901,13 +4910,42 @@ function JobsPageContent() {
 
       {/* Job Listings - Modern Card Grid */}
       <main className={`flex-1 ${isMobile ? 'px-0 pb-20' : 'max-w-7xl mx-auto px-4 py-6'} w-full`} style={isMobile ? { position: 'relative', zIndex: 1, paddingTop: '0px' } : {}}>
+        {/* Search Description - Show what user searched for */}
+        {searchQuery.trim() && filteredJobs.length > 0 && (
+          <div className={`${isMobile ? 'px-4 pt-4' : 'mb-4'}`}>
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-3"
+            >
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-primary-600 flex-shrink-0" />
+                <p className="text-sm text-gray-700">
+                  <span className="font-medium text-primary-700">Search results for:</span>{' '}
+                  <span className="font-semibold text-gray-900">"{searchQuery}"</span>
+                  {' '}
+                  <span className="text-gray-600">
+                    ({filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'} found)
+                  </span>
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+        
         {filteredJobs.length === 0 ? (
           <div className="text-center py-16">
             <div className="max-w-md mx-auto">
               <Filter className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">No jobs found</h3>
               <p className="text-gray-600 mb-6">
-                Try adjusting your filters or search criteria to find more jobs.
+                {searchQuery.trim() ? (
+                  <>
+                    No jobs found for <span className="font-semibold">"{searchQuery}"</span>. Try adjusting your search or filters.
+                  </>
+                ) : (
+                  'Try adjusting your filters or search criteria to find more jobs.'
+                )}
               </p>
             </div>
           </div>

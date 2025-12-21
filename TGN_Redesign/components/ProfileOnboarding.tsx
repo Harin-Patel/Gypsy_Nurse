@@ -521,7 +521,6 @@ export default function ProfileOnboarding() {
     if (currentStep >= 5) {
       progressData.name = profileData.name
       progressData.email = profileData.email
-      progressData.address = profileData.address
       progressData.dob = profileData.dob
       progressData.ssn = profileData.ssn
       progressData.licenses = profileData.licenses
@@ -555,7 +554,6 @@ export default function ProfileOnboarding() {
       // },
       name: profileData.name,
       email: profileData.email,
-      address: profileData.address,
       dob: profileData.dob,
       ssn: profileData.ssn,
       licenses: profileData.licenses,
@@ -565,7 +563,7 @@ export default function ProfileOnboarding() {
       education: profileData.education,
       references: profileData.references,
       profileComplete: true
-    })
+    } as any)
 
     toast.success('Profile completed successfully!')
     setIsVisible(false)
@@ -660,7 +658,6 @@ export default function ProfileOnboarding() {
         profileComplete: false, // Explicitly prevent auto-completion
         name: updatedData.name,
         email: updatedData.email,
-        address: updatedData.address,
         dob: updatedData.dob,
         ssn: updatedData.ssn,
         licenses: updatedData.licenses,
@@ -2598,7 +2595,7 @@ export default function ProfileOnboarding() {
                   {/* Sticky Header */}
                   <div className="sticky top-0 z-50 bg-white">
                     <div className="px-4 sm:px-6 pt-6 pb-4">
-                      <div className="max-w-4xl mx-auto">
+                      <div className="max-w-2xl mx-auto">
                         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
                           Profile Summary
                         </h1>
@@ -2609,7 +2606,7 @@ export default function ProfileOnboarding() {
                     </div>
                   </div>
                   <div className="px-4 sm:px-6 pb-6">
-                    <div className="max-w-4xl mx-auto">
+                    <div className="max-w-2xl mx-auto">
 
                   <div className="space-y-0">
                     {/* Step 5: Personal Information */}
@@ -2626,7 +2623,7 @@ export default function ProfileOnboarding() {
                               {profileData.email && <p className="text-sm text-gray-600"><span className="font-medium">Email:</span> {profileData.email}</p>}
                               {profileData.address && <p className="text-sm text-gray-600"><span className="font-medium">Address:</span> {profileData.address}</p>}
                               {profileData.dob && <p className="text-sm text-gray-600"><span className="font-medium">Date of Birth:</span> {formatDateToDDMMYYYY(profileData.dob)}</p>}
-                              {profileData.ssn && <p className="text-sm text-gray-600"><span className="font-medium">SSN:</span> ****{profileData.ssn}</p>}
+                              {profileData.ssn && <p className="text-sm text-gray-600"><span className="font-medium">SSN:</span> ****{profileData.ssn.slice(-4)}</p>}
                               {!profileData.name && !profileData.email && !profileData.address && !profileData.dob && !profileData.ssn && (
                                 <p className="text-sm text-gray-400 italic">No information added</p>
                               )}

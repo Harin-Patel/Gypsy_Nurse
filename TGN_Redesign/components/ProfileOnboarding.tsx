@@ -665,8 +665,20 @@ export default function ProfileOnboarding() {
     // First 4 steps commented out but keeping completion logic
     // const finalProfession = profession || otherLicensed
 
-    // Update user profile with all data
-    updateUser({
+    // Use ref to get the latest profileData to avoid stale state
+    const latestProfileData = profileDataRef.current
+
+    // Debug: Log references before saving
+    console.log('=== HANDLE COMPLETE DEBUG ===')
+    console.log('profileData.references:', profileData.references)
+    console.log('profileDataRef.current.references:', latestProfileData.references)
+    console.log('References count (state):', profileData.references?.length || 0)
+    console.log('References count (ref):', latestProfileData.references?.length || 0)
+    console.log('Is array (state):', Array.isArray(profileData.references))
+    console.log('Is array (ref):', Array.isArray(latestProfileData.references))
+
+    // Update user profile with all data - use ref to ensure latest data
+    const userUpdateData = {
       // profession: finalProfession,
       // specialty: specialties.join(', '), // Store as comma-separated string
       // jobRole: jobRole || undefined,
@@ -675,37 +687,59 @@ export default function ProfileOnboarding() {
       //   state: location.state
       // },
       // Personal Information fields
-      name: profileData.name,
-      firstName: profileData.firstName,
-      lastName: profileData.lastName,
-      email: profileData.email,
-      phoneNumber: profileData.phoneNumber,
-      address: profileData.address,
-      streetAddress: profileData.streetAddress,
-      additionalAddress: profileData.additionalAddress,
-      city: profileData.city,
-      state: profileData.state,
-      zipCode: profileData.zipCode,
-      dob: profileData.dob,
-      ssn: profileData.ssn,
-      yearsOfExperience: profileData.yearsOfExperience,
-      // Section arrays
-      licenses: profileData.licenses,
-      certificates: profileData.certificates,
-      specialties: profileData.specialties,
-      workHistory: profileData.workHistory,
-      education: profileData.education,
-      references: profileData.references,
+      name: latestProfileData.name,
+      firstName: latestProfileData.firstName,
+      lastName: latestProfileData.lastName,
+      email: latestProfileData.email,
+      phoneNumber: latestProfileData.phoneNumber,
+      address: latestProfileData.address,
+      streetAddress: latestProfileData.streetAddress,
+      additionalAddress: latestProfileData.additionalAddress,
+      city: latestProfileData.city,
+      state: latestProfileData.state,
+      zipCode: latestProfileData.zipCode,
+      dob: latestProfileData.dob,
+      ssn: latestProfileData.ssn,
+      yearsOfExperience: latestProfileData.yearsOfExperience,
+      // Section arrays - ensure they're arrays, use ref data
+      licenses: Array.isArray(latestProfileData.licenses) ? latestProfileData.licenses : [],
+      certificates: Array.isArray(latestProfileData.certificates) ? latestProfileData.certificates : [],
+      specialties: Array.isArray(latestProfileData.specialties) ? latestProfileData.specialties : [],
+      workHistory: Array.isArray(latestProfileData.workHistory) ? latestProfileData.workHistory : [],
+      education: Array.isArray(latestProfileData.education) ? latestProfileData.education : [],
+      references: Array.isArray(latestProfileData.references) ? latestProfileData.references : [],
       profileComplete: true
-    } as any)
+    } as any
+
+    // Debug: Log what we're sending to updateUser
+    console.log('Updating user with references:', userUpdateData.references)
+    console.log('References in update data:', JSON.stringify(userUpdateData.references, null, 2))
+    console.log('=== END HANDLE COMPLETE DEBUG ===')
+
+    // Update user
+    updateUser(userUpdateData)
+    
+    // Also directly update localStorage to ensure it's saved immediately
+    if (typeof window !== 'undefined') {
+      try {
+        const storedUser = localStorage.getItem('auth_user')
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser)
+          const updatedUser = {
+            ...parsedUser,
+            ...userUpdateData
+          }
+          localStorage.setItem('auth_user', JSON.stringify(updatedUser))
+          console.log('Directly saved to localStorage. References:', updatedUser.references)
+        }
+      } catch (error) {
+        console.error('Error directly saving to localStorage:', error)
+      }
+    }
 
     toast.success('Profile completed successfully!')
     setIsVisible(false)
     document.body.style.overflow = ''
-    
-    setTimeout(() => {
-      router.push('/profile')
-    }, 500)
   }
 
   const handleClose = () => {
@@ -781,6 +815,14 @@ export default function ProfileOnboarding() {
       id: editingItem?.id || `${currentSection}-${Date.now()}`
     }
     
+    // Debug for references
+    if (currentSection === 'references') {
+      console.log('=== SAVING REFERENCE ===')
+      console.log('formData:', formData)
+      console.log('newItem:', newItem)
+      console.log('Current profileData.references:', profileData.references)
+    }
+    
     // Update local state and save to backend
     setProfileData(prev => {
       const updatedData = editingItem
@@ -795,6 +837,12 @@ export default function ProfileOnboarding() {
             [currentSection]: [...prev[currentSection], newItem]
           }
       
+      // Debug for references
+      if (currentSection === 'references') {
+        console.log('Updated references array:', updatedData.references)
+        console.log('References count after update:', updatedData.references?.length || 0)
+      }
+      
       // Save progress to backend with updated data immediately
       // Use the updatedData directly to avoid stale state issues
       const progressData: any = {
@@ -803,16 +851,37 @@ export default function ProfileOnboarding() {
         email: updatedData.email,
         dob: updatedData.dob,
         ssn: updatedData.ssn,
-        licenses: updatedData.licenses,
-        certificates: updatedData.certificates,
-        specialties: updatedData.specialties,
-        workHistory: updatedData.workHistory,
-        education: updatedData.education,
-        references: updatedData.references
+        licenses: Array.isArray(updatedData.licenses) ? updatedData.licenses : [],
+        certificates: Array.isArray(updatedData.certificates) ? updatedData.certificates : [],
+        specialties: Array.isArray(updatedData.specialties) ? updatedData.specialties : [],
+        workHistory: Array.isArray(updatedData.workHistory) ? updatedData.workHistory : [],
+        education: Array.isArray(updatedData.education) ? updatedData.education : [],
+        references: Array.isArray(updatedData.references) ? updatedData.references : []
       }
+      
+      // Debug for references
+      if (currentSection === 'references') {
+        console.log('Saving to updateUser with references:', progressData.references)
+      }
+      
       // Use setTimeout to ensure state update is processed before saving
       setTimeout(() => {
         updateUser(progressData)
+        
+        // Also directly update localStorage for references
+        if (currentSection === 'references' && typeof window !== 'undefined') {
+          try {
+            const storedUser = localStorage.getItem('auth_user')
+            if (storedUser) {
+              const parsedUser = JSON.parse(storedUser)
+              parsedUser.references = progressData.references
+              localStorage.setItem('auth_user', JSON.stringify(parsedUser))
+              console.log('Directly saved references to localStorage:', parsedUser.references)
+            }
+          } catch (error) {
+            console.error('Error saving references to localStorage:', error)
+          }
+        }
       }, 0)
       
       return updatedData
@@ -1774,18 +1843,6 @@ export default function ProfileOnboarding() {
                         </p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => {
-                        setShowDetailsPage(false)
-                        setEditingItem(null)
-                        setCurrentSection(null)
-                        setFormData({})
-                      }}
-                      className="p-2.5 text-gray-500 hover:text-gray-900 hover:bg-white/80 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
-                      aria-label="Close modal"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
                   </div>
                 </div>
                 

@@ -129,7 +129,15 @@ export default function LoginPage() {
           // After successful OTP verification, proceed with login
           const result = await login(mobile, '', 'jobseeker')
           if (result.success) {
-            toast.success('Login successful! Welcome back!')
+            // Check if onboarding will be shown (profile incomplete)
+            // Wait a bit for user state to update, then check
+            setTimeout(() => {
+              const currentUser = JSON.parse(localStorage.getItem('auth_user') || 'null')
+              const willShowOnboarding = !currentUser || currentUser.profileComplete === false || currentUser.profileComplete === undefined
+              if (!willShowOnboarding) {
+                toast.success('Login successful! Welcome back!')
+              }
+            }, 100)
             router.push('/')
           } else {
             const errorMsg = result.error || 'OTP verification failed'
@@ -145,7 +153,15 @@ export default function LoginPage() {
     const result = await login(email, password, 'jobseeker')
 
     if (result.success) {
-      toast.success('Login successful! Welcome back!')
+      // Check if onboarding will be shown (profile incomplete)
+      // Wait a bit for user state to update, then check
+      setTimeout(() => {
+        const currentUser = JSON.parse(localStorage.getItem('auth_user') || 'null')
+        const willShowOnboarding = !currentUser || currentUser.profileComplete === false || currentUser.profileComplete === undefined
+        if (!willShowOnboarding) {
+          toast.success('Login successful! Welcome back!')
+        }
+      }, 100)
       router.push('/')
     } else {
       const errorMsg = result.error || 'Login failed'

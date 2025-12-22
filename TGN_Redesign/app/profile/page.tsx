@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navigation from '@/components/Navigation'
-import Footer from '@/components/Footer'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import { useAuth } from '@/contexts/AuthContext'
 import { 
@@ -19,6 +18,139 @@ import { useDisableBodyScroll } from '@/utils/useDisableBodyScroll'
 import { getProfilePhoto, setProfilePhoto as saveProfilePhoto, removeProfilePhoto as deleteProfilePhoto, getProfilePhotoWithFallback } from '@/utils/profilePhoto'
 import { compressImage } from '@/utils/imageCompression'
 import { SAMPLE_JOBS } from '@/utils/jobData'
+
+// Constants from onboarding
+const US_STATES = [
+  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware',
+  'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky',
+  'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi',
+  'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico',
+  'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania',
+  'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
+  'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
+]
+
+const LICENSE_TYPES = [
+  'Registered Nurse (RN)',
+  'Licensed Practical Nurse (LPN)',
+  'Certified Nursing Assistant (CNA)',
+  'Nurse Practitioner (NP)',
+  'Clinical Nurse Specialist (CNS)'
+]
+
+const CERTIFICATE_TYPES = [
+  'Basic Life Support (BLS)',
+  'Advanced Cardiovascular Life Support (ACLS)',
+  'Pediatric Advanced Life Support (PALS)',
+  'Critical Care Registered Nurse (CCRN)',
+  'Certified Emergency Nurse (CEN)'
+]
+
+const CERTIFICATIONS = [
+  'Basic Life Support (BLS)',
+  'Advanced Cardiovascular Life Support (ACLS)',
+  'Pediatric Advanced Life Support (PALS)',
+  'Critical Care Registered Nurse (CCRN)',
+  'Certified Emergency Nurse (CEN)',
+  'Neonatal Resuscitation Program (NRP)'
+]
+
+const CERTIFICATION_SPECIALTIES_MAP: { [key: string]: string[] } = {
+  'Basic Life Support (BLS)': [
+    'Emergency Department',
+    'Intensive Care Unit (ICU)',
+    'Cardiac Care Unit (CCU)',
+    'Medical-Surgical'
+  ],
+  'Advanced Cardiovascular Life Support (ACLS)': [
+    'Emergency Department',
+    'Intensive Care Unit (ICU)',
+    'Cardiac Care Unit (CCU)',
+    'Medical-Surgical'
+  ],
+  'Pediatric Advanced Life Support (PALS)': [
+    'Pediatric Emergency',
+    'Neonatal Intensive Care Unit (NICU)',
+    'Emergency Department'
+  ],
+  'Critical Care Registered Nurse (CCRN)': [
+    'Intensive Care Unit (ICU)',
+    'Cardiac Care Unit (CCU)',
+    'Emergency Department',
+    'Medical-Surgical'
+  ],
+  'Certified Emergency Nurse (CEN)': [
+    'Emergency Department',
+    'Pediatric Emergency'
+  ],
+  'Neonatal Resuscitation Program (NRP)': [
+    'Neonatal Intensive Care Unit (NICU)',
+    'Pediatric Emergency'
+  ]
+}
+
+const SCHOOLS = [
+  'University of California, Los Angeles',
+  'Johns Hopkins University',
+  'University of Pennsylvania',
+  'Duke University',
+  'University of Michigan',
+  'New York University',
+  'Columbia University',
+  'University of North Carolina',
+  'Ohio State University',
+  'University of Texas',
+  'University of Washington',
+  'Emory University',
+  'Vanderbilt University',
+  'Georgetown University',
+  'Boston University',
+  'University of Southern California',
+  'Northwestern University',
+  'University of Chicago',
+  'Yale University',
+  'Harvard University'
+]
+
+const COURSE_OF_STUDY = [
+  'Bachelor of Science in Nursing (BSN)',
+  'Associate Degree in Nursing (ADN)',
+  'Master of Science in Nursing (MSN)',
+  'Doctor of Nursing Practice (DNP)',
+  'Licensed Practical Nurse (LPN) Program',
+  'Diploma in Nursing',
+  'Bachelor of Science in Health Sciences',
+  'Master of Public Health (MPH)',
+  'Doctor of Philosophy in Nursing (PhD)'
+]
+
+const DEGREES = [
+  'Associate Degree',
+  'Bachelor\'s Degree',
+  'Master\'s Degree',
+  'Doctorate',
+  'Certificate',
+  'Diploma'
+]
+
+const REFERENCE_JOB_TITLES = [
+  'Manager',
+  'Supervisor',
+  'Director',
+  'Charge Nurse',
+  'Clinical Manager',
+  'Unit Manager',
+  'Department Head',
+  'Nurse Manager',
+  'Assistant Manager',
+  'Clinical Coordinator',
+  'Head Nurse',
+  'Lead Nurse',
+  'Administrator',
+  'Chief Nursing Officer',
+  'Vice President',
+  'Other'
+]
 
 export default function ProfilePage() {
   const isMobile = useIsMobile()
@@ -55,9 +187,76 @@ export default function ProfilePage() {
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   
-  // State Dropdown
-  const [selectedState, setSelectedState] = useState('MD - Maryland')
+  // State Dropdown - Initialize from user data
+  const [selectedState, setSelectedState] = useState(() => {
+    if (authUser?.state) {
+      // Check if already in "XX - State Name" format
+      if (authUser.state.includes(' - ')) {
+        return authUser.state
+      }
+      // Map state names to abbreviations (common states)
+      const stateAbbreviations: { [key: string]: string } = {
+        'Maryland': 'MD',
+        'California': 'CA',
+        'New York': 'NY',
+        'Texas': 'TX',
+        'Florida': 'FL',
+        'Illinois': 'IL',
+        'Pennsylvania': 'PA',
+        'Ohio': 'OH',
+        'Georgia': 'GA',
+        'North Carolina': 'NC',
+        'Michigan': 'MI',
+        'New Jersey': 'NJ',
+        'Virginia': 'VA',
+        'Washington': 'WA',
+        'Arizona': 'AZ',
+        'Massachusetts': 'MA',
+        'Tennessee': 'TN',
+        'Indiana': 'IN',
+        'Missouri': 'MO',
+        'Colorado': 'CO'
+      }
+      const abbreviation = stateAbbreviations[authUser.state] || authUser.state.substring(0, 2).toUpperCase()
+      return `${abbreviation} - ${authUser.state}`
+    }
+    return 'MD - Maryland'
+  })
   const [showStateDropdown, setShowStateDropdown] = useState(false)
+  
+  // Update selectedState when authUser changes
+  useEffect(() => {
+    if (authUser?.state) {
+      if (authUser.state.includes(' - ')) {
+        setSelectedState(authUser.state)
+      } else {
+        const stateAbbreviations: { [key: string]: string } = {
+          'Maryland': 'MD',
+          'California': 'CA',
+          'New York': 'NY',
+          'Texas': 'TX',
+          'Florida': 'FL',
+          'Illinois': 'IL',
+          'Pennsylvania': 'PA',
+          'Ohio': 'OH',
+          'Georgia': 'GA',
+          'North Carolina': 'NC',
+          'Michigan': 'MI',
+          'New Jersey': 'NJ',
+          'Virginia': 'VA',
+          'Washington': 'WA',
+          'Arizona': 'AZ',
+          'Massachusetts': 'MA',
+          'Tennessee': 'TN',
+          'Indiana': 'IN',
+          'Missouri': 'MO',
+          'Colorado': 'CO'
+        }
+        const abbreviation = stateAbbreviations[authUser.state] || authUser.state.substring(0, 2).toUpperCase()
+        setSelectedState(`${abbreviation} - ${authUser.state}`)
+      }
+    }
+  }, [authUser?.state])
   
   // Disable body scroll when any modal is open
   useDisableBodyScroll(showEditModal)
@@ -75,6 +274,30 @@ export default function ProfilePage() {
   useDisableBodyScroll(showEditReferenceModal)
   useDisableBodyScroll(showDeleteModal)
   useDisableBodyScroll(showPhotoUploadModal)
+  
+  // Add Modal Form States
+  const [addLicenseType, setAddLicenseType] = useState('')
+  const [addLicenseNumber, setAddLicenseNumber] = useState('')
+  const [addLicenseState, setAddLicenseState] = useState('')
+  const [addLicenseExpiration, setAddLicenseExpiration] = useState('')
+  
+  const [addCertificateType, setAddCertificateType] = useState('')
+  const [addCertificateNumber, setAddCertificateNumber] = useState('')
+  const [addCertificateExpiration, setAddCertificateExpiration] = useState('')
+  
+  const [addSpecialtyCertification, setAddSpecialtyCertification] = useState('')
+  const [addSpecialtySpecialty, setAddSpecialtySpecialty] = useState('')
+  
+  const [addEducationTitle, setAddEducationTitle] = useState('')
+  const [addEducationCourse, setAddEducationCourse] = useState('')
+  const [addEducationGraduated, setAddEducationGraduated] = useState('')
+  const [addEducationDegree, setAddEducationDegree] = useState('')
+  
+  const [addReferenceName, setAddReferenceName] = useState('')
+  const [addReferenceTitle, setAddReferenceTitle] = useState('')
+  const [addReferenceWorkHistoryId, setAddReferenceWorkHistoryId] = useState('')
+  const [addReferencePhone, setAddReferencePhone] = useState('')
+  const [addReferenceEmail, setAddReferenceEmail] = useState('')
   
   // Work History Modal States (Add)
   const [workHistoryTitle, setWorkHistoryTitle] = useState('')
@@ -107,6 +330,30 @@ export default function ProfilePage() {
   
   // Education Modal States (Edit)
   const [editDidGraduate, setEditDidGraduate] = useState(false)
+  
+  // Edit Modal Form States
+  const [editLicenseType, setEditLicenseType] = useState('')
+  const [editLicenseNumber, setEditLicenseNumber] = useState('')
+  const [editLicenseState, setEditLicenseState] = useState('')
+  const [editLicenseExpiration, setEditLicenseExpiration] = useState('')
+  
+  const [editCertificateType, setEditCertificateType] = useState('')
+  const [editCertificateNumber, setEditCertificateNumber] = useState('')
+  const [editCertificateExpiration, setEditCertificateExpiration] = useState('')
+  
+  const [editSpecialtyCertification, setEditSpecialtyCertification] = useState('')
+  const [editSpecialtySpecialty, setEditSpecialtySpecialty] = useState('')
+  
+  const [editEducationTitle, setEditEducationTitle] = useState('')
+  const [editEducationCourse, setEditEducationCourse] = useState('')
+  const [editEducationGraduated, setEditEducationGraduated] = useState('')
+  const [editEducationDegree, setEditEducationDegree] = useState('')
+  
+  const [editReferenceName, setEditReferenceName] = useState('')
+  const [editReferenceTitle, setEditReferenceTitle] = useState('')
+  const [editReferenceWorkHistoryId, setEditReferenceWorkHistoryId] = useState('')
+  const [editReferencePhone, setEditReferencePhone] = useState('')
+  const [editReferenceEmail, setEditReferenceEmail] = useState('')
 
   // Date formatting helpers
   const formatDateToDDMMYYYY = (dateString: string): string => {
@@ -135,6 +382,17 @@ export default function ProfilePage() {
       return dateString
     }
     return dateString
+  }
+
+  const isDateInPast = (dateString: string): boolean => {
+    if (!dateString) return false
+    const date = formatDateToYYYYMMDD(dateString)
+    if (!date) return false
+    const selectedDate = new Date(date)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0) // Reset time to compare dates only
+    selectedDate.setHours(0, 0, 0, 0)
+    return selectedDate < today
   }
 
   const isDateInFuture = (dateString: string): boolean => {
@@ -212,12 +470,12 @@ export default function ProfilePage() {
       <div className="relative">
         <div
           onClick={handleFieldClick}
-          className={`w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus-within:border-primary-500 focus-within:outline-none cursor-pointer transition-all duration-300 hover:border-gray-300 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 flex items-center gap-3 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus-within:border-primary-500 focus-within:outline-none cursor-pointer transition-all duration-200 flex items-center gap-3 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           <Calendar className="w-5 h-5 text-primary-600 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             {formattedValue ? (
-              <span className="text-base text-gray-900 font-medium">{formattedValue}</span>
+              <span className="text-base text-gray-900">{formattedValue}</span>
             ) : (
               <span className="text-base text-gray-400">{placeholder}</span>
             )}
@@ -395,6 +653,266 @@ export default function ProfilePage() {
     )
   }
 
+  // Custom Select Component
+  const CustomSelect = ({ value, onChange, placeholder = "Select option", disabled = false, children, icon: Icon }: { value: string, onChange: (value: string) => void, placeholder?: string, disabled?: boolean, children: any, icon?: any }) => {
+    const [isOpen, setIsOpen] = useState(false)
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0, isAbove: false })
+    const [isPositionCalculated, setIsPositionCalculated] = useState(false)
+    const dropdownRef = useRef<HTMLDivElement>(null)
+    const buttonRef = useRef<HTMLDivElement>(null)
+    const selectedOptionRef = useRef<HTMLButtonElement>(null)
+    
+    // Extract options from children
+    const extractOptions = (children: any): any[] => {
+      if (!children) return []
+      if (Array.isArray(children)) {
+        return children.flatMap((child: any) => extractOptions(child))
+      }
+      if (children?.props?.value !== undefined) {
+        return [children]
+      }
+      if (children?.props?.children) {
+        return extractOptions(children.props.children)
+      }
+      return []
+    }
+    const options = extractOptions(children).filter((child: any) => child?.props?.value !== '')
+    
+    // Get selected option text
+    const selectedOption = options.find((opt: any) => opt?.props?.value === value)
+    const selectedText = selectedOption?.props?.children || value || ''
+    
+    // Recalculate dropdown position on window resize
+    useEffect(() => {
+      if (isOpen && buttonRef.current && isPositionCalculated) {
+        const handleResize = () => {
+          if (buttonRef.current) {
+            const buttonRect = buttonRef.current.getBoundingClientRect()
+            const spaceBelow = window.innerHeight - buttonRect.bottom
+            const spaceAbove = buttonRect.top
+            const estimatedDropdownHeight = Math.min(256, options.length * 48 + 16)
+            const isAbove = spaceBelow < estimatedDropdownHeight && spaceAbove > spaceBelow
+            
+            setDropdownPosition({
+              top: isAbove ? buttonRect.top - estimatedDropdownHeight - 8 : buttonRect.bottom + 8,
+              left: buttonRect.left,
+              width: buttonRect.width,
+              isAbove
+            })
+          }
+        }
+        
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+      }
+    }, [isOpen, isPositionCalculated, options.length])
+    
+    // Auto-scroll to selected option when dropdown opens
+    useEffect(() => {
+      if (isOpen && value && isPositionCalculated && dropdownRef.current) {
+        requestAnimationFrame(() => {
+          if (selectedOptionRef.current && dropdownRef.current) {
+            selectedOptionRef.current.scrollIntoView({
+              behavior: 'auto',
+              block: 'nearest',
+              inline: 'nearest'
+            })
+          }
+        })
+      }
+    }, [isOpen, value, isPositionCalculated])
+    
+    // Close dropdown when clicking outside
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (dropdownRef.current && buttonRef.current && 
+            !dropdownRef.current.contains(event.target as Node) && 
+            !buttonRef.current.contains(event.target as Node)) {
+          setIsOpen(false)
+          setIsPositionCalculated(false)
+        }
+      }
+      
+      if (isOpen) {
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+      }
+    }, [isOpen])
+
+    const handleOptionClick = (optionValue: string) => {
+      onChange(optionValue)
+      setIsOpen(false)
+      setIsPositionCalculated(false)
+    }
+
+    return (
+      <div className="relative">
+        <div
+          ref={buttonRef}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (!disabled) {
+              if (!isOpen && buttonRef.current) {
+                const buttonRect = buttonRef.current.getBoundingClientRect()
+                const spaceBelow = window.innerHeight - buttonRect.bottom
+                const spaceAbove = buttonRect.top
+                const estimatedDropdownHeight = Math.min(256, options.length * 48 + 16)
+                const isAbove = spaceBelow < estimatedDropdownHeight && spaceAbove > spaceBelow
+                
+                setDropdownPosition({
+                  top: isAbove ? buttonRect.top - estimatedDropdownHeight - 8 : buttonRect.bottom + 8,
+                  left: buttonRect.left,
+                  width: buttonRect.width,
+                  isAbove
+                })
+                setIsPositionCalculated(true)
+                setIsOpen(true)
+              } else {
+                setIsOpen(false)
+                setIsPositionCalculated(false)
+              }
+            }
+          }}
+          className={`w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus-within:border-primary-500 focus-within:outline-none cursor-pointer transition-all duration-200 flex items-center gap-3 ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${isOpen ? 'border-primary-500' : ''}`}
+        >
+          {Icon && <Icon className="w-5 h-5 text-primary-600 flex-shrink-0" />}
+          <div className="flex-1 min-w-0">
+            {value && selectedText ? (
+              <span className="text-base text-gray-900">{selectedText}</span>
+            ) : (
+              <span className="text-base text-gray-400">{placeholder}</span>
+            )}
+          </div>
+          <motion.div
+            animate={{ rotate: isOpen ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0 pointer-events-none" />
+          </motion.div>
+        </div>
+
+        {/* Custom Dropdown Menu */}
+        {isOpen && !disabled && isPositionCalculated && (
+          <>
+            <div 
+              className="fixed inset-0 z-[100004]" 
+              style={{ pointerEvents: 'auto', backgroundColor: 'transparent' }}
+              onClick={() => {
+                setIsOpen(false)
+                setIsPositionCalculated(false)
+              }}
+            />
+            
+            <div
+              ref={dropdownRef}
+              style={{
+                position: 'fixed',
+                top: `${dropdownPosition.top}px`,
+                left: `${dropdownPosition.left}px`,
+                width: `${dropdownPosition.width}px`,
+                opacity: 1,
+                transform: 'scale(1)',
+              }}
+              className="bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-[100005] max-h-64 overflow-y-auto"
+            >
+                <div className="p-2 space-y-1">
+                  {options.map((option: any, idx: number) => {
+                    const optionValue = option?.props?.value
+                    const optionText = option?.props?.children
+                    const isSelected = value === optionValue
+                    
+                    return (
+                      <button
+                        key={optionValue}
+                        ref={isSelected ? selectedOptionRef : null}
+                        type="button"
+                        onClick={() => handleOptionClick(optionValue)}
+                        className={`w-full flex items-center px-4 py-3 rounded-lg transition-all text-left ${
+                          isSelected
+                            ? 'bg-primary-50 text-primary-700 font-semibold'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className="truncate">{optionText}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+      </div>
+    )
+  }
+
+  // Validation functions
+  const isValidPhone = (phone: string): boolean => {
+    return /^\d{10}$/.test(phone.replace(/\D/g, ''))
+  }
+
+  const isValidEmail = (email: string): boolean => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  }
+
+  // Check if form data is valid (for enabling/disabling button) without showing errors
+  const isFormDataValid = (section: string, data: any): boolean => {
+    switch (section) {
+      case 'licenses':
+        if (!data.type?.trim()) return false
+        // If expiration date is provided, validate it's not in the past
+        if (data.expiration?.trim() && isDateInPast(data.expiration)) return false
+        return true
+      case 'certificates':
+        if (!data.type?.trim()) return false
+        // If expiration date is provided, validate it's not in the past
+        if (data.expiration?.trim() && isDateInPast(data.expiration)) return false
+        return true
+      case 'specialties':
+        if (!data.certification?.trim() || !data.specialty?.trim()) return false
+        // Validate that specialty is available for the selected certification
+        const availableSpecialties = CERTIFICATION_SPECIALTIES_MAP[data.certification] || []
+        return availableSpecialties.includes(data.specialty)
+      case 'workHistory':
+        if (!data.title?.trim()) return false
+        if (!data.unit?.trim()) return false
+        if (!data.startDate?.trim()) return false
+        // If start date is provided, it shouldn't be in the future
+        if (data.startDate && isDateInFuture(data.startDate)) return false
+        // If not currently working, end date is required
+        if (!data.currentlyWorking) {
+          if (!data.endDate?.trim()) return false
+          if (isDateInFuture(data.endDate)) return false
+          if (data.startDate && isEndDateBeforeStartDate(data.startDate, data.endDate)) return false
+        }
+        // If travel assignment is checked, agency is required
+        if (data.travelAssignment && !data.agency?.trim()) return false
+        // If charge experience is checked, comment is required
+        if (data.chargeExperience && !data.chargeExperienceComment?.trim()) return false
+        return true
+      case 'education':
+        if (!data.title?.trim()) return false
+        if (!data.course?.trim()) return false
+        // If didGraduate is checked, graduation date and degree are required
+        if (data.didGraduate) {
+          if (!data.graduated?.trim()) return false
+          if (!data.degree?.trim()) return false
+        }
+        return true
+      case 'references':
+        if (!data.name?.trim()) return false
+        if (!data.title?.trim()) return false
+        // At least one contact method (phone or email) is required
+        if (!data.phone?.trim() && !data.email?.trim()) return false
+        // If phone is provided, it must be exactly 10 digits
+        if (data.phone?.trim() && !isValidPhone(data.phone)) return false
+        // If email is provided, it must be valid format
+        if (data.email?.trim() && !isValidEmail(data.email)) return false
+        return true
+      default:
+        return true
+    }
+  }
+
   // Initialize edit states when modals open
   useEffect(() => {
     if (showEditWorkHistoryModal && selectedItem) {
@@ -413,10 +931,48 @@ export default function ProfilePage() {
   }, [showEditWorkHistoryModal, selectedItem])
 
   useEffect(() => {
+    if (showEditLicenseModal && selectedItem) {
+      setEditLicenseType(selectedItem.type || selectedItem.title || '')
+      setEditLicenseNumber(selectedItem.number || '')
+      setEditLicenseState(selectedItem.state || '')
+      setEditLicenseExpiration(selectedItem.expiration || '')
+    }
+  }, [showEditLicenseModal, selectedItem])
+
+  useEffect(() => {
+    if (showEditCertificateModal && selectedItem) {
+      setEditCertificateType(selectedItem.type || selectedItem.title || '')
+      setEditCertificateNumber(selectedItem.number || '')
+      setEditCertificateExpiration(selectedItem.expiration || '')
+    }
+  }, [showEditCertificateModal, selectedItem])
+
+  useEffect(() => {
+    if (showEditSpecialtyModal && selectedItem) {
+      setEditSpecialtyCertification(selectedItem.certification || selectedItem.title || '')
+      setEditSpecialtySpecialty(selectedItem.specialty || '')
+    }
+  }, [showEditSpecialtyModal, selectedItem])
+
+  useEffect(() => {
     if (showEditEducationModal && selectedItem) {
       setEditDidGraduate(!!(selectedItem.graduated || selectedItem.degree))
+      setEditEducationTitle(selectedItem.title || '')
+      setEditEducationCourse(selectedItem.course || '')
+      setEditEducationGraduated(selectedItem.graduated || '')
+      setEditEducationDegree(selectedItem.degree || '')
     }
   }, [showEditEducationModal, selectedItem])
+
+  useEffect(() => {
+    if (showEditReferenceModal && selectedItem) {
+      setEditReferenceName(selectedItem.name || '')
+      setEditReferenceTitle(selectedItem.title || '')
+      setEditReferenceWorkHistoryId(selectedItem.workHistoryId || '')
+      setEditReferencePhone(selectedItem.phone || '')
+      setEditReferenceEmail(selectedItem.email || '')
+    }
+  }, [showEditReferenceModal, selectedItem])
 
   // Delete Handler
   const handleDeleteClick = (item: any, section: string) => {
@@ -442,20 +998,75 @@ export default function ProfilePage() {
 
   // Update Handlers for Edit Modals
   const handleUpdateLicense = () => {
-    // In a real app, you would get form values and call an API
-    // For now, we'll just show success and close the modal
+    const formData = {
+      type: editLicenseType,
+      number: editLicenseNumber,
+      state: editLicenseState,
+      expiration: editLicenseExpiration
+    }
+    if (!isFormDataValid('licenses', formData)) {
+      if (!editLicenseType?.trim()) {
+        toast.error('Please select license type')
+        return
+      }
+      if (editLicenseExpiration?.trim() && isDateInPast(editLicenseExpiration)) {
+        toast.error('Expiration date cannot be in the past')
+        return
+      }
+      return
+    }
     toast.success('License updated successfully!')
     setShowEditLicenseModal(false)
     setSelectedItem(null)
   }
 
   const handleUpdateCertificate = () => {
+    const formData = {
+      type: editCertificateType,
+      number: editCertificateNumber,
+      expiration: editCertificateExpiration
+    }
+    if (!isFormDataValid('certificates', formData)) {
+      if (!editCertificateType?.trim()) {
+        toast.error('Please select certificate type')
+        return
+      }
+      if (editCertificateExpiration?.trim() && isDateInPast(editCertificateExpiration)) {
+        toast.error('Expiration date cannot be in the past')
+        return
+      }
+      return
+    }
     toast.success('Certificate updated successfully!')
     setShowEditCertificateModal(false)
     setSelectedItem(null)
   }
 
   const handleUpdateSpecialty = () => {
+    const formData = {
+      certification: editSpecialtyCertification,
+      specialty: editSpecialtySpecialty
+    }
+    if (!isFormDataValid('specialties', formData)) {
+      if (!editSpecialtyCertification?.trim()) {
+        toast.error('Please select a certification')
+        return
+      }
+      if (!editSpecialtySpecialty?.trim()) {
+        toast.error('Please select a specialty')
+        return
+      }
+      const availableSpecialties = CERTIFICATION_SPECIALTIES_MAP[editSpecialtyCertification] || []
+      if (availableSpecialties.length === 0) {
+        toast.error('No specialties available for the selected certification')
+        return
+      }
+      if (!availableSpecialties.includes(editSpecialtySpecialty)) {
+        toast.error('Selected specialty is not available for the selected certification')
+        return
+      }
+      return
+    }
     toast.success('Specialty updated successfully!')
     setShowEditSpecialtyModal(false)
     setSelectedItem(null)
@@ -588,6 +1199,34 @@ export default function ProfilePage() {
   }
 
   const handleUpdateEducation = () => {
+    const formData = {
+      title: editEducationTitle,
+      course: editEducationCourse,
+      didGraduate: editDidGraduate,
+      graduated: editEducationGraduated,
+      degree: editEducationDegree
+    }
+    if (!isFormDataValid('education', formData)) {
+      if (!editEducationTitle?.trim()) {
+        toast.error('Please enter school name')
+        return
+      }
+      if (!editEducationCourse?.trim()) {
+        toast.error('Please select course of study')
+        return
+      }
+      if (editDidGraduate) {
+        if (!editEducationGraduated?.trim()) {
+          toast.error('Please select graduation date')
+          return
+        }
+        if (!editEducationDegree?.trim()) {
+          toast.error('Please select degree')
+          return
+        }
+      }
+      return
+    }
     toast.success('Education updated successfully!')
     setShowEditEducationModal(false)
     setSelectedItem(null)
@@ -595,6 +1234,36 @@ export default function ProfilePage() {
   }
 
   const handleUpdateReference = () => {
+    const formData = {
+      name: editReferenceName,
+      title: editReferenceTitle,
+      workHistoryId: editReferenceWorkHistoryId,
+      phone: editReferencePhone,
+      email: editReferenceEmail
+    }
+    if (!isFormDataValid('references', formData)) {
+      if (!editReferenceName?.trim()) {
+        toast.error('Please enter full name')
+        return
+      }
+      if (!editReferenceTitle?.trim()) {
+        toast.error('Please select reference job title')
+        return
+      }
+      if (!editReferencePhone?.trim() && !editReferenceEmail?.trim()) {
+        toast.error('Please provide at least one contact method (phone number or email)')
+        return
+      }
+      if (editReferencePhone?.trim() && !isValidPhone(editReferencePhone)) {
+        toast.error('Please enter a valid 10-digit phone number')
+        return
+      }
+      if (editReferenceEmail?.trim() && !isValidEmail(editReferenceEmail)) {
+        toast.error('Please enter a valid email address')
+        return
+      }
+      return
+    }
     toast.success('Professional Reference updated successfully!')
     setShowEditReferenceModal(false)
     setSelectedItem(null)
@@ -699,24 +1368,302 @@ export default function ProfilePage() {
     }
   }, [])
 
+  // Debug: Log full user object on mount and when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedUser = localStorage.getItem('auth_user')
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser)
+          console.log('Profile page - Full user object from localStorage:', {
+            hasReferences: !!parsedUser.references,
+            referencesType: typeof parsedUser.references,
+            referencesIsArray: Array.isArray(parsedUser.references),
+            referencesCount: parsedUser.references?.length || 0,
+            references: parsedUser.references,
+            fullUser: parsedUser
+          })
+        }
+      } catch (error) {
+        console.error('Error reading localStorage:', error)
+      }
+    }
+  }, [authUser])
+
+  // Helper function to format date from DD/MM/YYYY to readable format
+  const formatDate = (dateString: string): string => {
+    if (!dateString) return ''
+    // Check if already in readable format (contains month name like "Jan", "Feb", etc.)
+    if (dateString.match(/[A-Za-z]{3}\s+\d{1,2},\s+\d{4}/)) {
+      return dateString
+    }
+    // Parse DD/MM/YYYY format
+    const parts = dateString.split('/')
+    if (parts.length === 3 && parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
+      const [day, month, year] = parts
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+      // Validate the date is valid
+      if (isNaN(date.getTime())) {
+        return dateString
+      }
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
+    }
+    return dateString
+  }
+
+  // Helper function to format date range for work history
+  const formatDateRange = (startDate: string, endDate: string, currentlyWorking: boolean): string => {
+    const start = formatDate(startDate)
+    if (currentlyWorking) {
+      return `${start} - Present`
+    }
+    const end = formatDate(endDate)
+    return `${start} - ${end}`
+  }
+
+  // Helper function to check if expiration date is active
+  const getExpirationStatus = (expiration: string): 'active' | 'expired' => {
+    if (!expiration) return 'active'
+    // Parse DD/MM/YYYY format
+    const parts = expiration.split('/')
+    if (parts.length === 3) {
+      const [day, month, year] = parts
+      const expDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      expDate.setHours(0, 0, 0, 0)
+      return expDate >= today ? 'active' : 'expired'
+    }
+    return 'active'
+  }
+
+  // Helper function to get work history title from workHistoryId
+  const getWorkHistoryTitle = (workHistoryId: string): string => {
+    const workHistoryItem = (authUser?.workHistory || []).find((wh: any) => wh.id === workHistoryId)
+    return workHistoryItem?.title || ''
+  }
+
+  // Helper function to convert DD/MM/YYYY to YYYY-MM-DD for date input
+  const convertDateForInput = (dateString: string): string => {
+    if (!dateString) return ''
+    // Check if already in YYYY-MM-DD format
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return dateString
+    }
+    // Parse DD/MM/YYYY format
+    const parts = dateString.split('/')
+    if (parts.length === 3 && parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
+      const [day, month, year] = parts
+      return `${year}-${month}-${day}`
+    }
+    return ''
+  }
+
+  // Helper function to format state name to "XX - State Name" format
+  const formatStateForDropdown = (stateName: string): string => {
+    if (!stateName) return 'MD - Maryland'
+    // Check if already in "XX - State Name" format
+    if (stateName.includes(' - ')) {
+      return stateName
+    }
+    // Map state names to abbreviations (common states)
+    const stateAbbreviations: { [key: string]: string } = {
+      'Maryland': 'MD',
+      'California': 'CA',
+      'New York': 'NY',
+      'Texas': 'TX',
+      'Florida': 'FL',
+      'Illinois': 'IL',
+      'Pennsylvania': 'PA',
+      'Ohio': 'OH',
+      'Georgia': 'GA',
+      'North Carolina': 'NC',
+      'Michigan': 'MI',
+      'New Jersey': 'NJ',
+      'Virginia': 'VA',
+      'Washington': 'WA',
+      'Arizona': 'AZ',
+      'Massachusetts': 'MA',
+      'Tennessee': 'TN',
+      'Indiana': 'IN',
+      'Missouri': 'MO',
+      'Colorado': 'CO'
+    }
+    const abbreviation = stateAbbreviations[stateName] || stateName.substring(0, 2).toUpperCase()
+    return `${abbreviation} - ${stateName}`
+  }
+
   // Use real user data with defaults - dynamically update avatar when profilePhoto changes
   const user = {
     name: authUser?.name || 'User',
     email: authUser?.email || 'user@example.com',
     avatar: profilePhoto || getProfilePhotoWithFallback(authUser?.avatar),
-    experience: '25 Years Experience',
-    address: '3371 Columbia Boulevard, Baltimore, Maryland 21218',
-    dob: '03/20/1997',
-    ssn: '***-**-4321'
+    experience: authUser?.yearsOfExperience ? `${authUser.yearsOfExperience} Years Experience` : '25 Years Experience',
+    address: authUser?.address || authUser?.streetAddress || '3371 Columbia Boulevard, Baltimore, Maryland 21218',
+    dob: authUser?.dob || '03/20/1997',
+    ssn: authUser?.ssn ? `***-**-${authUser.ssn.slice(-4)}` : '***-**-4321'
   }
 
+  // Map licenses from user data
+  const licenses = (authUser?.licenses || []).map((license: any) => ({
+    title: license.type || '',
+    number: license.number || '',
+    state: license.state || '',
+    expiration: formatDate(license.expiration || ''),
+    status: getExpirationStatus(license.expiration || '')
+  }))
+
+  // Map certificates from user data
+  const certificates = (authUser?.certificates || []).map((cert: any) => ({
+    title: cert.type || '',
+    number: cert.number || '',
+    expiration: formatDate(cert.expiration || ''),
+    status: getExpirationStatus(cert.expiration || '')
+  }))
+
+  // Map specialties from user data
+  const specialties = (authUser?.specialties || []).map((spec: any) => ({
+    title: spec.certification || '',
+    specialty: spec.specialty || ''
+  }))
+
+  // Map work history from user data
+  const workHistory = (authUser?.workHistory || []).map((wh: any) => ({
+    title: wh.title || '',
+    unit: wh.unit || '',
+    period: formatDateRange(wh.startDate || '', wh.endDate || '', wh.currentlyWorking || false),
+    agency: wh.agency || '',
+    description: wh.description || '',
+    chargeExperience: wh.chargeExperience ? wh.chargeExperienceComment || '' : ''
+  }))
+
+  // Map education from user data
+  const education = (authUser?.education || []).map((edu: any) => ({
+    title: edu.title || '',
+    course: edu.course || '',
+    status: edu.didGraduate ? 'Graduated' : 'Did Not Graduate',
+    graduated: edu.didGraduate ? formatDate(edu.graduated || '') : '',
+    degree: edu.degree || ''
+  }))
+
+  // Direct state for references - read from localStorage
+  const [referencesState, setReferencesState] = useState<any[]>([])
+  
+  // Function to load references directly from localStorage
+  const loadReferences = useCallback(() => {
+    if (typeof window === 'undefined') return []
+    
+    try {
+      const storedUser = localStorage.getItem('auth_user')
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser)
+        if (parsedUser.references && Array.isArray(parsedUser.references)) {
+          return parsedUser.references
+        }
+      }
+    } catch (error) {
+      console.error('Error loading references:', error)
+    }
+    return []
+  }, [])
+  
+  // Load references on mount and when authUser changes
+  useEffect(() => {
+    // Try authUser first
+    if (authUser?.references && Array.isArray(authUser.references) && authUser.references.length > 0) {
+      setReferencesState(authUser.references)
+      return
+    }
+    
+    // Fallback to localStorage
+    const refs = loadReferences()
+    setReferencesState(refs)
+  }, [authUser?.references, loadReferences])
+  
+  // Also check localStorage periodically and on focus
+  useEffect(() => {
+    const checkReferences = () => {
+      const refs = loadReferences()
+      if (refs.length > 0) {
+        setReferencesState(refs)
+      }
+    }
+    
+    // Check on mount
+    checkReferences()
+    
+    // Check when window gains focus (user might have completed onboarding in another tab)
+    window.addEventListener('focus', checkReferences)
+    
+    // Check periodically (every 2 seconds) to catch updates
+    const interval = setInterval(checkReferences, 2000)
+    
+    return () => {
+      window.removeEventListener('focus', checkReferences)
+      clearInterval(interval)
+    }
+  }, [loadReferences])
+  
+  // Map references for display
+  const references = useMemo(() => {
+    // Use referencesState (from localStorage) or authUser.references
+    const sourceRefs = referencesState.length > 0 
+      ? referencesState 
+      : (authUser?.references && Array.isArray(authUser.references) ? authUser.references : [])
+    
+    // Debug: Log what we found
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Profile page - References mapping:', {
+        referencesState,
+        authUserReferences: authUser?.references,
+        sourceRefs,
+        count: sourceRefs.length
+      })
+    }
+    
+    // If no references found, return empty array
+    if (!sourceRefs || sourceRefs.length === 0) {
+      return []
+    }
+    
+    // Map all references - accept any object
+    return sourceRefs
+      .filter((ref: any) => {
+        // Only filter out null/undefined
+        if (!ref) {
+          return false
+        }
+        // Accept any object - be very lenient
+        return typeof ref === 'object'
+      })
+      .map((ref: any, index: number) => {
+        // Find the associated work history item
+        const workHistoryItem = (authUser?.workHistory || []).find((wh: any) => wh && wh.id === ref.workHistoryId)
+        const period = workHistoryItem 
+          ? formatDateRange(workHistoryItem.startDate || '', workHistoryItem.endDate || '', workHistoryItem.currentlyWorking || false)
+          : ''
+        return {
+          id: ref.id || `ref-${index}-${Date.now()}`,
+          name: ref.name || 'Professional Reference',
+          title: ref.title || '',
+          company: getWorkHistoryTitle(ref.workHistoryId || ''),
+          period: period,
+          phone: ref.phone || '',
+          email: ref.email || '',
+          workHistoryId: ref.workHistoryId || ''
+        }
+      })
+  }, [referencesState, authUser?.references, authUser?.workHistory])
+
+  // Calculate dynamic stats counts
   const stats = [
-    { label: 'Professional Licenses', count: 4, icon: Shield },
-    { label: 'Certificates', count: 4, icon: Award },
-    { label: 'Certification Specialties', count: 4, icon: Award },
-    { label: 'Work Histories', count: 4, icon: Briefcase },
-    { label: 'Education Histories', count: 4, icon: GraduationCap },
-    { label: 'Professional References', count: 4, icon: Users },
+    { label: 'Professional Licenses', count: licenses.length, icon: Shield },
+    { label: 'Certificates', count: certificates.length, icon: Award },
+    { label: 'Certification Specialties', count: specialties.length, icon: Award },
+    { label: 'Work Histories', count: workHistory.length, icon: Briefcase },
+    { label: 'Education Histories', count: education.length, icon: GraduationCap },
+    { label: 'Professional References', count: references.length, icon: Users },
   ]
 
   const tabs = [
@@ -726,181 +1673,6 @@ export default function ProfilePage() {
     'Work History',
     'Education',
     'Professional References'
-  ]
-
-  const licenses = [
-    {
-      title: 'Qualified Medication Assistant',
-      number: 'QUALITY1234ASDF',
-      state: 'Washington',
-      expiration: 'Nov 25, 2025',
-      status: 'active'
-    },
-    {
-      title: 'Certified Occupational Therapy Assistant',
-      state: 'New Hampshire',
-      expiration: 'Nov 30, 2025',
-      status: 'active'
-    },
-    {
-      title: 'Customer Service',
-      state: 'California',
-      expiration: 'Dec 15, 2025',
-      status: 'active'
-    },
-    {
-      title: 'Data Analyst',
-      state: 'Texas',
-      expiration: 'Jan 10, 2026',
-      status: 'active'
-    },
-  ]
-
-  const certificates = [
-    {
-      title: 'Advanced Cardiac Life Support',
-      number: 'ACLS123456ACLS',
-      expiration: 'Nov 23, 2025',
-      status: 'active'
-    },
-    {
-      title: 'Pediatric Advanced Life Support',
-      number: 'PALS12345TEST',
-      expiration: 'Dec 15, 2025',
-      status: 'active'
-    },
-    {
-      title: 'Pediatric Advanced Life Support',
-      number: 'PALS123456',
-      expiration: 'Jan 20, 2026',
-      status: 'active'
-    },
-    {
-      title: 'Basic Life Support',
-      number: 'BLS789012',
-      expiration: 'Feb 10, 2026',
-      status: 'active'
-    },
-  ]
-
-  const specialties = [
-    {
-      title: 'Medical Assistant',
-      specialty: 'Internal Use Only'
-    },
-    {
-      title: 'Registered Nurse',
-      specialty: 'Case Manager'
-    },
-    {
-      title: 'Administrative Assistant',
-      specialty: 'Home Health'
-    },
-    {
-      title: 'Registered Nurse',
-      specialty: 'Emergency Room'
-    },
-  ]
-
-  const workHistory = [
-    {
-      title: '11603 - CHRISTUS Trinity Mother Frances Canton HealthPark',
-      unit: 'Acute Care Social Worker (Medical) Licensed/Clin',
-      period: 'Oct 11, 2024 - Oct 10, 2025',
-      agency: '',
-      description: '',
-      chargeExperience: ''
-    },
-    {
-      title: '6822 CHC PR & MSA NE GEORGIA - 2500 Limestone Pkwy Gainesville',
-      unit: 'Animal Technician',
-      period: 'Aug 1, 2024 - Aug 14, 2025',
-      agency: 'Staffing Agency',
-      description: 'Special Skills and Experience',
-      chargeExperience: ''
-    },
-    {
-      title: 'Banner - Wyoming Medical Center',
-      unit: 'Animal Technician',
-      period: 'Feb 11, 2022 - Oct 30, 2025',
-      agency: 'Testing Staffing Agency',
-      description: 'Testing Special Skills',
-      chargeExperience: 'Testing Charge Experience'
-    },
-    {
-      title: '13101 - CHRISTUS St Michael Health System',
-      unit: 'Acute Care Social Worker (Medical) Licensed/Clin',
-      period: 'Dec 19, 2019 - Oct 1, 2025',
-      agency: 'Testing Agency',
-      description: 'Testing Desc',
-      chargeExperience: 'Testing Comment'
-    },
-  ]
-
-  const education = [
-    {
-      title: 'Global International School',
-      course: 'High School Diploma',
-      status: 'Graduated',
-      graduated: 'Jul 1, 2021',
-      degree: 'Master of Science'
-    },
-    {
-      title: 'Western Oklahoma State College',
-      course: 'Information Technology',
-      status: 'Did Not Graduate',
-      graduated: '',
-      degree: ''
-    },
-    {
-      title: 'South Aiken High School',
-      course: 'Information Technology',
-      status: 'Graduated',
-      graduated: 'Sep 28, 2018',
-      degree: 'Master of Science'
-    },
-    {
-      title: 'Testing School',
-      course: 'High School Diploma',
-      status: 'Did Not Graduate',
-      graduated: '',
-      degree: ''
-    },
-  ]
-
-  const references = [
-    {
-      name: 'Jack Sparrow',
-      title: 'Preceptor',
-      company: 'Banner - Wyoming Medical Center',
-      period: '02/11/2022 - 10/30/2025',
-      phone: '2066578147',
-      email: 'jack@gmail.com'
-    },
-    {
-      name: 'Testing Ref',
-      title: 'Director',
-      company: '13101 - CHRISTUS St Michael Health System',
-      period: '12/19/2019 - 10/01/2025',
-      phone: '2066578174',
-      email: ''
-    },
-    {
-      name: 'Halen Johnson',
-      title: 'Doctor',
-      company: 'CommonSpirit Mountain Region - 1010 Three Springs Blvd, Mercy Regional Medical Center, 063 MRMC Dura',
-      period: '08/12/2019 - 06/04/2020',
-      phone: '2084359012',
-      email: 'halen@mailnesia.com'
-    },
-    {
-      name: 'Host User Testing',
-      title: 'Nurse',
-      company: '2nd Street - St Mary\'s Medical Center - Duluth',
-      period: '05/01/2012 - 04/23/2019',
-      phone: '2066578174',
-      email: 'host@mailnesia.com'
-    },
   ]
 
   return (
@@ -2262,7 +3034,7 @@ export default function ProfilePage() {
                            activeTab === 'Specialties' ? specialties.length :
                            activeTab === 'Work History' ? workHistory.length :
                            activeTab === 'Education' ? education.length :
-                           activeTab === 'References' ? references.length : 0}
+                           activeTab === 'Professional References' ? references.length : 0}
                         </motion.span>
                       </div>
                       <p className="text-gray-600">Manage your professional credentials and certifications</p>
@@ -2277,7 +3049,7 @@ export default function ProfilePage() {
                           setShowAddWorkHistoryModal(true)
                         } else if (activeTab === 'Education') {
                           setShowAddEducationModal(true)
-                        } else if (activeTab === 'References') {
+                        } else if (activeTab === 'Professional References') {
                           setShowAddReferenceModal(true)
                         } else {
                           setShowAddModal(true)
@@ -2294,7 +3066,7 @@ export default function ProfilePage() {
                          activeTab === 'Specialties' ? 'Add Specialty' :
                          activeTab === 'Work History' ? 'Add Work History' :
                          activeTab === 'Education' ? 'Add Education' :
-                         activeTab === 'References' ? 'Add Reference' : 'Add Item'}
+                         activeTab === 'Professional References' ? 'Add Professional Reference' : 'Add Item'}
                       </span>
                     </motion.button>
                   </div>
@@ -2939,7 +3711,7 @@ export default function ProfilePage() {
                     </>
                   )}
 
-                  {activeTab === 'References' && (
+                  {activeTab === 'Professional References' && (
                     <>
                       {references.length === 0 ? (
                         <motion.div
@@ -3164,7 +3936,6 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {!isMobile && <Footer />}
 
       {/* Edit Profile Modal */}
       {showEditModal && (
@@ -3316,7 +4087,7 @@ export default function ProfilePage() {
                     </label>
                     <input
                       type="text"
-                      defaultValue="Julia"
+                      defaultValue={authUser?.firstName || ''}
                       className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700`}
                     />
                   </motion.div>
@@ -3337,7 +4108,7 @@ export default function ProfilePage() {
                     </label>
                     <input
                       type="text"
-                      defaultValue="Roberts"
+                      defaultValue={authUser?.lastName || ''}
                       className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700`}
                     />
                   </motion.div>
@@ -3356,7 +4127,7 @@ export default function ProfilePage() {
                     </label>
                     <input
                       type="date"
-                      defaultValue="1997-03-20"
+                      defaultValue={convertDateForInput(authUser?.dob || '')}
                       className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700`}
                     />
                     <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
@@ -3383,7 +4154,7 @@ export default function ProfilePage() {
                     </label>
                     <input
                       type="text"
-                      defaultValue="987654321"
+                      defaultValue={authUser?.ssn || ''}
                       placeholder="123456789"
                       className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700 placeholder:text-gray-400`}
                     />
@@ -3404,7 +4175,7 @@ export default function ProfilePage() {
                     </label>
                     <input
                       type="number"
-                      defaultValue="25"
+                      defaultValue={authUser?.yearsOfExperience || ''}
                       min="1"
                       max="50"
                       className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700`}
@@ -3432,7 +4203,7 @@ export default function ProfilePage() {
                     </label>
                     <input
                       type="text"
-                      defaultValue="3371 Columbia Boulevard"
+                      defaultValue={authUser?.streetAddress || authUser?.address || ''}
                       className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'}`}
                     />
                   </motion.div>
@@ -3449,6 +4220,7 @@ export default function ProfilePage() {
                     </label>
                     <input
                       type="text"
+                      defaultValue={authUser?.additionalAddress || ''}
                       placeholder="Apartment, suite, etc. (optional)"
                       className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'}`}
                     />
@@ -3467,7 +4239,7 @@ export default function ProfilePage() {
                       </label>
                       <input
                         type="text"
-                        defaultValue="Baltimore"
+                        defaultValue={authUser?.city || ''}
                         className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'}`}
                       />
                     </motion.div>
@@ -3587,7 +4359,7 @@ export default function ProfilePage() {
                     </label>
                     <input
                       type="text"
-                      defaultValue="21218"
+                      defaultValue={authUser?.zipCode || ''}
                       placeholder="12345"
                       className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'}`}
                     />
@@ -3672,863 +4444,531 @@ export default function ProfilePage() {
 
       {/* Add License Modal */}
       {showAddModal && (
-        <>
-          {/* Backdrop */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] ${isMobile ? '' : 'flex items-center justify-center'} p-4 sm:p-6`}
-            onClick={() => setShowAddModal(false)}
-          >
-            {/* Modal - Bottom Sheet on Mobile, Centered on Desktop */}
+        <AnimatePresence>
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={isMobile ? { opacity: 0, y: '100%' } : { opacity: 0, scale: 0.9, y: 20 }}
-              animate={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, scale: 1, y: 0 }}
-              exit={isMobile ? { opacity: 0, y: '100%' } : { opacity: 0, scale: 0.9, y: 20 }}
-              transition={isMobile ? { duration: 0.3, ease: [0.32, 0.72, 0, 1] } : { duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className={`relative ${isMobile ? 'fixed bottom-0 left-0 right-0 w-full' : 'w-full max-w-2xl mx-4 sm:mx-0'}`}
-              style={isMobile ? { 
-                maxHeight: '90vh',
-                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-                zIndex: 10000
-              } : { maxHeight: '90vh' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Glow effect behind modal - Desktop Only */}
-              {!isMobile && (
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
-              )}
-              
-              {/* Main modal container */}
-              <div className={`relative bg-white ${isMobile ? 'rounded-t-3xl shadow-2xl' : 'rounded-2xl sm:rounded-3xl shadow-2xl'} overflow-hidden ${isMobile ? 'border-t border-gray-200' : 'border border-gray-100'} ${isMobile ? 'max-h-[90vh]' : 'max-h-[90vh]'} flex flex-col`}>
-                
-                {/* Mobile Drag Handle */}
-                {isMobile && (
-                  <div className="flex justify-center pt-3 pb-2">
-                    <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
-                  </div>
-                )}
-                
-                {/* Header Section */}
-                <div className={`relative ${isMobile ? 'px-4 pt-4 pb-3' : 'px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6'} flex-shrink-0 ${isMobile ? 'flex items-center justify-between' : ''}`}>
-                  {isMobile ? (
-                    <>
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
+              onClick={() => setShowAddModal(false)}
+            />
+            
+            {/* Modal Container */}
+            <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3, type: "spring" }}
+                className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+                        <Shield className="w-6 h-6 text-white" />
+                      </div>
                       <div>
-                        <h2 className="text-xl font-bold text-gray-900">
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">
                           Add Professional License
-                        </h2>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Fill in your license information
+                        </h1>
+                        <p className="text-sm font-medium text-gray-500">
+                          Professional Licenses
                         </p>
                       </div>
-                      <button
-                        onClick={() => setShowAddModal(false)}
-                        className="p-2 rounded-lg bg-gray-100 active:bg-gray-200"
-                      >
-                        <X className="w-5 h-5 text-gray-600" />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                  {/* Icon and Title */}
-                  <div className="flex items-start gap-5">
-                    {/* Animated Icon */}
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ 
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 15,
-                        delay: 0.1
-                      }}
-                      className="relative"
-                    >
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <Shield className="w-8 h-8 text-white" />
-                      </div>
-                      {/* Pulsing ring */}
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [0.5, 0, 0.5]
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                        className="absolute inset-0 bg-primary-500 rounded-2xl"
-                      />
-                    </motion.div>
-                    
-                    {/* Title and Description */}
-                    <div className="flex-1 pt-1">
-                      <motion.h2
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
-                      >
-                        Add Professional License
-                      </motion.h2>
-                      <motion.p
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="text-sm text-gray-600"
-                      >
-                        Fill in your license information to add it to your profile
-                      </motion.p>
                     </div>
                   </div>
-                    </>
-                  )}
                 </div>
-
-                {/* Divider - Desktop Only */}
-                {!isMobile && (
-                <div className="px-8">
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </div>
-                )}
-
-                {/* Content Area - Scrollable */}
-                <div className={`${isMobile ? 'px-4 py-4' : 'px-4 sm:px-6 md:px-8 py-4 sm:py-6'} overflow-y-auto flex-1`} style={{ maxHeight: isMobile ? 'calc(90vh - 120px)' : 'calc(90vh - 200px)' }}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
-                    {/* License Type - Full Width */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.5 }}
-                      className="md:col-span-2"
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Award className="w-4 h-4 text-primary-600" />
-                        License Type
-                        <span className="text-red-500">*</span>
+                
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        License Type <span className="text-red-500">*</span>
                       </label>
-                      <div className="relative group">
-                        <select className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 appearance-none cursor-pointer hover:border-gray-300 font-medium text-gray-700">
-                          <option value="">Select license type</option>
-                          <option>Registered Nurse (RN)</option>
-                          <option>Licensed Practical Nurse (LPN)</option>
-                          <option>Certified Nursing Assistant (CNA)</option>
-                          <option>Nurse Practitioner (NP)</option>
-                          <option>Clinical Nurse Specialist (CNS)</option>
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                      <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                        Choose the type of professional license you want to add
-                      </p>
-                    </motion.div>
-
-                    {/* License Number */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.6 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                        </svg>
-                        License Number
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g., RN123456"
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
+                      <CustomSelect
+                        value={addLicenseType}
+                        onChange={(value) => setAddLicenseType(value)}
+                        placeholder="Select license type"
+                        icon={Shield}
+                      >
+                        <option value="">Select license type</option>
+                        {LICENSE_TYPES.map(type => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
+                      </CustomSelect>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">License Number</label>
+                      <input type="text" value={addLicenseNumber} onChange={(e) => setAddLicenseNumber(e.target.value)} placeholder="Enter license number" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                      <CustomSelect
+                        value={addLicenseState}
+                        onChange={(value) => setAddLicenseState(value)}
+                        placeholder="Select state"
+                        icon={MapPin}
+                      >
+                        <option value="">Select state</option>
+                        {US_STATES.map(state => <option key={state} value={state}>{state}</option>)}
+                      </CustomSelect>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Expiration Date</label>
+                      <CustomDatePicker
+                        value={addLicenseExpiration}
+                        onChange={(value) => setAddLicenseExpiration(value)}
+                        placeholder="Select expiration date"
+                        showFormat={true}
                       />
-                    </motion.div>
-
-                    {/* State */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.7 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <MapPin className="w-4 h-4 text-primary-600" />
-                        State
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Search states..."
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-                      />
-                    </motion.div>
-
-                    {/* Expiration Date - Full Width */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.8 }}
-                      className="md:col-span-2"
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Calendar className="w-4 h-4 text-primary-600" />
-                        Expiration Date
-                      </label>
-                      <input
-                        type="date"
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700"
-                      />
-                      <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
-                        We'll send you a reminder before your license expires
-                      </p>
-                    </motion.div>
-
+                    </div>
                   </div>
                 </div>
-
+                
                 {/* Footer */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Info text */}
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: 0.9 }}
-                      className="text-xs text-gray-500 flex items-center gap-1.5"
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => {
+                        setShowAddModal(false)
+                        setAddLicenseType('')
+                        setAddLicenseNumber('')
+                        setAddLicenseState('')
+                        setAddLicenseExpiration('')
+                      }} 
+                      className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
                     >
-                      <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      Your information is secure and encrypted
-                    </motion.p>
-                    
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-3">
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 1.0 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setShowAddModal(false)}
-                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
-                      >
-                        Cancel
-                      </motion.button>
-                      
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 1.1 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          toast.success('License added successfully')
-                          setShowAddModal(false)
-                        }}
-                        className="group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden text-sm sm:text-base"
-                      >
-                        <span className="relative z-10 flex items-center gap-2">
-                          <Plus className="w-5 h-5" />
-                          Add License
-                        </span>
-                        {/* Shine effect */}
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-                          animate={{ x: ['-200%', '200%'] }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            repeatDelay: 1,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      </motion.button>
-                    </div>
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const formData = {
+                          type: addLicenseType,
+                          number: addLicenseNumber,
+                          state: addLicenseState,
+                          expiration: addLicenseExpiration
+                        }
+                        if (!isFormDataValid('licenses', formData)) {
+                          if (!addLicenseType?.trim()) {
+                            toast.error('Please select license type')
+                            return
+                          }
+                          if (addLicenseExpiration?.trim() && isDateInPast(addLicenseExpiration)) {
+                            toast.error('Expiration date cannot be in the past')
+                            return
+                          }
+                          return
+                        }
+                        toast.success('License added successfully')
+                        setShowAddModal(false)
+                        setAddLicenseType('')
+                        setAddLicenseNumber('')
+                        setAddLicenseState('')
+                        setAddLicenseExpiration('')
+                      }}
+                      disabled={!isFormDataValid('licenses', {
+                        type: addLicenseType,
+                        number: addLicenseNumber,
+                        state: addLicenseState,
+                        expiration: addLicenseExpiration
+                      })}
+                      className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 active:scale-95 shadow-lg ${
+                        isFormDataValid('licenses', {
+                          type: addLicenseType,
+                          number: addLicenseNumber,
+                          state: addLicenseState,
+                          expiration: addLicenseExpiration
+                        })
+                          ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 hover:shadow-xl shadow-primary-500/30'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                      }`}
+                    >
+                      Add
+                    </button>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </>
+              </motion.div>
+            </div>
+          </>
+        </AnimatePresence>
       )}
 
       {/* Add Certificate Modal */}
       {showAddCertificateModal && (
-        <>
-          {/* Backdrop */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
-            onClick={() => setShowAddCertificateModal(false)}
-          >
-            {/* Modal */}
+        <AnimatePresence>
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl mx-4 sm:mx-0"
-              style={{ maxHeight: '90vh' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Glow effect behind modal */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
-              
-              {/* Main modal container */}
-              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
-                
-                {/* Header Section */}
-                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
-                  {/* Icon and Title */}
-                  <div className="flex items-start gap-5">
-                    {/* Animated Icon */}
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ 
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 15,
-                        delay: 0.1
-                      }}
-                      className="relative"
-                    >
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <Award className="w-8 h-8 text-white" />
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
+              onClick={() => setShowAddCertificateModal(false)}
+            />
+            
+            {/* Modal Container */}
+            <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3, type: "spring" }}
+                className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+                        <Award className="w-6 h-6 text-white" />
                       </div>
-                      {/* Pulsing ring */}
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [0.5, 0, 0.5]
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                        className="absolute inset-0 bg-primary-500 rounded-2xl"
-                      />
-                    </motion.div>
-                    
-                    {/* Title and Description */}
-                    <div className="flex-1 pt-1">
-                      <motion.h2
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
-                      >
-                        Add Professional Certificate
-                      </motion.h2>
-                      <motion.p
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="text-sm text-gray-600"
-                      >
-                        Fill in your certificate information to add it to your profile
-                      </motion.p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Divider */}
-                <div className="px-8">
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </div>
-
-                {/* Content Area - Scrollable */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
-                    {/* Certificate Type - Full Width */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.5 }}
-                      className="md:col-span-2"
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Award className="w-4 h-4 text-primary-600" />
-                        Certificate Type
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative group">
-                        <select className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 appearance-none cursor-pointer hover:border-gray-300 font-medium text-gray-700">
-                          <option value="">Select Certificate Type</option>
-                          <option>Basic Life Support (BLS)</option>
-                          <option>Advanced Cardiovascular Life Support (ACLS)</option>
-                          <option>Pediatric Advanced Life Support (PALS)</option>
-                          <option>Critical Care Registered Nurse (CCRN)</option>
-                          <option>Certified Emergency Nurse (CEN)</option>
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                      <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                        Choose the type of certificate you want to add
-                      </p>
-                    </motion.div>
-
-                    {/* Certificate Number */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.6 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                        </svg>
-                        Certificate Number
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g., RN305437"
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-                      />
-                    </motion.div>
-
-                    {/* Expiration Date */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.7 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Calendar className="w-4 h-4 text-primary-600" />
-                        Expiration Date
-                      </label>
-                      <input
-                        type="date"
-                        placeholder="Select expiration date"
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700"
-                      />
-                    </motion.div>
-
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Info text */}
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: 0.9 }}
-                      className="text-xs text-gray-500 flex items-center gap-1.5"
-                    >
-                      <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      Your information is secure and encrypted
-                    </motion.p>
-                    
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-3">
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 1.0 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setShowAddCertificateModal(false)}
-                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
-                      >
-                        Cancel
-                      </motion.button>
-                      
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 1.1 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          toast.success('Certificate added successfully')
-                          setShowAddCertificateModal(false)
-                        }}
-                        className="group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden text-sm sm:text-base"
-                      >
-                        <span className="relative z-10 flex items-center gap-2">
-                          <Plus className="w-5 h-5" />
+                      <div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">
                           Add Certificate
-                        </span>
-                        {/* Shine effect */}
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-                          animate={{ x: ['-200%', '200%'] }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            repeatDelay: 1,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      </motion.button>
+                        </h1>
+                        <p className="text-sm font-medium text-gray-500">
+                          Professional Certificates
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </>
+                
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Certificate Type <span className="text-red-500">*</span>
+                      </label>
+                      <CustomSelect
+                        value={addCertificateType}
+                        onChange={(value) => setAddCertificateType(value)}
+                        placeholder="Select certificate type"
+                        icon={Award}
+                      >
+                        <option value="">Select certificate type</option>
+                        {CERTIFICATE_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+                      </CustomSelect>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Certificate Number</label>
+                      <input type="text" value={addCertificateNumber} onChange={(e) => setAddCertificateNumber(e.target.value)} placeholder="Enter certificate number" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Expiration Date</label>
+                      <CustomDatePicker
+                        value={addCertificateExpiration}
+                        onChange={(value) => setAddCertificateExpiration(value)}
+                        placeholder="Select expiration date"
+                        showFormat={true}
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Footer */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => {
+                        setShowAddCertificateModal(false)
+                        setAddCertificateType('')
+                        setAddCertificateNumber('')
+                        setAddCertificateExpiration('')
+                      }} 
+                      className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const formData = {
+                          type: addCertificateType,
+                          number: addCertificateNumber,
+                          expiration: addCertificateExpiration
+                        }
+                        if (!isFormDataValid('certificates', formData)) {
+                          if (!addCertificateType?.trim()) {
+                            toast.error('Please select certificate type')
+                            return
+                          }
+                          if (addCertificateExpiration?.trim() && isDateInPast(addCertificateExpiration)) {
+                            toast.error('Expiration date cannot be in the past')
+                            return
+                          }
+                          return
+                        }
+                        toast.success('Certificate added successfully')
+                        setShowAddCertificateModal(false)
+                        setAddCertificateType('')
+                        setAddCertificateNumber('')
+                        setAddCertificateExpiration('')
+                      }}
+                      disabled={!isFormDataValid('certificates', {
+                        type: addCertificateType,
+                        number: addCertificateNumber,
+                        expiration: addCertificateExpiration
+                      })}
+                      className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 active:scale-95 shadow-lg ${
+                        isFormDataValid('certificates', {
+                          type: addCertificateType,
+                          number: addCertificateNumber,
+                          expiration: addCertificateExpiration
+                        })
+                          ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 hover:shadow-xl shadow-primary-500/30'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                      }`}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        </AnimatePresence>
       )}
 
       {/* Add Specialty Modal */}
       {showAddSpecialtyModal && (
-        <>
-          {/* Backdrop */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
-            onClick={() => setShowAddSpecialtyModal(false)}
-          >
-            {/* Modal */}
+        <AnimatePresence>
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl mx-4 sm:mx-0"
-              style={{ maxHeight: '90vh' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Glow effect behind modal */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
-              
-              {/* Main modal container */}
-              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
+              onClick={() => setShowAddSpecialtyModal(false)}
+            />
+            
+            {/* Modal Container */}
+            <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3, type: "spring" }}
+                className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+                        <Award className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                          Add Certification Specialty
+                        </h1>
+                        <p className="text-sm font-medium text-gray-500">
+                          Nursing Specialties
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 
-                {/* Header Section */}
-                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
-                  {/* Icon and Title */}
-                  <div className="flex items-start gap-5">
-                    {/* Animated Icon */}
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ 
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 15,
-                        delay: 0.1
-                      }}
-                      className="relative"
-                    >
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <Award className="w-8 h-8 text-white" />
-                      </div>
-                      {/* Pulsing ring */}
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [0.5, 0, 0.5]
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Certification <span className="text-red-500">*</span>
+                      </label>
+                      <CustomSelect
+                        value={addSpecialtyCertification}
+                        onChange={(value) => {
+                          setAddSpecialtyCertification(value)
+                          setAddSpecialtySpecialty('') // Clear specialty when certification changes
                         }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                        className="absolute inset-0 bg-primary-500 rounded-2xl"
-                      />
-                    </motion.div>
-                    
-                    {/* Title and Description */}
-                    <div className="flex-1 pt-1">
-                      <motion.h2
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
+                        placeholder="Select certification"
+                        icon={Award}
                       >
-                        Add Certification Specialty
-                      </motion.h2>
-                      <motion.p
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="text-sm text-gray-600"
-                      >
-                        Select your certification and specialty
-                      </motion.p>
+                        <option value="">Select certification</option>
+                        {CERTIFICATIONS.map(cert => <option key={cert} value={cert}>{cert}</option>)}
+                      </CustomSelect>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Specialty <span className="text-red-500">*</span>
+                      </label>
+                      {(() => {
+                        const selectedCertification = addSpecialtyCertification
+                        const availableSpecialties = selectedCertification 
+                          ? (CERTIFICATION_SPECIALTIES_MAP[selectedCertification] || [])
+                          : []
+                        const hasNoSpecialties = selectedCertification && availableSpecialties.length === 0
+                        
+                        return (
+                          <>
+                            <CustomSelect
+                              value={addSpecialtySpecialty}
+                              onChange={(value) => setAddSpecialtySpecialty(value)}
+                              placeholder={selectedCertification ? "Select specialty" : "Select certification first"}
+                              icon={Award}
+                              disabled={!selectedCertification || hasNoSpecialties}
+                            >
+                              <option value="">Select specialty</option>
+                              {availableSpecialties.map(spec => <option key={spec} value={spec}>{spec}</option>)}
+                            </CustomSelect>
+                            {hasNoSpecialties && (
+                              <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
+                                <span>⚠</span>
+                                <span>No specialties available for the selected certification.</span>
+                              </p>
+                            )}
+                            {selectedCertification && availableSpecialties.length > 0 && !addSpecialtySpecialty && (
+                              <p className="mt-1.5 text-xs text-gray-500">
+                                Please select a specialty from the available options.
+                              </p>
+                            )}
+                          </>
+                        )
+                      })()}
                     </div>
                   </div>
                 </div>
-
-                {/* Divider */}
-                <div className="px-8">
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </div>
-
-                {/* Content Area - Scrollable */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-                  <div className="grid grid-cols-1 gap-6">
-                    
-                    {/* Certification */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.5 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Award className="w-4 h-4 text-primary-600" />
-                        Certification
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative group">
-                        <select className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 appearance-none cursor-pointer hover:border-gray-300 font-medium text-gray-700">
-                          <option value="">Select certification</option>
-                          <option>Basic Life Support (BLS)</option>
-                          <option>Advanced Cardiovascular Life Support (ACLS)</option>
-                          <option>Pediatric Advanced Life Support (PALS)</option>
-                          <option>Critical Care Registered Nurse (CCRN)</option>
-                          <option>Certified Emergency Nurse (CEN)</option>
-                          <option>Neonatal Resuscitation Program (NRP)</option>
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                      <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                        Select the certification first
-                      </p>
-                    </motion.div>
-
-                    {/* Specialty */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.6 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Award className="w-4 h-4 text-primary-600" />
-                        Specialty
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative group">
-                        <select className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 appearance-none cursor-pointer hover:border-gray-300 font-medium text-gray-700">
-                          <option value="">Select certification first</option>
-                          <option>Emergency Department</option>
-                          <option>Intensive Care Unit (ICU)</option>
-                          <option>Cardiac Care Unit (CCU)</option>
-                          <option>Pediatric Emergency</option>
-                          <option>Neonatal Intensive Care Unit (NICU)</option>
-                          <option>Medical-Surgical</option>
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                      <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                        Choose your area of specialty
-                      </p>
-                    </motion.div>
-
-                  </div>
-                </div>
-
+                
                 {/* Footer */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Info text */}
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: 0.7 }}
-                      className="text-xs text-gray-500 flex items-center gap-1.5"
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => {
+                        setShowAddSpecialtyModal(false)
+                        setAddSpecialtyCertification('')
+                        setAddSpecialtySpecialty('')
+                      }} 
+                      className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
                     >
-                      <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      Your information is secure and encrypted
-                    </motion.p>
-                    
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-3">
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 0.8 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setShowAddSpecialtyModal(false)}
-                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
-                      >
-                        Cancel
-                      </motion.button>
-                      
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 0.9 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          toast.success('Specialty added successfully')
-                          setShowAddSpecialtyModal(false)
-                        }}
-                        className="group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden text-sm sm:text-base"
-                      >
-                        <span className="relative z-10 flex items-center gap-2">
-                          <Plus className="w-5 h-5" />
-                          Add Specialty
-                        </span>
-                        {/* Shine effect */}
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-                          animate={{ x: ['-200%', '200%'] }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            repeatDelay: 1,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      </motion.button>
-                    </div>
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const formData = {
+                          certification: addSpecialtyCertification,
+                          specialty: addSpecialtySpecialty
+                        }
+                        if (!isFormDataValid('specialties', formData)) {
+                          if (!addSpecialtyCertification?.trim()) {
+                            toast.error('Please select a certification')
+                            return
+                          }
+                          if (!addSpecialtySpecialty?.trim()) {
+                            toast.error('Please select a specialty')
+                            return
+                          }
+                          const availableSpecialties = CERTIFICATION_SPECIALTIES_MAP[addSpecialtyCertification] || []
+                          if (availableSpecialties.length === 0) {
+                            toast.error('No specialties available for the selected certification')
+                            return
+                          }
+                          if (!availableSpecialties.includes(addSpecialtySpecialty)) {
+                            toast.error('Selected specialty is not available for the selected certification')
+                            return
+                          }
+                          return
+                        }
+                        toast.success('Specialty added successfully')
+                        setShowAddSpecialtyModal(false)
+                        setAddSpecialtyCertification('')
+                        setAddSpecialtySpecialty('')
+                      }}
+                      disabled={!isFormDataValid('specialties', {
+                        certification: addSpecialtyCertification,
+                        specialty: addSpecialtySpecialty
+                      })}
+                      className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 active:scale-95 shadow-lg ${
+                        isFormDataValid('specialties', {
+                          certification: addSpecialtyCertification,
+                          specialty: addSpecialtySpecialty
+                        })
+                          ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 hover:shadow-xl shadow-primary-500/30'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                      }`}
+                    >
+                      Add
+                    </button>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </>
+              </motion.div>
+            </div>
+          </>
+        </AnimatePresence>
       )}
 
       {/* Add Work History Modal */}
       {showAddWorkHistoryModal && (
-        <>
-          {/* Backdrop */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
-            onClick={() => {
-              setShowAddWorkHistoryModal(false)
-              // Reset all form fields
-              setWorkHistoryTitle('')
-              setWorkHistoryUnit('')
-              setWorkHistoryStartDate('')
-              setWorkHistoryEndDate('')
-              setCurrentlyWorking(false)
-              setWorkHistoryAgency('')
-              setWorkHistoryDescription('')
-              setChargeExperience(false)
-              setChargeExperienceComment('')
-              setTravelAssignment(false)
-              setPerDiem(false)
-            }}
-          >
-            {/* Modal */}
+        <AnimatePresence>
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-3xl"
-              style={{ maxHeight: '90vh' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Glow effect behind modal */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
-              
-              {/* Main modal container */}
-              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
-                
-                {/* Header Section */}
-                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
-                  {/* Icon and Title */}
-                  <div className="flex items-start gap-5">
-                    {/* Animated Icon */}
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ 
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 15,
-                        delay: 0.1
-                      }}
-                      className="relative"
-                    >
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <Briefcase className="w-8 h-8 text-white" />
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
+              onClick={() => {
+                setShowAddWorkHistoryModal(false)
+                // Reset all form fields
+                setWorkHistoryTitle('')
+                setWorkHistoryUnit('')
+                setWorkHistoryStartDate('')
+                setWorkHistoryEndDate('')
+                setCurrentlyWorking(false)
+                setWorkHistoryAgency('')
+                setWorkHistoryDescription('')
+                setChargeExperience(false)
+                setChargeExperienceComment('')
+                setTravelAssignment(false)
+                setPerDiem(false)
+              }}
+            />
+            
+            {/* Modal Container */}
+            <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3, type: "spring" }}
+                className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+                        <Briefcase className="w-6 h-6 text-white" />
                       </div>
-                      {/* Pulsing ring */}
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [0.5, 0, 0.5]
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                        className="absolute inset-0 bg-primary-500 rounded-2xl"
-                      />
-                    </motion.div>
-                    
-                    {/* Title and Description */}
-                    <div className="flex-1 pt-1">
-                      <motion.h2
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
-                      >
-                        Add Work History
-                      </motion.h2>
-                      <motion.p
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="text-sm text-gray-600"
-                      >
-                        Enter your work experience details
-                      </motion.p>
+                      <div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                          Add Work History
+                        </h1>
+                        <p className="text-sm font-medium text-gray-500">
+                          Work History
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Divider */}
-                <div className="px-8">
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </div>
-
-                {/* Content Area - Scrollable */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
+                
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
                   <div className="space-y-4">
                     
                     {/* Employer Full Name and Unit - Side by Side */}
@@ -4770,1435 +5210,962 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Info text */}
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: 1.5 }}
-                      className="text-xs text-gray-500 flex items-center gap-1.5"
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => {
+                        setShowAddWorkHistoryModal(false)
+                        // Reset all form fields
+                        setWorkHistoryTitle('')
+                        setWorkHistoryUnit('')
+                        setWorkHistoryStartDate('')
+                        setWorkHistoryEndDate('')
+                        setCurrentlyWorking(false)
+                        setWorkHistoryAgency('')
+                        setWorkHistoryDescription('')
+                        setChargeExperience(false)
+                        setChargeExperienceComment('')
+                        setTravelAssignment(false)
+                        setPerDiem(false)
+                      }} 
+                      className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
                     >
-                      <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      Your information is secure and encrypted
-                    </motion.p>
-                    
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-3">
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 1.6 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          setShowAddWorkHistoryModal(false)
-                          // Reset all form fields
-                          setWorkHistoryTitle('')
-                          setWorkHistoryUnit('')
-                          setWorkHistoryStartDate('')
-                          setWorkHistoryEndDate('')
-                          setCurrentlyWorking(false)
-                          setWorkHistoryAgency('')
-                          setWorkHistoryDescription('')
-                          setChargeExperience(false)
-                          setChargeExperienceComment('')
-                          setTravelAssignment(false)
-                          setPerDiem(false)
-                        }}
-                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
-                      >
-                        Cancel
-                      </motion.button>
-                      
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 1.7 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleAddWorkHistory}
-                        disabled={!workHistoryTitle.trim() || !workHistoryUnit.trim() || !workHistoryStartDate.trim() || (!currentlyWorking && !workHistoryEndDate.trim()) || (travelAssignment && !workHistoryAgency.trim()) || (chargeExperience && !chargeExperienceComment.trim())}
-                        className={`group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl font-semibold transition-all overflow-hidden text-sm sm:text-base ${
-                          workHistoryTitle.trim() && workHistoryUnit.trim() && workHistoryStartDate.trim() && (currentlyWorking || workHistoryEndDate.trim()) && (!travelAssignment || workHistoryAgency.trim()) && (!chargeExperience || chargeExperienceComment.trim())
-                            ? 'bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40'
-                            : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                        }`}
-                      >
-                        <span className="relative z-10 flex items-center gap-2">
-                          <Plus className="w-5 h-5" />
-                          Add Work History
-                        </span>
-                        {/* Shine effect */}
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-                          animate={{ x: ['-200%', '200%'] }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            repeatDelay: 1,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      </motion.button>
-                    </div>
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={handleAddWorkHistory}
+                      disabled={!isFormDataValid('workHistory', {
+                        title: workHistoryTitle,
+                        unit: workHistoryUnit,
+                        startDate: workHistoryStartDate,
+                        endDate: workHistoryEndDate,
+                        currentlyWorking: currentlyWorking,
+                        travelAssignment: travelAssignment,
+                        agency: workHistoryAgency,
+                        chargeExperience: chargeExperience,
+                        chargeExperienceComment: chargeExperienceComment
+                      })}
+                      className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 active:scale-95 shadow-lg ${
+                        isFormDataValid('workHistory', {
+                          title: workHistoryTitle,
+                          unit: workHistoryUnit,
+                          startDate: workHistoryStartDate,
+                          endDate: workHistoryEndDate,
+                          currentlyWorking: currentlyWorking,
+                          travelAssignment: travelAssignment,
+                          agency: workHistoryAgency,
+                          chargeExperience: chargeExperience,
+                          chargeExperienceComment: chargeExperienceComment
+                        })
+                          ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 hover:shadow-xl shadow-primary-500/30'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                      }`}
+                    >
+                      Add
+                    </button>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </>
+              </motion.div>
+            </div>
+          </>
+        </AnimatePresence>
       )}
 
       {/* Add Education Modal */}
       {showAddEducationModal && (
-        <>
-          {/* Backdrop */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
-            onClick={() => {
-              setShowAddEducationModal(false)
-              setDidGraduate(false)
-            }}
-          >
-            {/* Modal */}
+        <AnimatePresence>
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl mx-4 sm:mx-0"
-              style={{ maxHeight: '90vh' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Glow effect behind modal */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
-              
-              {/* Main modal container */}
-              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
-                
-                {/* Header Section */}
-                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
-                  {/* Icon and Title */}
-                  <div className="flex items-start gap-5">
-                    {/* Animated Icon */}
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ 
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 15,
-                        delay: 0.1
-                      }}
-                      className="relative"
-                    >
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <GraduationCap className="w-8 h-8 text-white" />
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
+              onClick={() => {
+                setShowAddEducationModal(false)
+                setDidGraduate(false)
+              }}
+            />
+            
+            {/* Modal Container */}
+            <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3, type: "spring" }}
+                className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+                        <GraduationCap className="w-6 h-6 text-white" />
                       </div>
-                      {/* Pulsing ring */}
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [0.5, 0, 0.5]
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                        className="absolute inset-0 bg-primary-500 rounded-2xl"
-                      />
-                    </motion.div>
-                    
-                    {/* Title and Description */}
-                    <div className="flex-1 pt-1">
-                      <motion.h2
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
-                      >
-                        Add Education History
-                      </motion.h2>
-                      <motion.p
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="text-sm text-gray-600"
-                      >
-                        Enter your education history details
-                      </motion.p>
+                      <div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                          Add Education
+                        </h1>
+                        <p className="text-sm font-medium text-gray-500">
+                          Education
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Divider */}
-                <div className="px-8">
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </div>
-
-                {/* Content Area - Scrollable */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
-                    {/* School Name */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.5 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <GraduationCap className="w-4 h-4 text-primary-600" />
-                        School Name
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
+                
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">School Name <span className="text-red-500">*</span></label>
+                      <SearchableDropdown
+                        value={addEducationTitle}
+                        onChange={(value) => setAddEducationTitle(value)}
                         placeholder="Search schools..."
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
+                        options={SCHOOLS}
                       />
-                    </motion.div>
-
-                    {/* Course of Study */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.6 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        Course of Study
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative group">
-                        <select className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 appearance-none cursor-pointer hover:border-gray-300 font-medium text-gray-700">
-                          <option value="">Select course of study</option>
-                          <option>Bachelor of Science in Nursing (BSN)</option>
-                          <option>Associate Degree in Nursing (ADN)</option>
-                          <option>Master of Science in Nursing (MSN)</option>
-                          <option>Doctor of Nursing Practice (DNP)</option>
-                          <option>Licensed Practical Nurse (LPN) Program</option>
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Course of Study <span className="text-red-500">*</span></label>
+                      <CustomSelect
+                        value={addEducationCourse}
+                        onChange={(value) => setAddEducationCourse(value)}
+                        placeholder="Select course of study"
+                        icon={GraduationCap}
+                      >
+                        <option value="">Select course of study</option>
+                        {COURSE_OF_STUDY.map(course => (
+                          <option key={course} value={course}>{course}</option>
+                        ))}
+                      </CustomSelect>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="checkbox" 
+                        id="didGraduate" 
+                        checked={didGraduate} 
+                        onChange={(e) => {
+                          setDidGraduate(e.target.checked)
+                          if (!e.target.checked) {
+                            setAddEducationGraduated('')
+                            setAddEducationDegree('')
+                          }
+                        }} 
+                        className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                        style={{ accentColor: '#7F2860' }}
+                      />
+                      <label htmlFor="didGraduate" className="text-sm text-gray-700 cursor-pointer">Did you Graduate?</label>
+                    </div>
+                    {didGraduate && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Graduation Date <span className="text-red-500">*</span></label>
+                          <CustomDatePicker
+                            value={addEducationGraduated}
+                            onChange={(value) => setAddEducationGraduated(value)}
+                            placeholder="dd/mm/yyyy"
+                            showFormat={true}
+                            maxDate="today"
+                          />
                         </div>
-                      </div>
-                    </motion.div>
-
-                    {/* Did you Graduate? - Full Width */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.7 }}
-                      className="md:col-span-2"
-                    >
-                      <label className="flex items-center gap-3 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={didGraduate}
-                          onChange={(e) => setDidGraduate(e.target.checked)}
-                          className="w-5 h-5 rounded border-2 border-gray-300 text-primary-600 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer accent-primary-600"
-                        />
-                        <span className="text-sm font-medium text-gray-700 group-hover:text-primary-600 transition-colors">
-                          Did you Graduate?
-                        </span>
-                      </label>
-                    </motion.div>
-
-                    {/* Graduation Date - Only show if graduated */}
-                    {didGraduate && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.4 }}
-                        className="md:col-span-2"
-                      >
-                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                          <Calendar className="w-4 h-4 text-primary-600" />
-                          Graduation Date
-                          <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="date"
-                          placeholder="dd/mm/yyyy"
-                          className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700"
-                        />
-                      </motion.div>
-                    )}
-
-                    {/* Degree - Only show if graduated */}
-                    {didGraduate && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.4 }}
-                        className="md:col-span-2"
-                      >
-                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                          <Award className="w-4 h-4 text-primary-600" />
-                          Degree
-                          <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative group">
-                          <select className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 appearance-none cursor-pointer hover:border-gray-300 font-medium text-gray-700">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Degree <span className="text-red-500">*</span></label>
+                          <CustomSelect
+                            value={addEducationDegree}
+                            onChange={(value) => setAddEducationDegree(value)}
+                            placeholder="Select degree"
+                            icon={GraduationCap}
+                          >
                             <option value="">Select degree</option>
-                            <option>Associate Degree</option>
-                            <option>Bachelor's Degree</option>
-                            <option>Master's Degree</option>
-                            <option>Doctoral Degree</option>
-                            <option>Certificate/Diploma</option>
-                          </select>
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                            <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
+                            {DEGREES.map(degree => (
+                              <option key={degree} value={degree}>{degree}</option>
+                            ))}
+                          </CustomSelect>
                         </div>
-                      </motion.div>
+                      </>
                     )}
-
                   </div>
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Info text */}
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: 0.8 }}
-                      className="text-xs text-gray-500 flex items-center gap-1.5"
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => {
+                        setShowAddEducationModal(false)
+                        setDidGraduate(false)
+                        setAddEducationTitle('')
+                        setAddEducationCourse('')
+                        setAddEducationGraduated('')
+                        setAddEducationDegree('')
+                      }} 
+                      className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
                     >
-                      <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      Your information is secure and encrypted
-                    </motion.p>
-                    
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-3">
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 0.9 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          setShowAddEducationModal(false)
-                          setDidGraduate(false)
-                        }}
-                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
-                      >
-                        Cancel
-                      </motion.button>
-                      
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 1.0 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          toast.success('Education added successfully')
-                          setShowAddEducationModal(false)
-                          setDidGraduate(false)
-                        }}
-                        className="group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden text-sm sm:text-base"
-                      >
-                        <span className="relative z-10 flex items-center gap-2">
-                          <Plus className="w-5 h-5" />
-                          Add Education
-                        </span>
-                        {/* Shine effect */}
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-                          animate={{ x: ['-200%', '200%'] }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            repeatDelay: 1,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      </motion.button>
-                    </div>
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const formData = {
+                          title: addEducationTitle,
+                          course: addEducationCourse,
+                          didGraduate: didGraduate,
+                          graduated: addEducationGraduated,
+                          degree: addEducationDegree
+                        }
+                        if (!isFormDataValid('education', formData)) {
+                          if (!addEducationTitle?.trim()) {
+                            toast.error('Please enter school name')
+                            return
+                          }
+                          if (!addEducationCourse?.trim()) {
+                            toast.error('Please select course of study')
+                            return
+                          }
+                          if (didGraduate) {
+                            if (!addEducationGraduated?.trim()) {
+                              toast.error('Please select graduation date')
+                              return
+                            }
+                            if (!addEducationDegree?.trim()) {
+                              toast.error('Please select degree')
+                              return
+                            }
+                          }
+                          return
+                        }
+                        toast.success('Education added successfully')
+                        setShowAddEducationModal(false)
+                        setDidGraduate(false)
+                        setAddEducationTitle('')
+                        setAddEducationCourse('')
+                        setAddEducationGraduated('')
+                        setAddEducationDegree('')
+                      }}
+                      disabled={!isFormDataValid('education', {
+                        title: addEducationTitle,
+                        course: addEducationCourse,
+                        didGraduate: didGraduate,
+                        graduated: addEducationGraduated,
+                        degree: addEducationDegree
+                      })}
+                      className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 active:scale-95 shadow-lg ${
+                        isFormDataValid('education', {
+                          title: addEducationTitle,
+                          course: addEducationCourse,
+                          didGraduate: didGraduate,
+                          graduated: addEducationGraduated,
+                          degree: addEducationDegree
+                        })
+                          ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 hover:shadow-xl shadow-primary-500/30'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                      }`}
+                    >
+                      Add
+                    </button>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </>
+              </motion.div>
+            </div>
+          </>
+        </AnimatePresence>
       )}
 
       {/* Add Professional Reference Modal */}
       {showAddReferenceModal && (
-        <>
-          {/* Backdrop */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
-            onClick={() => setShowAddReferenceModal(false)}
-          >
-            {/* Modal */}
+        <AnimatePresence>
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl mx-4 sm:mx-0"
-              style={{ maxHeight: '90vh' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Glow effect behind modal */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
-              
-              {/* Main modal container */}
-              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
-                
-                {/* Header Section */}
-                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
-                  {/* Icon and Title */}
-                  <div className="flex items-start gap-5">
-                    {/* Animated Icon */}
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ 
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 15,
-                        delay: 0.1
-                      }}
-                      className="relative"
-                    >
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <Users className="w-8 h-8 text-white" />
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
+              onClick={() => setShowAddReferenceModal(false)}
+            />
+            
+            {/* Modal Container */}
+            <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3, type: "spring" }}
+                className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+                        <Users className="w-6 h-6 text-white" />
                       </div>
-                      {/* Pulsing ring */}
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [0.5, 0, 0.5]
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                        className="absolute inset-0 bg-primary-500 rounded-2xl"
-                      />
-                    </motion.div>
-                    
-                    {/* Title and Description */}
-                    <div className="flex-1 pt-1">
-                      <motion.h2
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
-                      >
-                        Add Professional Reference
-                      </motion.h2>
-                      <motion.p
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="text-sm text-gray-600"
-                      >
-                        Enter your professional reference details
-                      </motion.p>
+                      <div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                          Add Professional Reference
+                        </h1>
+                        <p className="text-sm font-medium text-gray-500">
+                          Professional References
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Divider */}
-                <div className="px-8">
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </div>
-
-                {/* Content Area - Scrollable */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-                  <div className="grid grid-cols-1 gap-6">
-                    
-                    {/* Full Name */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.5 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Users className="w-4 h-4 text-primary-600" />
-                        Full Name
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Enter full name"
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-                      />
-                    </motion.div>
-
-                    {/* Reference Job Title */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.6 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Briefcase className="w-4 h-4 text-primary-600" />
-                        Reference Job Title
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Enter job title"
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-                      />
-                    </motion.div>
-
-                    {/* Where did you work together? */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.7 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <MapPin className="w-4 h-4 text-primary-600" />
-                        Where did you work together?
-                      </label>
-                      <div className="relative group">
-                        <select className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 appearance-none cursor-pointer hover:border-gray-300 font-medium text-gray-700">
-                          <option value="">Select from your work history</option>
-                          <option>Johns Hopkins Hospital - ICU (2020-2023)</option>
-                          <option>Mayo Clinic - Emergency Department (2018-2020)</option>
-                          <option>Cleveland Clinic - Cardiac Care (2015-2018)</option>
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                    </motion.div>
-
-                    {/* Phone Number & Email */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.8 }}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                    >
-                      {/* Phone Number */}
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                          <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                          </svg>
-                          Phone Number
-                        </label>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value="+1"
-                            disabled
-                            className="w-16 px-3 py-3.5 bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-gray-700 text-center"
-                          />
-                          <input
-                            type="tel"
-                            placeholder="Enter 10 digits"
-                            maxLength={10}
-                            className="flex-1 px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Email */}
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                          <Mail className="w-4 h-4 text-primary-600" />
-                          Email
-                        </label>
-                        <input
-                          type="email"
-                          placeholder="Enter email address"
-                          className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-                        />
-                      </div>
-                    </motion.div>
-
-                    {/* Note */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.9 }}
-                      className="bg-pink-50 border border-pink-200 rounded-xl p-4"
-                    >
-                      <div className="flex items-start gap-3">
-                        <svg className="w-5 h-5 text-pink-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                        <div>
-                          <p className="text-sm font-semibold text-pink-800 mb-1">Note:</p>
-                          <p className="text-sm text-pink-700">At least one contact method (phone number or email) is required.</p>
-                        </div>
-                      </div>
-                    </motion.div>
-
+                
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
+                  <div className="space-y-4">
+                    {(() => {
+                      // Get work history items for the dropdown
+                      const workHistoryOptions = (authUser?.workHistory || []).map((work: any) => ({
+                        id: work.id,
+                        label: `${work.title || work.facility || ''}${work.unit ? ` - ${work.unit}` : ''}${work.startDate ? ` (${formatDateToDDMMYYYY(work.startDate)} - ${work.currentlyWorking ? 'Present' : (work.endDate ? formatDateToDDMMYYYY(work.endDate) : 'N/A')})` : ''}`
+                      }))
+                      
+                      return (
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Full Name <span className="text-red-500">*</span></label>
+                            <input 
+                              type="text" 
+                              value={addReferenceName}
+                              onChange={(e) => setAddReferenceName(e.target.value)}
+                              placeholder="Enter full name" 
+                              className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Reference Job Title <span className="text-red-500">*</span></label>
+                            <CustomSelect
+                              value={addReferenceTitle}
+                              onChange={(value) => setAddReferenceTitle(value)}
+                              placeholder="Select job title"
+                              icon={Briefcase}
+                            >
+                              <option value="">Select job title</option>
+                              {REFERENCE_JOB_TITLES.map(title => (
+                                <option key={title} value={title}>{title}</option>
+                              ))}
+                            </CustomSelect>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Where did you work together?</label>
+                            <CustomSelect
+                              value={addReferenceWorkHistoryId}
+                              onChange={(value) => setAddReferenceWorkHistoryId(value)}
+                              placeholder="Select from your work history"
+                              icon={Briefcase}
+                              disabled={workHistoryOptions.length === 0}
+                            >
+                              <option value="">Select from your work history</option>
+                              {workHistoryOptions.map(work => (
+                                <option key={work.id} value={work.id}>{work.label}</option>
+                              ))}
+                            </CustomSelect>
+                            {workHistoryOptions.length === 0 && (
+                              <p className="mt-1.5 text-xs text-gray-500">Add work history first to select a reference</p>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                              <div className="relative">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 font-medium">+1</div>
+                                <input 
+                                  type="tel" 
+                                  value={addReferencePhone}
+                                  onChange={(e) => {
+                                    // Only allow digits and limit to 10 digits
+                                    const value = e.target.value.replace(/\D/g, '').slice(0, 10)
+                                    setAddReferencePhone(value)
+                                  }}
+                                  placeholder="Enter 10 digits" 
+                                  className="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
+                                  maxLength={10}
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                              <input 
+                                type="email" 
+                                value={addReferenceEmail}
+                                onChange={(e) => setAddReferenceEmail(e.target.value)}
+                                placeholder="Enter email address" 
+                                className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )
+                    })()}
                   </div>
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Info text */}
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: 1.0 }}
-                      className="text-xs text-gray-500 flex items-center gap-1.5"
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => {
+                        setShowAddReferenceModal(false)
+                        setAddReferenceName('')
+                        setAddReferenceTitle('')
+                        setAddReferenceWorkHistoryId('')
+                        setAddReferencePhone('')
+                        setAddReferenceEmail('')
+                      }} 
+                      className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
                     >
-                      <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      Your information is secure and encrypted
-                    </motion.p>
-                    
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-3">
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 1.1 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setShowAddReferenceModal(false)}
-                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
-                      >
-                        Cancel
-                      </motion.button>
-                      
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 1.2 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          toast.success('Reference added successfully')
-                          setShowAddReferenceModal(false)
-                        }}
-                        className="group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden text-sm sm:text-base"
-                      >
-                        <span className="relative z-10 flex items-center gap-2">
-                          <Plus className="w-5 h-5" />
-                          Add Reference
-                        </span>
-                        {/* Shine effect */}
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-                          animate={{ x: ['-200%', '200%'] }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            repeatDelay: 1,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      </motion.button>
-                    </div>
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const formData = {
+                          name: addReferenceName,
+                          title: addReferenceTitle,
+                          workHistoryId: addReferenceWorkHistoryId,
+                          phone: addReferencePhone,
+                          email: addReferenceEmail
+                        }
+                        if (!isFormDataValid('references', formData)) {
+                          if (!addReferenceName?.trim()) {
+                            toast.error('Please enter full name')
+                            return
+                          }
+                          if (!addReferenceTitle?.trim()) {
+                            toast.error('Please select reference job title')
+                            return
+                          }
+                          if (!addReferencePhone?.trim() && !addReferenceEmail?.trim()) {
+                            toast.error('Please provide at least one contact method (phone number or email)')
+                            return
+                          }
+                          if (addReferencePhone?.trim() && !isValidPhone(addReferencePhone)) {
+                            toast.error('Please enter a valid 10-digit phone number')
+                            return
+                          }
+                          if (addReferenceEmail?.trim() && !isValidEmail(addReferenceEmail)) {
+                            toast.error('Please enter a valid email address')
+                            return
+                          }
+                          return
+                        }
+                        toast.success('Reference added successfully')
+                        setShowAddReferenceModal(false)
+                        setAddReferenceName('')
+                        setAddReferenceTitle('')
+                        setAddReferenceWorkHistoryId('')
+                        setAddReferencePhone('')
+                        setAddReferenceEmail('')
+                      }}
+                      disabled={!isFormDataValid('references', {
+                        name: addReferenceName,
+                        title: addReferenceTitle,
+                        workHistoryId: addReferenceWorkHistoryId,
+                        phone: addReferencePhone,
+                        email: addReferenceEmail
+                      })}
+                      className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 active:scale-95 shadow-lg ${
+                        isFormDataValid('references', {
+                          name: addReferenceName,
+                          title: addReferenceTitle,
+                          workHistoryId: addReferenceWorkHistoryId,
+                          phone: addReferencePhone,
+                          email: addReferenceEmail
+                        })
+                          ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 hover:shadow-xl shadow-primary-500/30'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                      }`}
+                    >
+                      Add
+                    </button>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </>
+              </motion.div>
+            </div>
+          </>
+        </AnimatePresence>
       )}
 
       {/* Edit License Modal */}
       {showEditLicenseModal && selectedItem && (
-        <>
-          {/* Backdrop */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
-            onClick={() => {
-              setShowEditLicenseModal(false)
-              setSelectedItem(null)
-            }}
-          >
-            {/* Modal */}
+        <AnimatePresence>
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl mx-4 sm:mx-0"
-              style={{ maxHeight: '90vh' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Glow effect behind modal */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
-              
-              {/* Main modal container */}
-              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
-                
-                {/* Header Section */}
-                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
-                  {/* Icon and Title */}
-                  <div className="flex items-start gap-5">
-                    {/* Animated Icon */}
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ 
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 15,
-                        delay: 0.1
-                      }}
-                      className="relative"
-                    >
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <Shield className="w-8 h-8 text-white" />
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
+              onClick={() => {
+                setShowEditLicenseModal(false)
+                setSelectedItem(null)
+              }}
+            />
+            
+            {/* Modal Container */}
+            <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3, type: "spring" }}
+                className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+                        <Shield className="w-6 h-6 text-white" />
                       </div>
-                      {/* Pulsing ring */}
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [0.5, 0, 0.5]
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                        className="absolute inset-0 bg-primary-500 rounded-2xl"
-                      />
-                    </motion.div>
-                    
-                    {/* Title and Description */}
-                    <div className="flex-1 pt-1">
-                      <motion.h2
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
-                      >
-                        Edit Professional License
-                      </motion.h2>
-                      <motion.p
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="text-sm text-gray-600"
-                      >
-                        Update your license information
-                      </motion.p>
+                      <div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                          Edit Professional License
+                        </h1>
+                        <p className="text-sm font-medium text-gray-500">
+                          Professional Licenses
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Divider */}
-                <div className="px-8">
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </div>
-
-                {/* Content Area - Scrollable */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
-                    {/* License Type - Full Width */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.5 }}
-                      className="md:col-span-2"
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Award className="w-4 h-4 text-primary-600" />
-                        License Type
-                        <span className="text-red-500">*</span>
+                
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        License Type <span className="text-red-500">*</span>
                       </label>
-                      <div className="relative group">
-                        <select 
-                          defaultValue={selectedItem.title || ''}
-                          className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 appearance-none cursor-pointer hover:border-gray-300 font-medium text-gray-700"
-                        >
-                          <option value="">Select license type</option>
-                          <option value="Qualified Medication Assistant">Qualified Medication Assistant</option>
-                          <option value="Certified Occupational Therapy Assistant">Certified Occupational Therapy Assistant</option>
-                          <option value="Customer Service">Customer Service</option>
-                          <option value="Registered Nurse (RN)">Registered Nurse (RN)</option>
-                          <option value="Licensed Practical Nurse (LPN)">Licensed Practical Nurse (LPN)</option>
-                          <option value="Certified Nursing Assistant (CNA)">Certified Nursing Assistant (CNA)</option>
-                          <option value="Nurse Practitioner (NP)">Nurse Practitioner (NP)</option>
-                          <option value="Clinical Nurse Specialist (CNS)">Clinical Nurse Specialist (CNS)</option>
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                      <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                        Choose the type of professional license
-                      </p>
-                    </motion.div>
-
-                    {/* License Number */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.6 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                        </svg>
-                        License Number
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue={selectedItem.number || ''}
-                        placeholder="e.g., RN123456"
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
+                      <CustomSelect
+                        value={editLicenseType}
+                        onChange={(value) => setEditLicenseType(value)}
+                        placeholder="Select license type"
+                        icon={Shield}
+                      >
+                        <option value="">Select license type</option>
+                        {LICENSE_TYPES.map(type => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
+                      </CustomSelect>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">License Number</label>
+                      <input type="text" value={editLicenseNumber} onChange={(e) => setEditLicenseNumber(e.target.value)} placeholder="Enter license number" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                      <CustomSelect
+                        value={editLicenseState}
+                        onChange={(value) => setEditLicenseState(value)}
+                        placeholder="Select state"
+                        icon={MapPin}
+                      >
+                        <option value="">Select state</option>
+                        {US_STATES.map(state => <option key={state} value={state}>{state}</option>)}
+                      </CustomSelect>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Expiration Date</label>
+                      <CustomDatePicker
+                        value={editLicenseExpiration}
+                        onChange={(value) => setEditLicenseExpiration(value)}
+                        placeholder="Select expiration date"
+                        showFormat={true}
                       />
-                    </motion.div>
-
-                    {/* State */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.7 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <MapPin className="w-4 h-4 text-primary-600" />
-                        State
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue={selectedItem.state || ''}
-                        placeholder="Search states..."
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-                      />
-                    </motion.div>
-
-                    {/* Expiration Date - Full Width */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.8 }}
-                      className="md:col-span-2"
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Calendar className="w-4 h-4 text-primary-600" />
-                        Expiration Date
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue={selectedItem.expiration || ''}
-                        placeholder="e.g., Nov 25, 2025"
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-                      />
-                      <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
-                        We'll send you a reminder before your license expires
-                      </p>
-                    </motion.div>
-
+                    </div>
                   </div>
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Info text */}
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: 0.9 }}
-                      className="text-xs text-gray-500 flex items-center gap-1.5"
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => {
+                        setShowEditLicenseModal(false)
+                        setSelectedItem(null)
+                      }} 
+                      className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
                     >
-                      <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      Your information is secure and encrypted
-                    </motion.p>
-                    
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-3">
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 1.0 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          setShowEditLicenseModal(false)
-                          setSelectedItem(null)
-                        }}
-                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
-                      >
-                        Cancel
-                      </motion.button>
-                      
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 1.1 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleUpdateLicense}
-                        className="group relative px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
-                      >
-                        <span className="relative z-10 flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          Update
-                        </span>
-                        {/* Shine effect */}
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-                          animate={{ x: ['-200%', '200%'] }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            repeatDelay: 1,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      </motion.button>
-                    </div>
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={handleUpdateLicense}
+                      disabled={!isFormDataValid('licenses', {
+                        type: editLicenseType,
+                        number: editLicenseNumber,
+                        state: editLicenseState,
+                        expiration: editLicenseExpiration
+                      })}
+                      className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 active:scale-95 shadow-lg ${
+                        isFormDataValid('licenses', {
+                          type: editLicenseType,
+                          number: editLicenseNumber,
+                          state: editLicenseState,
+                          expiration: editLicenseExpiration
+                        })
+                          ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 hover:shadow-xl shadow-primary-500/30'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                      }`}
+                    >
+                      Update
+                    </button>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </>
+              </motion.div>
+            </div>
+          </>
+        </AnimatePresence>
       )}
 
       {/* Edit Professional Certificate Modal */}
       {showEditCertificateModal && selectedItem && (
-        <>
-          {/* Backdrop */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
-            onClick={() => {
-              setShowEditCertificateModal(false)
-              setSelectedItem(null)
-            }}
-          >
-            {/* Modal */}
+        <AnimatePresence>
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl mx-4 sm:mx-0"
-              style={{ maxHeight: '90vh' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Glow effect behind modal */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
-              
-              {/* Main modal container */}
-              <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
+              onClick={() => {
+                setShowEditCertificateModal(false)
+                setSelectedItem(null)
+              }}
+            />
+            
+            {/* Modal Container */}
+            <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3, type: "spring" }}
+                className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+                        <Award className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                          Edit Certificate
+                        </h1>
+                        <p className="text-sm font-medium text-gray-500">
+                          Professional Certificates
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 
-                {/* Header Section */}
-                <div className="relative px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 flex-shrink-0">
-                  {/* Icon and Title */}
-                  <div className="flex items-start gap-5">
-                    {/* Animated Icon */}
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ 
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 15,
-                        delay: 0.1
-                      }}
-                      className="relative"
-                    >
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <Award className="w-8 h-8 text-white" />
-                      </div>
-                      {/* Pulsing ring */}
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [0.5, 0, 0.5]
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                        className="absolute inset-0 bg-primary-500 rounded-2xl"
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Certificate Type <span className="text-red-500">*</span>
+                      </label>
+                      <CustomSelect
+                        value={editCertificateType}
+                        onChange={(value) => setEditCertificateType(value)}
+                        placeholder="Select certificate type"
+                        icon={Award}
+                      >
+                        <option value="">Select certificate type</option>
+                        {CERTIFICATE_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+                      </CustomSelect>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Certificate Number</label>
+                      <input type="text" value={editCertificateNumber} onChange={(e) => setEditCertificateNumber(e.target.value)} placeholder="Enter certificate number" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Expiration Date</label>
+                      <CustomDatePicker
+                        value={editCertificateExpiration}
+                        onChange={(value) => setEditCertificateExpiration(value)}
+                        onChange={() => {}}
+                        placeholder="Select expiration date"
+                        showFormat={true}
                       />
-                    </motion.div>
-                    
-                    {/* Title and Description */}
-                    <div className="flex-1 pt-1">
-                      <motion.h2
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
-                      >
-                        Edit Professional Certificate
-                      </motion.h2>
-                      <motion.p
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="text-sm text-gray-600"
-                      >
-                        Update your certificate information
-                      </motion.p>
                     </div>
                   </div>
                 </div>
-
-                {/* Divider */}
-                <div className="px-8">
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </div>
-
-                {/* Content Area - Scrollable */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
-                    {/* Certificate Type - Full Width */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.5 }}
-                      className="md:col-span-2"
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Award className="w-4 h-4 text-primary-600" />
-                        Certificate Type
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative group">
-                        <select 
-                          defaultValue={selectedItem.title || ''}
-                          className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 appearance-none cursor-pointer hover:border-gray-300 font-medium text-gray-700"
-                        >
-                          <option value="">Select certificate type</option>
-                          <option value="Basic Life Support">Basic Life Support</option>
-                          <option value="Advanced Cardiac Life Support">Advanced Cardiac Life Support</option>
-                          <option value="Pediatric Advanced Life Support">Pediatric Advanced Life Support</option>
-                          <option value="Neonatal Resuscitation Program">Neonatal Resuscitation Program</option>
-                          <option value="Critical Care Registered Nurse">Critical Care Registered Nurse</option>
-                          <option value="Basic Life Support (BLS)">Basic Life Support (BLS)</option>
-                          <option value="Advanced Cardiovascular Life Support (ACLS)">Advanced Cardiovascular Life Support (ACLS)</option>
-                          <option value="Pediatric Advanced Life Support (PALS)">Pediatric Advanced Life Support (PALS)</option>
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                      <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                        Choose the type of professional certificate
-                      </p>
-                    </motion.div>
-
-                    {/* Certificate Number */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.6 }}
-                      className="md:col-span-2"
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                        </svg>
-                        Certificate Number
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue={selectedItem.number || ''}
-                        placeholder="e.g., BLS123456"
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-                      />
-                    </motion.div>
-
-                    {/* Expiration Date - Full Width */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.7 }}
-                      className="md:col-span-2"
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Calendar className="w-4 h-4 text-primary-600" />
-                        Expiration Date
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue={selectedItem.expiration || ''}
-                        placeholder="e.g., Nov 25, 2025"
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-                      />
-                      <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
-                        We'll send you a reminder before your certificate expires
-                      </p>
-                    </motion.div>
-
-                  </div>
-                </div>
-
+                
                 {/* Footer */}
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Info text */}
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: 0.8 }}
-                      className="text-xs text-gray-500 flex items-center gap-1.5"
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => {
+                        setShowEditCertificateModal(false)
+                        setSelectedItem(null)
+                      }} 
+                      className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
                     >
-                      <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      Your information is secure and encrypted
-                    </motion.p>
-                    
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-3">
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 0.9 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          setShowEditCertificateModal(false)
-                          setSelectedItem(null)
-                        }}
-                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
-                      >
-                        Cancel
-                      </motion.button>
-                      
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 1.0 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleUpdateCertificate}
-                        className="group relative px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
-                      >
-                        <span className="relative z-10 flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          Update
-                        </span>
-                        {/* Shine effect */}
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-                          animate={{ x: ['-200%', '200%'] }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            repeatDelay: 1,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      </motion.button>
-                    </div>
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={handleUpdateCertificate}
+                      disabled={!isFormDataValid('certificates', {
+                        type: editCertificateType,
+                        number: editCertificateNumber,
+                        expiration: editCertificateExpiration
+                      })}
+                      className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 active:scale-95 shadow-lg ${
+                        isFormDataValid('certificates', {
+                          type: editCertificateType,
+                          number: editCertificateNumber,
+                          expiration: editCertificateExpiration
+                        })
+                          ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 hover:shadow-xl shadow-primary-500/30'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                      }`}
+                    >
+                      Update
+                    </button>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </>
+              </motion.div>
+            </div>
+          </>
+        </AnimatePresence>
       )}
 
       {/* Edit Certification Specialty Modal */}
       {showEditSpecialtyModal && selectedItem && (
-        <>
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
-            onClick={() => {
-              setShowEditSpecialtyModal(false)
-              setSelectedItem(null)
-            }}
-          >
+        <AnimatePresence>
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl mx-4 sm:mx-0"
-              style={{ maxHeight: '90vh' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
-              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-                <div className="relative px-8 pt-8 pb-6">
-                  <div className="flex items-start gap-5">
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
-                      className="relative"
-                    >
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <Award className="w-8 h-8 text-white" />
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
+              onClick={() => {
+                setShowEditSpecialtyModal(false)
+                setSelectedItem(null)
+              }}
+            />
+            
+            {/* Modal Container */}
+            <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3, type: "spring" }}
+                className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+                        <Award className="w-6 h-6 text-white" />
                       </div>
-                      <motion.div
-                        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute inset-0 bg-primary-500 rounded-2xl"
-                      />
-                    </motion.div>
-                    <div className="flex-1 pt-1">
-                      <motion.h2
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
-                      >
-                        Edit Certification Specialty
-                      </motion.h2>
-                      <motion.p
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="text-sm text-gray-600"
-                      >
-                        Update your certification and specialty
-                      </motion.p>
+                      <div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                          Edit Certification Specialty
+                        </h1>
+                        <p className="text-sm font-medium text-gray-500">
+                          Nursing Specialties
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="px-8">
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </div>
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.5 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Award className="w-4 h-4 text-primary-600" />
-                        Certification
+                
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Certification <span className="text-red-500">*</span>
                       </label>
-                      <select 
-                        defaultValue={selectedItem.title || ''}
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 appearance-none cursor-pointer hover:border-gray-300 font-medium text-gray-700"
-                      >
-                        <option value="">Select certification</option>
-                        <option value="Medical Assistant">Medical Assistant</option>
-                        <option value="Registered Nurse">Registered Nurse</option>
-                        <option value="Administrative Assistant">Administrative Assistant</option>
-                        <option value="Licensed Practical Nurse">Licensed Practical Nurse</option>
-                        <option value="Certified Nursing Assistant">Certified Nursing Assistant</option>
-                        <option value="ACLS">ACLS</option>
-                        <option value="BLS">BLS</option>
-                        <option value="PALS">PALS</option>
-                        <option value="NRP">NRP</option>
-                        <option value="CCRN">CCRN</option>
-                      </select>
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.6 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                        </svg>
-                        Specialty
+                      {(() => {
+                        const availableSpecialties = editSpecialtyCertification 
+                          ? (CERTIFICATION_SPECIALTIES_MAP[editSpecialtyCertification] || [])
+                          : []
+                        const hasNoSpecialties = editSpecialtyCertification && availableSpecialties.length === 0
+                        
+                        return (
+                          <>
+                            <CustomSelect
+                              value={editSpecialtyCertification}
+                              onChange={(value) => {
+                                setEditSpecialtyCertification(value)
+                                setEditSpecialtySpecialty('') // Clear specialty when certification changes
+                              }}
+                              placeholder="Select certification"
+                              icon={Award}
+                            >
+                              <option value="">Select certification</option>
+                              {CERTIFICATIONS.map(cert => <option key={cert} value={cert}>{cert}</option>)}
+                            </CustomSelect>
+                            {hasNoSpecialties && (
+                              <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
+                                <span>⚠</span>
+                                <span>No specialties available for the selected certification.</span>
+                              </p>
+                            )}
+                          </>
+                        )
+                      })()}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Specialty <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        defaultValue={selectedItem.specialty || ''}
-                        placeholder="e.g., Emergency Care"
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-                      />
-                    </motion.div>
-                  </div>
-                </div>
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
-                  <div className="flex items-center justify-between gap-4">
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.4, delay: 0.7 }}
-                      className="text-xs text-gray-500 flex items-center gap-1.5"
-                    >
-                      <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      Your information is secure and encrypted
-                    </motion.p>
-                    <div className="flex items-center gap-3">
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 0.8 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          setShowEditSpecialtyModal(false)
-                          setSelectedItem(null)
-                        }}
-                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
-                      >
-                        Cancel
-                      </motion.button>
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: 0.9 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleUpdateSpecialty}
-                        className="group relative px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden"
-                      >
-                        <span className="relative z-10 flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          Update
-                        </span>
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-                          animate={{ x: ['-200%', '200%'] }}
-                          transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, ease: "easeInOut" }}
-                        />
-                      </motion.button>
+                      {(() => {
+                        const availableSpecialties = editSpecialtyCertification 
+                          ? (CERTIFICATION_SPECIALTIES_MAP[editSpecialtyCertification] || [])
+                          : []
+                        const hasNoSpecialties = editSpecialtyCertification && availableSpecialties.length === 0
+                        
+                        return (
+                          <>
+                            <CustomSelect
+                              value={editSpecialtySpecialty}
+                              onChange={(value) => setEditSpecialtySpecialty(value)}
+                              placeholder={editSpecialtyCertification ? "Select specialty" : "Select certification first"}
+                              icon={Award}
+                              disabled={!editSpecialtyCertification || hasNoSpecialties}
+                            >
+                              <option value="">Select specialty</option>
+                              {availableSpecialties.map(spec => <option key={spec} value={spec}>{spec}</option>)}
+                            </CustomSelect>
+                            {hasNoSpecialties && (
+                              <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
+                                <span>⚠</span>
+                                <span>No specialties available for the selected certification.</span>
+                              </p>
+                            )}
+                            {editSpecialtyCertification && availableSpecialties.length > 0 && !editSpecialtySpecialty && (
+                              <p className="mt-1.5 text-xs text-gray-500">
+                                Please select a specialty from the available options.
+                              </p>
+                            )}
+                          </>
+                        )
+                      })()}
                     </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </>
+                
+                {/* Footer */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => {
+                        setShowEditSpecialtyModal(false)
+                        setSelectedItem(null)
+                      }} 
+                      className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={handleUpdateSpecialty}
+                      disabled={!isFormDataValid('specialties', {
+                        certification: editSpecialtyCertification,
+                        specialty: editSpecialtySpecialty
+                      })}
+                      className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 active:scale-95 shadow-lg ${
+                        isFormDataValid('specialties', {
+                          certification: editSpecialtyCertification,
+                          specialty: editSpecialtySpecialty
+                        })
+                          ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 hover:shadow-xl shadow-primary-500/30'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                      }`}
+                    >
+                      Update
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        </AnimatePresence>
       )}
 
       {/* Edit Work History Modal */}
       {showEditWorkHistoryModal && selectedItem && (
-        <>
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
-            onClick={() => {
-              setShowEditWorkHistoryModal(false)
-              setSelectedItem(null)
-              // Reset all form fields
-              setEditWorkHistoryTitle('')
-              setEditWorkHistoryUnit('')
-              setEditWorkHistoryStartDate('')
-              setEditWorkHistoryEndDate('')
-              setEditCurrentlyWorking(false)
-              setEditWorkHistoryAgency('')
-              setEditWorkHistoryDescription('')
-              setEditChargeExperience(false)
-              setEditChargeExperienceComment('')
-              setEditTravelAssignment(false)
-              setEditPerDiem(false)
-            }}
-          >
+        <AnimatePresence>
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl mx-4 sm:mx-0"
-              style={{ maxHeight: '90vh' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
-              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-                <div className="relative px-8 pt-8 pb-6">
-                  <div className="flex items-start gap-5">
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
-                      className="relative"
-                    >
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <Briefcase className="w-8 h-8 text-white" />
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
+              onClick={() => {
+                setShowEditWorkHistoryModal(false)
+                setSelectedItem(null)
+                // Reset all form fields
+                setEditWorkHistoryTitle('')
+                setEditWorkHistoryUnit('')
+                setEditWorkHistoryStartDate('')
+                setEditWorkHistoryEndDate('')
+                setEditCurrentlyWorking(false)
+                setEditWorkHistoryAgency('')
+                setEditWorkHistoryDescription('')
+                setEditChargeExperience(false)
+                setEditChargeExperienceComment('')
+                setEditTravelAssignment(false)
+                setEditPerDiem(false)
+              }}
+            />
+            
+            {/* Modal Container */}
+            <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3, type: "spring" }}
+                className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+                        <Briefcase className="w-6 h-6 text-white" />
                       </div>
-                      <motion.div
-                        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute inset-0 bg-primary-500 rounded-2xl"
-                      />
-                    </motion.div>
-                    <div className="flex-1 pt-1">
-                      <motion.h2
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
-                      >
-                        Edit Work History
-                      </motion.h2>
-                      <motion.p
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="text-sm text-gray-600"
-                      >
-                        Update your work experience details
-                      </motion.p>
+                      <div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                          Edit Work History
+                        </h1>
+                        <p className="text-sm font-medium text-gray-500">
+                          Work History
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="px-8">
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </div>
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
+                
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
                   <div className="space-y-4">
-                    {/* Employer Full Name and Unit - Side by Side */}
                     {(() => {
                       // Get unique facilities from jobs
                       const uniqueFacilities = Array.from(new Set(SAMPLE_JOBS.map(job => job.facilityName).filter(Boolean))).sort()
@@ -6212,206 +6179,162 @@ export default function ProfilePage() {
                       )).sort()
                       
                       return (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.4 }}>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Employer Full Name <span className="text-red-500">*</span>
-                            </label>
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Employer Full Name <span className="text-red-500">*</span></label>
                             <SearchableDropdown
                               value={editWorkHistoryTitle}
                               onChange={(value) => setEditWorkHistoryTitle(value)}
                               placeholder="Search facilities..."
                               options={uniqueFacilities}
                             />
-                          </motion.div>
-                          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.5 }}>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Unit <span className="text-red-500">*</span>
-                            </label>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Unit <span className="text-red-500">*</span></label>
                             <SearchableDropdown
                               value={editWorkHistoryUnit}
                               onChange={(value) => setEditWorkHistoryUnit(value)}
                               placeholder="Search specialties..."
                               options={uniqueSpecialties}
                             />
-                          </motion.div>
-                        </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Start Date <span className="text-red-500">*</span></label>
+                              <CustomDatePicker
+                                value={editWorkHistoryStartDate}
+                                onChange={(value) => {
+                                  setEditWorkHistoryStartDate(value)
+                                  if (editWorkHistoryEndDate && isEndDateBeforeStartDate(value, editWorkHistoryEndDate)) {
+                                    setEditWorkHistoryEndDate('')
+                                  }
+                                }}
+                                placeholder="Select start date"
+                                showFormat={false}
+                                maxDate="today"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                End Date {!editCurrentlyWorking && <span className="text-red-500">*</span>}
+                              </label>
+                              <CustomDatePicker
+                                value={editWorkHistoryEndDate}
+                                onChange={(value) => setEditWorkHistoryEndDate(value)}
+                                placeholder="Select end date"
+                                disabled={editCurrentlyWorking}
+                                showFormat={false}
+                                minDate={editWorkHistoryStartDate || undefined}
+                                maxDate="today"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="checkbox" 
+                              id="editCurrentlyWorking" 
+                              checked={editCurrentlyWorking} 
+                              onChange={(e) => {
+                                setEditCurrentlyWorking(e.target.checked)
+                                if (e.target.checked) {
+                                  setEditWorkHistoryEndDate('')
+                                }
+                              }} 
+                              className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                              style={{ accentColor: '#7F2860' }}
+                            />
+                            <label htmlFor="editCurrentlyWorking" className="text-sm text-gray-700 cursor-pointer">Currently working here</label>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Description / Special Skills / Experience</label>
+                            <textarea 
+                              value={editWorkHistoryDescription} 
+                              onChange={(e) => setEditWorkHistoryDescription(e.target.value)} 
+                              placeholder="Describe your role and responsibilities..."
+                              rows={3} 
+                              className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
+                            />
+                          </div>
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                              <input 
+                                type="checkbox" 
+                                id="editTravelAssignment" 
+                                checked={editTravelAssignment} 
+                                onChange={(e) => {
+                                  setEditTravelAssignment(e.target.checked)
+                                  if (e.target.checked) {
+                                    setEditPerDiem(false)
+                                  }
+                                }} 
+                                className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                                style={{ accentColor: '#7F2860' }}
+                              />
+                              <label htmlFor="editTravelAssignment" className="text-sm text-gray-700 cursor-pointer">Travel Assignment</label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input 
+                                type="checkbox" 
+                                id="editChargeExperience" 
+                                checked={editChargeExperience} 
+                                onChange={(e) => setEditChargeExperience(e.target.checked)} 
+                                className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                                style={{ accentColor: '#7F2860' }}
+                              />
+                              <label htmlFor="editChargeExperience" className="text-sm text-gray-700 cursor-pointer">Charge Experience?</label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input 
+                                type="checkbox" 
+                                id="editPerDiem" 
+                                checked={editPerDiem} 
+                                onChange={(e) => {
+                                  setEditPerDiem(e.target.checked)
+                                  if (e.target.checked) {
+                                    setEditTravelAssignment(false)
+                                  }
+                                }} 
+                                className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                                style={{ accentColor: '#7F2860' }}
+                              />
+                              <label htmlFor="editPerDiem" className="text-sm text-gray-700 cursor-pointer">Per Diem</label>
+                            </div>
+                          </div>
+                          {editTravelAssignment && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Staffing Agency Name <span className="text-red-500">*</span></label>
+                              <input 
+                                type="text" 
+                                value={editWorkHistoryAgency} 
+                                onChange={(e) => setEditWorkHistoryAgency(e.target.value)} 
+                                placeholder="Enter staffing agency name" 
+                                className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
+                              />
+                            </div>
+                          )}
+                          {editChargeExperience && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Comment <span className="text-red-500">*</span></label>
+                              <textarea 
+                                value={editChargeExperienceComment} 
+                                onChange={(e) => setEditChargeExperienceComment(e.target.value)} 
+                                placeholder="Describe your charge experience..."
+                                rows={3} 
+                                className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
+                              />
+                            </div>
+                          )}
+                        </>
                       )
                     })()}
-
-                    {/* Start Date and End Date */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.6 }}>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Start Date <span className="text-red-500">*</span>
-                        </label>
-                        <CustomDatePicker
-                          value={editWorkHistoryStartDate}
-                          onChange={(value) => {
-                            setEditWorkHistoryStartDate(value)
-                            if (editWorkHistoryEndDate && isEndDateBeforeStartDate(value, editWorkHistoryEndDate)) {
-                              setEditWorkHistoryEndDate('')
-                            }
-                          }}
-                          placeholder="Select start date"
-                          showFormat={false}
-                          maxDate="today"
-                        />
-                      </motion.div>
-                      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.7 }}>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          End Date {!editCurrentlyWorking && <span className="text-red-500">*</span>}
-                        </label>
-                        <CustomDatePicker
-                          value={editWorkHistoryEndDate}
-                          onChange={(value) => setEditWorkHistoryEndDate(value)}
-                          placeholder="Select end date"
-                          disabled={editCurrentlyWorking}
-                          showFormat={false}
-                          minDate={editWorkHistoryStartDate || undefined}
-                          maxDate="today"
-                        />
-                      </motion.div>
-                    </div>
-
-                    {/* Currently working here */}
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.8 }} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="editCurrentlyWorking"
-                        checked={editCurrentlyWorking}
-                        onChange={(e) => {
-                          setEditCurrentlyWorking(e.target.checked)
-                          if (e.target.checked) {
-                            setEditWorkHistoryEndDate('')
-                          }
-                        }}
-                        className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
-                        style={{ accentColor: '#7F2860' }}
-                      />
-                      <label htmlFor="editCurrentlyWorking" className="text-sm text-gray-700 cursor-pointer">
-                        Currently working here
-                      </label>
-                    </motion.div>
-
-                    {/* Description / Special Skills / Experience */}
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.9 }}>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Description / Special Skills / Experience
-                      </label>
-                      <textarea
-                        value={editWorkHistoryDescription}
-                        onChange={(e) => setEditWorkHistoryDescription(e.target.value)}
-                        placeholder="Describe your role and responsibilities..."
-                        rows={4}
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400 resize-none"
-                      />
-                    </motion.div>
-
-                    {/* Travel Assignment, Charge Experience?, and Per Diem */}
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 1.0 }} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="editTravelAssignment"
-                          checked={editTravelAssignment}
-                          onChange={(e) => {
-                            setEditTravelAssignment(e.target.checked)
-                            if (e.target.checked) {
-                              setEditPerDiem(false)
-                            }
-                          }}
-                          className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
-                        style={{ accentColor: '#7F2860' }}
-                        />
-                        <label htmlFor="editTravelAssignment" className="text-sm text-gray-700 cursor-pointer">
-                          Travel Assignment
-                        </label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="editChargeExperience"
-                          checked={editChargeExperience}
-                          onChange={(e) => setEditChargeExperience(e.target.checked)}
-                          className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
-                        style={{ accentColor: '#7F2860' }}
-                        />
-                        <label htmlFor="editChargeExperience" className="text-sm text-gray-700 cursor-pointer">
-                          Charge Experience?
-                        </label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="editPerDiem"
-                          checked={editPerDiem}
-                          onChange={(e) => {
-                            setEditPerDiem(e.target.checked)
-                            if (e.target.checked) {
-                              setEditTravelAssignment(false)
-                            }
-                          }}
-                          className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
-                        style={{ accentColor: '#7F2860' }}
-                        />
-                        <label htmlFor="editPerDiem" className="text-sm text-gray-700 cursor-pointer">
-                          Per Diem
-                        </label>
-                      </div>
-                    </motion.div>
-
-                    {/* Staffing Agency Name - Conditional on Travel Assignment */}
-                    {editTravelAssignment && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.4 }}
-                      >
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Staffing Agency Name <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={editWorkHistoryAgency}
-                          onChange={(e) => setEditWorkHistoryAgency(e.target.value)}
-                          placeholder="Enter staffing agency name"
-                          className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-                        />
-                      </motion.div>
-                    )}
-
-                    {/* Comment - Conditional on Charge Experience */}
-                    {editChargeExperience && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.4 }}
-                      >
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Comment <span className="text-red-500">*</span>
-                        </label>
-                        <textarea
-                          value={editChargeExperienceComment}
-                          onChange={(e) => setEditChargeExperienceComment(e.target.value)}
-                          placeholder="Describe your charge experience..."
-                          rows={4}
-                          className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400 resize-none"
-                        />
-                      </motion.div>
-                    )}
                   </div>
                 </div>
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
-                  <div className="flex items-center justify-between gap-4">
-                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.9 }} className="text-xs text-gray-500 flex items-center gap-1.5">
-                      <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                      Your information is secure and encrypted
-                    </motion.p>
-                    <div className="flex items-center gap-3">
-                      <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.0 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}                         onClick={() => { 
+                
+                {/* Footer */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => { 
                         setShowEditWorkHistoryModal(false)
                         setSelectedItem(null)
                         // Reset all form fields
@@ -6426,310 +6349,382 @@ export default function ProfilePage() {
                         setEditChargeExperienceComment('')
                         setEditTravelAssignment(false)
                         setEditPerDiem(false)
-                      }} className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow">Cancel</motion.button>
-                      <motion.button 
-                        initial={{ opacity: 0, scale: 0.9 }} 
-                        animate={{ opacity: 1, scale: 1 }} 
-                        transition={{ duration: 0.3, delay: 1.1 }} 
-                        whileHover={{ scale: 1.02 }} 
-                        whileTap={{ scale: 0.98 }} 
-                        onClick={handleUpdateWorkHistory}
-                        disabled={!editWorkHistoryTitle.trim() || !editWorkHistoryUnit.trim() || !editWorkHistoryStartDate.trim() || (!editCurrentlyWorking && !editWorkHistoryEndDate.trim()) || (editTravelAssignment && !editWorkHistoryAgency.trim()) || (editChargeExperience && !editChargeExperienceComment.trim())}
-                        className={`group relative px-6 py-3 rounded-xl font-semibold transition-all overflow-hidden ${
-                          editWorkHistoryTitle.trim() && editWorkHistoryUnit.trim() && editWorkHistoryStartDate.trim() && (editCurrentlyWorking || editWorkHistoryEndDate.trim()) && (!editTravelAssignment || editWorkHistoryAgency.trim()) && (!editChargeExperience || editChargeExperienceComment.trim())
-                            ? 'bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40'
-                            : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                        }`}
-                      >
-                        <span className="relative z-10 flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                          Update
-                        </span>
-                        <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" animate={{ x: ['-200%', '200%'] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, ease: "easeInOut" }} />
-                      </motion.button>
-                    </div>
+                      }} 
+                      className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={handleUpdateWorkHistory}
+                      disabled={!isFormDataValid('workHistory', {
+                        title: editWorkHistoryTitle,
+                        unit: editWorkHistoryUnit,
+                        startDate: editWorkHistoryStartDate,
+                        endDate: editWorkHistoryEndDate,
+                        currentlyWorking: editCurrentlyWorking,
+                        travelAssignment: editTravelAssignment,
+                        agency: editWorkHistoryAgency,
+                        chargeExperience: editChargeExperience,
+                        chargeExperienceComment: editChargeExperienceComment
+                      })}
+                      className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 active:scale-95 shadow-lg ${
+                        isFormDataValid('workHistory', {
+                          title: editWorkHistoryTitle,
+                          unit: editWorkHistoryUnit,
+                          startDate: editWorkHistoryStartDate,
+                          endDate: editWorkHistoryEndDate,
+                          currentlyWorking: editCurrentlyWorking,
+                          travelAssignment: editTravelAssignment,
+                          agency: editWorkHistoryAgency,
+                          chargeExperience: editChargeExperience,
+                          chargeExperienceComment: editChargeExperienceComment
+                        })
+                          ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 hover:shadow-xl shadow-primary-500/30'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                      }`}
+                    >
+                      Update
+                    </button>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </>
+              </motion.div>
+            </div>
+          </>
+        </AnimatePresence>
       )}
 
       {/* Edit Education History Modal */}
       {showEditEducationModal && selectedItem && (
-        <>
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
-            onClick={() => {
-              setShowEditEducationModal(false)
-              setSelectedItem(null)
-              setEditDidGraduate(false)
-            }}
-          >
+        <AnimatePresence>
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl mx-4 sm:mx-0"
-              style={{ maxHeight: '90vh' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
-              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-                <div className="relative px-8 pt-8 pb-6">
-                  <div className="flex items-start gap-5">
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
-                      className="relative"
-                    >
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <GraduationCap className="w-8 h-8 text-white" />
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
+              onClick={() => {
+                setShowEditEducationModal(false)
+                setSelectedItem(null)
+                setEditDidGraduate(false)
+              }}
+            />
+            
+            {/* Modal Container */}
+            <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3, type: "spring" }}
+                className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+                        <GraduationCap className="w-6 h-6 text-white" />
                       </div>
-                      <motion.div
-                        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute inset-0 bg-primary-500 rounded-2xl"
-                      />
-                    </motion.div>
-                    <div className="flex-1 pt-1">
-                      <motion.h2
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
-                      >
-                        Edit Education History
-                      </motion.h2>
-                      <motion.p
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="text-sm text-gray-600"
-                      >
-                        Update your education details
-                      </motion.p>
+                      <div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                          Edit Education
+                        </h1>
+                        <p className="text-sm font-medium text-gray-500">
+                          Education History
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="px-8">
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </div>
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.4 }} className="md:col-span-2">
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <GraduationCap className="w-4 h-4 text-primary-600" />
-                        School Name
-                      </label>
-                      <input type="text" defaultValue={selectedItem.title || ''} placeholder="e.g., University of California" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400" />
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.5 }} className="md:col-span-2">
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                        Course of Study
-                      </label>
-                      <input type="text" defaultValue={selectedItem.course || ''} placeholder="e.g., Bachelor of Science in Nursing" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400" />
-                    </motion.div>
-                    
-                    {/* Did you Graduate Checkbox */}
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.6 }} className="md:col-span-2">
-                      <label className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="checkbox" 
-                          checked={editDidGraduate}
-                          onChange={(e) => setEditDidGraduate(e.target.checked)}
-                          className="w-5 h-5 text-primary-600 border-2 border-gray-300 rounded focus:ring-0 focus:ring-offset-0 cursor-pointer accent-primary-600" 
-                        />
-                        <span className="text-sm font-semibold text-gray-700 group-hover:text-primary-600 transition-colors">Did you Graduate?</span>
-                      </label>
-                    </motion.div>
-
+                
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">School Name <span className="text-red-500">*</span></label>
+                      <SearchableDropdown
+                        value={selectedItem.title || ''}
+                        onChange={() => {}}
+                        placeholder="Search schools..."
+                        options={SCHOOLS}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Course of Study <span className="text-red-500">*</span></label>
+                      <CustomSelect
+                        value={selectedItem.course || ''}
+                        onChange={() => {}}
+                        placeholder="Select course of study"
+                        icon={GraduationCap}
+                      >
+                        <option value="">Select course of study</option>
+                        {COURSE_OF_STUDY.map(course => (
+                          <option key={course} value={course}>{course}</option>
+                        ))}
+                      </CustomSelect>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="checkbox" 
+                        id="editDidGraduate" 
+                        checked={editDidGraduate} 
+                        onChange={(e) => setEditDidGraduate(e.target.checked)} 
+                        className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                        style={{ accentColor: '#7F2860' }}
+                      />
+                      <label htmlFor="editDidGraduate" className="text-sm text-gray-700 cursor-pointer">Did you Graduate?</label>
+                    </div>
                     {editDidGraduate && (
                       <>
-                        <motion.div 
-                          initial={{ opacity: 0, y: 20 }} 
-                          animate={{ opacity: 1, y: 0 }} 
-                          exit={{ opacity: 0, y: -20 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                            <Calendar className="w-4 h-4 text-primary-600" />
-                            Graduation Date
-                          </label>
-                          <input type="text" defaultValue={selectedItem.graduated || ''} placeholder="e.g., May 2020" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400" />
-                        </motion.div>
-                        <motion.div 
-                          initial={{ opacity: 0, y: 20 }} 
-                          animate={{ opacity: 1, y: 0 }} 
-                          exit={{ opacity: 0, y: -20 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                            <Award className="w-4 h-4 text-primary-600" />
-                            Degree
-                          </label>
-                          <input type="text" defaultValue={selectedItem.degree || ''} placeholder="e.g., BSN" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400" />
-                        </motion.div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Graduation Date <span className="text-red-500">*</span></label>
+                          <CustomDatePicker
+                            value={selectedItem.graduated || ''}
+                            onChange={() => {}}
+                            placeholder="dd/mm/yyyy"
+                            showFormat={true}
+                            maxDate="today"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Degree <span className="text-red-500">*</span></label>
+                          <CustomSelect
+                            value={selectedItem.degree || ''}
+                            onChange={() => {}}
+                            placeholder="Select degree"
+                            icon={GraduationCap}
+                          >
+                            <option value="">Select degree</option>
+                            {DEGREES.map(degree => (
+                              <option key={degree} value={degree}>{degree}</option>
+                            ))}
+                          </CustomSelect>
+                        </div>
                       </>
                     )}
                   </div>
                 </div>
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
-                  <div className="flex items-center justify-between gap-4">
-                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.8 }} className="text-xs text-gray-500 flex items-center gap-1.5">
-                      <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                      Your information is secure and encrypted
-                    </motion.p>
-                    <div className="flex items-center gap-3">
-                      <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 0.9 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setShowEditEducationModal(false); setSelectedItem(null); setEditDidGraduate(false); }} className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow">Cancel</motion.button>
-                      <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.0 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleUpdateEducation} className="group relative px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden">
-                        <span className="relative z-10 flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                          Update
-                        </span>
-                        <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" animate={{ x: ['-200%', '200%'] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, ease: "easeInOut" }} />
-                      </motion.button>
-                    </div>
+                
+                {/* Footer */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => { 
+                        setShowEditEducationModal(false)
+                        setSelectedItem(null)
+                        setEditDidGraduate(false)
+                      }} 
+                      className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={handleUpdateEducation}
+                      disabled={!isFormDataValid('education', {
+                        title: editEducationTitle,
+                        course: editEducationCourse,
+                        didGraduate: editDidGraduate,
+                        graduated: editEducationGraduated,
+                        degree: editEducationDegree
+                      })}
+                      className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 active:scale-95 shadow-lg ${
+                        isFormDataValid('education', {
+                          title: editEducationTitle,
+                          course: editEducationCourse,
+                          didGraduate: editDidGraduate,
+                          graduated: editEducationGraduated,
+                          degree: editEducationDegree
+                        })
+                          ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 hover:shadow-xl shadow-primary-500/30'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                      }`}
+                    >
+                      Update
+                    </button>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </>
+              </motion.div>
+            </div>
+          </>
+        </AnimatePresence>
       )}
 
       {/* Edit Professional Reference Modal */}
       {showEditReferenceModal && selectedItem && (
-        <>
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
-            onClick={() => {
-              setShowEditReferenceModal(false)
-              setSelectedItem(null)
-            }}
-          >
+        <AnimatePresence>
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-              className="relative w-full max-w-2xl mx-4 sm:mx-0"
-              style={{ maxHeight: '90vh' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary-500/10 via-primary-400/10 to-primary-500/10 rounded-3xl blur-3xl" />
-              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-                <div className="relative px-8 pt-8 pb-6">
-                  <div className="flex items-start gap-5">
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
-                      className="relative"
-                    >
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <Users className="w-8 h-8 text-white" />
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
+              onClick={() => {
+                setShowEditReferenceModal(false)
+                setSelectedItem(null)
+              }}
+            />
+            
+            {/* Modal Container */}
+            <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3, type: "spring" }}
+                className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+                        <Users className="w-6 h-6 text-white" />
                       </div>
-                      <motion.div
-                        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute inset-0 bg-primary-500 rounded-2xl"
-                      />
-                    </motion.div>
-                    <div className="flex-1 pt-1">
-                      <motion.h2
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
-                      >
-                        Edit Professional Reference
-                      </motion.h2>
-                      <motion.p
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="text-sm text-gray-600"
-                      >
-                        Update your reference details
-                      </motion.p>
+                      <div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                          Edit Professional Reference
+                        </h1>
+                        <p className="text-sm font-medium text-gray-500">
+                          Professional References
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="px-8">
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </div>
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.4 }} className="md:col-span-2">
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Users className="w-4 h-4 text-primary-600" />
-                        Full Name
-                      </label>
-                      <input type="text" defaultValue={selectedItem.name || ''} placeholder="e.g., John Smith" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400" />
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.5 }} className="md:col-span-2">
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Briefcase className="w-4 h-4 text-primary-600" />
-                        Reference Job Title
-                      </label>
-                      <input type="text" defaultValue={selectedItem.title || ''} placeholder="e.g., Nurse Manager" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400" />
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.6 }} className="md:col-span-2">
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                        Company
-                      </label>
-                      <input type="text" defaultValue={selectedItem.company || ''} placeholder="e.g., City Hospital" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400" />
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.7 }}>
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                        Phone Number
-                      </label>
-                      <input type="tel" defaultValue={selectedItem.phone || ''} placeholder="e.g., (555) 123-4567" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400" />
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.8 }}>
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                        Email
-                      </label>
-                      <input type="email" defaultValue={selectedItem.email || ''} placeholder="e.g., john@example.com" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400" />
-                    </motion.div>
+                
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
+                  <div className="space-y-4">
+                    {(() => {
+                      // Get work history items for the dropdown
+                      const workHistoryOptions = (authUser?.workHistory || []).map((work: any) => ({
+                        id: work.id,
+                        label: `${work.title || work.facility || ''}${work.unit ? ` - ${work.unit}` : ''}${work.startDate ? ` (${formatDateToDDMMYYYY(work.startDate)} - ${work.currentlyWorking ? 'Present' : (work.endDate ? formatDateToDDMMYYYY(work.endDate) : 'N/A')})` : ''}`
+                      }))
+                      
+                      return (
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Full Name <span className="text-red-500">*</span></label>
+                            <input 
+                              type="text" 
+                              defaultValue={selectedItem.name || ''} 
+                              onChange={() => {}} 
+                              placeholder="Enter full name" 
+                              className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Reference Job Title <span className="text-red-500">*</span></label>
+                            <CustomSelect
+                              value={selectedItem.title || ''}
+                              onChange={() => {}}
+                              placeholder="Select job title"
+                              icon={Briefcase}
+                            >
+                              <option value="">Select job title</option>
+                              {REFERENCE_JOB_TITLES.map(title => (
+                                <option key={title} value={title}>{title}</option>
+                              ))}
+                            </CustomSelect>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Where did you work together?</label>
+                            <CustomSelect
+                              value={selectedItem.workHistoryId || ''}
+                              onChange={() => {}}
+                              placeholder="Select from your work history"
+                              icon={Briefcase}
+                              disabled={workHistoryOptions.length === 0}
+                            >
+                              <option value="">Select from your work history</option>
+                              {workHistoryOptions.map(work => (
+                                <option key={work.id} value={work.id}>{work.label}</option>
+                              ))}
+                            </CustomSelect>
+                            {workHistoryOptions.length === 0 && (
+                              <p className="mt-1.5 text-xs text-gray-500">Add work history first to select a reference</p>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                              <div className="relative">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 font-medium">+1</div>
+                                <input 
+                                  type="tel" 
+                                  defaultValue={selectedItem.phone || ''} 
+                                  onChange={() => {}} 
+                                  placeholder="Enter 10 digits" 
+                                  className="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
+                                  maxLength={10}
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                              <input 
+                                type="email" 
+                                defaultValue={selectedItem.email || ''} 
+                                onChange={() => {}} 
+                                placeholder="Enter email address" 
+                                className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )
+                    })()}
                   </div>
                 </div>
-                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-100 flex-shrink-0">
-                  <div className="flex items-center justify-between gap-4">
-                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.9 }} className="text-xs text-gray-500 flex items-center gap-1.5">
-                      <svg className="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                      Your information is secure and encrypted
-                    </motion.p>
-                    <div className="flex items-center gap-3">
-                      <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.0 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setShowEditReferenceModal(false); setSelectedItem(null); }} className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow">Cancel</motion.button>
-                      <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.1 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleUpdateReference} className="group relative px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden">
-                        <span className="relative z-10 flex items-center gap-2">
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                          Update
-                        </span>
-                        <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" animate={{ x: ['-200%', '200%'] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, ease: "easeInOut" }} />
-                      </motion.button>
-                    </div>
+                
+                {/* Footer */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => { 
+                        setShowEditReferenceModal(false)
+                        setSelectedItem(null)
+                      }} 
+                      className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={handleUpdateReference}
+                      disabled={!isFormDataValid('references', {
+                        name: editReferenceName,
+                        title: editReferenceTitle,
+                        workHistoryId: editReferenceWorkHistoryId,
+                        phone: editReferencePhone,
+                        email: editReferenceEmail
+                      })}
+                      className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 active:scale-95 shadow-lg ${
+                        isFormDataValid('references', {
+                          name: editReferenceName,
+                          title: editReferenceTitle,
+                          workHistoryId: editReferenceWorkHistoryId,
+                          phone: editReferencePhone,
+                          email: editReferenceEmail
+                        })
+                          ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 hover:shadow-xl shadow-primary-500/30'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                      }`}
+                    >
+                      Update
+                    </button>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </>
+              </motion.div>
+            </div>
+          </>
+        </AnimatePresence>
       )}
 
       {/* Delete Confirmation Modal */}

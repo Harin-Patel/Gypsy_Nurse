@@ -19,6 +19,68 @@ interface User {
     region?: string
   }
   profileComplete?: boolean
+  // Personal Information
+  firstName?: string
+  lastName?: string
+  phoneNumber?: string
+  address?: string
+  streetAddress?: string
+  additionalAddress?: string
+  city?: string
+  state?: string
+  zipCode?: string
+  dob?: string
+  ssn?: string
+  yearsOfExperience?: string
+  // Profile sections
+  licenses?: Array<{
+    id: string
+    type: string
+    number: string
+    state: string
+    expiration: string
+  }>
+  certificates?: Array<{
+    id: string
+    type: string
+    number: string
+    expiration: string
+  }>
+  specialties?: Array<{
+    id: string
+    certification: string
+    specialty: string
+  }>
+  workHistory?: Array<{
+    id: string
+    title: string
+    unit: string
+    startDate: string
+    endDate: string
+    currentlyWorking: boolean
+    agency: string
+    description: string
+    chargeExperience: boolean
+    chargeExperienceComment: string
+    travelAssignment: boolean
+    perDiem: boolean
+  }>
+  education?: Array<{
+    id: string
+    title: string
+    course: string
+    didGraduate: boolean
+    graduated: string
+    degree: string
+  }>
+  references?: Array<{
+    id: string
+    name: string
+    title: string
+    workHistoryId: string
+    phone: string
+    email: string
+  }>
 }
 
 interface AuthContextType {
@@ -206,7 +268,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateUser = (userData: Partial<User>) => {
     if (user) {
-      const updatedUser = { ...user, ...userData }
+      // Explicitly handle array fields to ensure they're properly replaced
+      const updatedUser: User = { 
+        ...user, 
+        ...userData,
+        // Explicitly set array fields if provided in userData
+        licenses: userData.licenses !== undefined ? userData.licenses : user.licenses,
+        certificates: userData.certificates !== undefined ? userData.certificates : user.certificates,
+        specialties: userData.specialties !== undefined ? userData.specialties : user.specialties,
+        workHistory: userData.workHistory !== undefined ? userData.workHistory : user.workHistory,
+        education: userData.education !== undefined ? userData.education : user.education,
+        references: userData.references !== undefined ? userData.references : user.references,
+      }
       // Only auto-mark profile as complete if profileComplete is not explicitly set in userData
       // This allows onboarding flow to prevent premature completion
       if (userData.profileComplete === undefined) {
@@ -216,6 +289,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(updatedUser)
       // Note: localStorage is automatically saved via useEffect when user state changes
+    } else {
+      // If user doesn't exist yet, create a new user object
+      const newUser: User = {
+        id: Math.random().toString(36).substring(2, 11),
+        name: (userData.name as string) || 'User',
+        email: (userData.email as string) || '',
+        avatar: (userData.avatar as string) || `https://ui-avatars.com/api/?name=${encodeURIComponent((userData.name as string) || 'User')}&background=7f2860&color=fff&size=128`,
+        role: (userData.role as User['role']) || 'jobseeker',
+        ...userData
+      } as User
+      setUser(newUser)
     }
   }
 

@@ -371,7 +371,12 @@ export default function Onboarding() {
                         sizes="100vw"
                         unoptimized={false}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white" />
+                      <div 
+                        className="absolute inset-0"
+                        style={{
+                          background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.04) 30%, transparent 60%, transparent 100%)'
+                        }}
+                      />
                     </div>
                   )}
 
@@ -395,9 +400,10 @@ export default function Onboarding() {
 
             {/* Bottom Navigation */}
             <div 
-              className="px-4 sm:px-6 md:px-8 pb-6 sm:pb-8 space-y-4 sm:space-y-6"
+              className="px-4 sm:px-6 md:px-8 pb-6 sm:pb-8 space-y-4 sm:space-y-6 bg-white"
               style={{
                 paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))',
+                paddingTop: '1.5rem',
               }}
             >
               {/* Progress Dots */}

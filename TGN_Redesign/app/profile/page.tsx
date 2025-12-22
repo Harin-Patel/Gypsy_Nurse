@@ -18,6 +18,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { useDisableBodyScroll } from '@/utils/useDisableBodyScroll'
 import { getProfilePhoto, setProfilePhoto as saveProfilePhoto, removeProfilePhoto as deleteProfilePhoto, getProfilePhotoWithFallback } from '@/utils/profilePhoto'
 import { compressImage } from '@/utils/imageCompression'
+import { SAMPLE_JOBS } from '@/utils/jobData'
 
 export default function ProfilePage() {
   const isMobile = useIsMobile()
@@ -76,16 +77,30 @@ export default function ProfilePage() {
   useDisableBodyScroll(showPhotoUploadModal)
   
   // Work History Modal States (Add)
+  const [workHistoryTitle, setWorkHistoryTitle] = useState('')
+  const [workHistoryUnit, setWorkHistoryUnit] = useState('')
+  const [workHistoryStartDate, setWorkHistoryStartDate] = useState('')
+  const [workHistoryEndDate, setWorkHistoryEndDate] = useState('')
   const [currentlyWorking, setCurrentlyWorking] = useState(false)
+  const [workHistoryAgency, setWorkHistoryAgency] = useState('')
+  const [workHistoryDescription, setWorkHistoryDescription] = useState('')
+  const [chargeExperience, setChargeExperience] = useState(false)
+  const [chargeExperienceComment, setChargeExperienceComment] = useState('')
   const [travelAssignment, setTravelAssignment] = useState(false)
   const [perDiem, setPerDiem] = useState(false)
-  const [chargeExperience, setChargeExperience] = useState(false)
   
   // Work History Modal States (Edit)
+  const [editWorkHistoryTitle, setEditWorkHistoryTitle] = useState('')
+  const [editWorkHistoryUnit, setEditWorkHistoryUnit] = useState('')
+  const [editWorkHistoryStartDate, setEditWorkHistoryStartDate] = useState('')
+  const [editWorkHistoryEndDate, setEditWorkHistoryEndDate] = useState('')
   const [editCurrentlyWorking, setEditCurrentlyWorking] = useState(false)
+  const [editWorkHistoryAgency, setEditWorkHistoryAgency] = useState('')
+  const [editWorkHistoryDescription, setEditWorkHistoryDescription] = useState('')
+  const [editChargeExperience, setEditChargeExperience] = useState(false)
+  const [editChargeExperienceComment, setEditChargeExperienceComment] = useState('')
   const [editTravelAssignment, setEditTravelAssignment] = useState(false)
   const [editPerDiem, setEditPerDiem] = useState(false)
-  const [editChargeExperience, setEditChargeExperience] = useState(false)
   
   // Education Modal States (Add)
   const [didGraduate, setDidGraduate] = useState(false)
@@ -93,13 +108,307 @@ export default function ProfilePage() {
   // Education Modal States (Edit)
   const [editDidGraduate, setEditDidGraduate] = useState(false)
 
+  // Date formatting helpers
+  const formatDateToDDMMYYYY = (dateString: string): string => {
+    if (!dateString) return ''
+    // If already in YYYY-MM-DD format, convert to DD/MM/YYYY
+    if (dateString.includes('-') && dateString.length === 10) {
+      const [year, month, day] = dateString.split('-')
+      return `${day}/${month}/${year}`
+    }
+    // If already in DD/MM/YYYY format, return as is
+    if (dateString.includes('/')) {
+      return dateString
+    }
+    return dateString
+  }
+
+  const formatDateToYYYYMMDD = (dateString: string): string => {
+    if (!dateString) return ''
+    // If in DD/MM/YYYY format, convert to YYYY-MM-DD
+    if (dateString.includes('/') && dateString.length === 10) {
+      const [day, month, year] = dateString.split('/')
+      return `${year}-${month}-${day}`
+    }
+    // If already in YYYY-MM-DD format, return as is
+    if (dateString.includes('-') && dateString.length === 10) {
+      return dateString
+    }
+    return dateString
+  }
+
+  const isDateInFuture = (dateString: string): boolean => {
+    if (!dateString) return false
+    const date = formatDateToYYYYMMDD(dateString)
+    if (!date) return false
+    const selectedDate = new Date(date)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0) // Reset time to compare dates only
+    selectedDate.setHours(0, 0, 0, 0)
+    return selectedDate > today
+  }
+
+  const isEndDateBeforeStartDate = (startDate: string, endDate: string): boolean => {
+    if (!startDate || !endDate) return false
+    const start = formatDateToYYYYMMDD(startDate)
+    const end = formatDateToYYYYMMDD(endDate)
+    if (!start || !end) return false
+    const startDateObj = new Date(start)
+    const endDateObj = new Date(end)
+    startDateObj.setHours(0, 0, 0, 0)
+    endDateObj.setHours(0, 0, 0, 0)
+    return endDateObj < startDateObj
+  }
+
+  // Custom Date Picker Component
+  const CustomDatePicker = ({ value, onChange, placeholder = "Select date", disabled = false, showFormat = true, minDate, maxDate }: { value: string, onChange: (value: string) => void, placeholder?: string, disabled?: boolean, showFormat?: boolean, minDate?: string, maxDate?: string }) => {
+    const dateInputRef = useRef<HTMLInputElement>(null)
+    const formattedValue = value ? formatDateToDDMMYYYY(value) : ''
+    
+    // Get today's date in YYYY-MM-DD format
+    const getTodayDate = () => {
+      const today = new Date()
+      const year = today.getFullYear()
+      const month = String(today.getMonth() + 1).padStart(2, '0')
+      const day = String(today.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
+    // Handle minDate: if empty string, use today; if undefined, no restriction; if provided, use it
+    let minDateValue: string | undefined = undefined
+    if (minDate !== undefined) {
+      if (minDate === '') {
+        minDateValue = getTodayDate()
+      } else if (minDate === 'today') {
+        minDateValue = getTodayDate()
+      } else {
+        minDateValue = formatDateToYYYYMMDD(minDate) || minDate
+      }
+    }
+
+    // Handle maxDate: if 'today', use today; if provided, use it
+    let maxDateValue: string | undefined = undefined
+    if (maxDate !== undefined) {
+      if (maxDate === 'today') {
+        maxDateValue = getTodayDate()
+      } else {
+        maxDateValue = formatDateToYYYYMMDD(maxDate) || maxDate
+      }
+    }
+    
+    const handleFieldClick = () => {
+      if (!disabled && dateInputRef.current) {
+        // Try to show native picker, fallback to focus
+        if (dateInputRef.current.showPicker) {
+          dateInputRef.current.showPicker()
+        } else {
+          dateInputRef.current.focus()
+          dateInputRef.current.click()
+        }
+      }
+    }
+
+    return (
+      <div className="relative">
+        <div
+          onClick={handleFieldClick}
+          className={`w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus-within:border-primary-500 focus-within:outline-none cursor-pointer transition-all duration-300 hover:border-gray-300 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 flex items-center gap-3 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <Calendar className="w-5 h-5 text-primary-600 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            {formattedValue ? (
+              <span className="text-base text-gray-900 font-medium">{formattedValue}</span>
+            ) : (
+              <span className="text-base text-gray-400">{placeholder}</span>
+            )}
+          </div>
+          <input
+            ref={dateInputRef}
+            type="date"
+            value={formatDateToYYYYMMDD(value) || value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            disabled={disabled}
+            min={minDateValue}
+            max={maxDateValue}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            style={{ colorScheme: 'light' }}
+          />
+        </div>
+        {showFormat && (
+          <p className="mt-1.5 text-xs text-gray-500">Format: DD/MM/YYYY</p>
+        )}
+      </div>
+    )
+  }
+
+  // Searchable Dropdown Component
+  const SearchableDropdown = ({ 
+    value, 
+    onChange, 
+    placeholder = "Search...", 
+    options, 
+    disabled = false 
+  }: { 
+    value: string, 
+    onChange: (value: string) => void, 
+    placeholder?: string, 
+    options: string[], 
+    disabled?: boolean 
+  }) => {
+    const [isOpen, setIsOpen] = useState(false)
+    const [searchTerm, setSearchTerm] = useState('')
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0, isAbove: false })
+    const [isPositionCalculated, setIsPositionCalculated] = useState(false)
+    const dropdownRef = useRef<HTMLDivElement>(null)
+    const inputRef = useRef<HTMLInputElement>(null)
+    const containerRef = useRef<HTMLDivElement>(null)
+
+    // Filter options based on search term
+    const filteredOptions = options.filter(option =>
+      option.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    // Calculate dropdown position
+    useEffect(() => {
+      if (isOpen && containerRef.current && !isPositionCalculated) {
+        const containerRect = containerRef.current.getBoundingClientRect()
+        const spaceBelow = window.innerHeight - containerRect.bottom
+        const spaceAbove = containerRect.top
+        const estimatedDropdownHeight = Math.min(256, filteredOptions.length * 48 + 16)
+        const isAbove = spaceBelow < estimatedDropdownHeight && spaceAbove > spaceBelow
+        
+        setDropdownPosition({
+          top: isAbove ? containerRect.top - estimatedDropdownHeight - 8 : containerRect.bottom + 8,
+          left: containerRect.left,
+          width: containerRect.width,
+          isAbove
+        })
+        setIsPositionCalculated(true)
+      }
+    }, [isOpen, filteredOptions.length, isPositionCalculated])
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (dropdownRef.current && containerRef.current && 
+            !dropdownRef.current.contains(event.target as Node) && 
+            !containerRef.current.contains(event.target as Node)) {
+          setIsOpen(false)
+          setIsPositionCalculated(false)
+          setSearchTerm('')
+        }
+      }
+      
+      if (isOpen) {
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+      }
+    }, [isOpen])
+
+    // Focus input when dropdown opens
+    useEffect(() => {
+      if (isOpen && inputRef.current) {
+        inputRef.current.focus()
+      }
+    }, [isOpen])
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value
+      setSearchTerm(newValue)
+      onChange(newValue)
+      if (!isOpen) {
+        setIsOpen(true)
+      }
+    }
+
+    const handleInputFocus = () => {
+      setIsOpen(true)
+    }
+
+    const handleOptionClick = (option: string) => {
+      onChange(option)
+      setSearchTerm('')
+      setIsOpen(false)
+      setIsPositionCalculated(false)
+    }
+
+    return (
+      <div className="relative" ref={containerRef}>
+        <div className="relative">
+          <input
+            ref={inputRef}
+            type="text"
+            value={value}
+            onChange={handleInputChange}
+            onFocus={handleInputFocus}
+            placeholder={placeholder}
+            disabled={disabled}
+            className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400 pr-10"
+          />
+          <ChevronDown 
+            className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          />
+        </div>
+
+        {/* Dropdown Menu */}
+        {isOpen && !disabled && isPositionCalculated && filteredOptions.length > 0 && (
+          <>
+            <div 
+              className="fixed inset-0 z-[100004]" 
+              style={{ pointerEvents: 'auto', backgroundColor: 'transparent' }}
+              onClick={() => {
+                setIsOpen(false)
+                setIsPositionCalculated(false)
+                setSearchTerm('')
+              }}
+            />
+            <div
+              ref={dropdownRef}
+              style={{
+                position: 'fixed',
+                top: `${dropdownPosition.top}px`,
+                left: `${dropdownPosition.left}px`,
+                width: `${dropdownPosition.width}px`,
+              }}
+              className="bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-[100005] max-h-64 overflow-y-auto"
+            >
+              <div className="p-2 space-y-1">
+                {filteredOptions.map((option, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleOptionClick(option)}
+                    className={`w-full flex items-center px-4 py-3 rounded-lg transition-all text-left ${
+                      value === option
+                        ? 'bg-primary-50 text-primary-700 font-semibold'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="truncate">{option}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    )
+  }
+
   // Initialize edit states when modals open
   useEffect(() => {
     if (showEditWorkHistoryModal && selectedItem) {
+      setEditWorkHistoryTitle(selectedItem.facility || '')
+      setEditWorkHistoryUnit(selectedItem.unit || '')
+      setEditWorkHistoryStartDate(selectedItem.startDate || '')
+      setEditWorkHistoryEndDate(selectedItem.endDate || '')
       setEditCurrentlyWorking(selectedItem.period?.includes('Present') || false)
-      setEditTravelAssignment(!!(selectedItem.agency))
-      setEditPerDiem(false)
-      setEditChargeExperience(!!(selectedItem.chargeExperience))
+      setEditWorkHistoryAgency(selectedItem.agency || '')
+      setEditWorkHistoryDescription(selectedItem.description || '')
+      setEditChargeExperience(!!(selectedItem.chargeExperience || selectedItem.chargeExperienceComment))
+      setEditChargeExperienceComment(selectedItem.chargeExperienceComment || selectedItem.chargeExperience || '')
+      setEditTravelAssignment(selectedItem.travelAssignment || false)
+      setEditPerDiem(selectedItem.perDiem || false)
     }
   }, [showEditWorkHistoryModal, selectedItem])
 
@@ -152,14 +461,130 @@ export default function ProfilePage() {
     setSelectedItem(null)
   }
 
+  // Validate work history form data
+  const validateWorkHistory = (data: {
+    title: string
+    unit: string
+    startDate: string
+    endDate: string
+    currentlyWorking: boolean
+    travelAssignment: boolean
+    agency: string
+    chargeExperience: boolean
+    chargeExperienceComment: string
+  }): boolean => {
+    if (!data.title?.trim()) {
+      toast.error('Please enter employer full name')
+      return false
+    }
+    if (!data.unit?.trim()) {
+      toast.error('Please enter unit')
+      return false
+    }
+    if (!data.startDate?.trim()) {
+      toast.error('Please select start date')
+      return false
+    }
+    // Validate start date is not in the future
+    if (data.startDate && isDateInFuture(data.startDate)) {
+      toast.error('Start date cannot be in the future')
+      return false
+    }
+    // If not currently working, end date is required
+    if (!data.currentlyWorking) {
+      if (!data.endDate?.trim()) {
+        toast.error('Please select end date')
+        return false
+      }
+      if (isDateInFuture(data.endDate)) {
+        toast.error('End date cannot be in the future')
+        return false
+      }
+      if (data.startDate && isEndDateBeforeStartDate(data.startDate, data.endDate)) {
+        toast.error('End date cannot be before start date')
+        return false
+      }
+    }
+    // If travel assignment is checked, agency is required
+    if (data.travelAssignment && !data.agency?.trim()) {
+      toast.error('Please enter staffing agency name')
+      return false
+    }
+    // If charge experience is checked, comment is required
+    if (data.chargeExperience && !data.chargeExperienceComment?.trim()) {
+      toast.error('Please describe your charge experience')
+      return false
+    }
+    return true
+  }
+
+  const handleAddWorkHistory = () => {
+    const workHistoryData = {
+      title: workHistoryTitle,
+      unit: workHistoryUnit,
+      startDate: workHistoryStartDate,
+      endDate: workHistoryEndDate,
+      currentlyWorking: currentlyWorking,
+      travelAssignment: travelAssignment,
+      agency: workHistoryAgency,
+      chargeExperience: chargeExperience,
+      chargeExperienceComment: chargeExperienceComment
+    }
+
+    if (!validateWorkHistory(workHistoryData)) {
+      return
+    }
+
+    // Here you would typically call an API to save the work history
+    toast.success('Work history added successfully')
+    setShowAddWorkHistoryModal(false)
+    // Reset all form fields
+    setWorkHistoryTitle('')
+    setWorkHistoryUnit('')
+    setWorkHistoryStartDate('')
+    setWorkHistoryEndDate('')
+    setCurrentlyWorking(false)
+    setWorkHistoryAgency('')
+    setWorkHistoryDescription('')
+    setChargeExperience(false)
+    setChargeExperienceComment('')
+    setTravelAssignment(false)
+    setPerDiem(false)
+  }
+
   const handleUpdateWorkHistory = () => {
+    const workHistoryData = {
+      title: editWorkHistoryTitle,
+      unit: editWorkHistoryUnit,
+      startDate: editWorkHistoryStartDate,
+      endDate: editWorkHistoryEndDate,
+      currentlyWorking: editCurrentlyWorking,
+      travelAssignment: editTravelAssignment,
+      agency: editWorkHistoryAgency,
+      chargeExperience: editChargeExperience,
+      chargeExperienceComment: editChargeExperienceComment
+    }
+
+    if (!validateWorkHistory(workHistoryData)) {
+      return
+    }
+
+    // Here you would typically call an API to update the work history
     toast.success('Work history updated successfully!')
     setShowEditWorkHistoryModal(false)
     setSelectedItem(null)
+    // Reset all form fields
+    setEditWorkHistoryTitle('')
+    setEditWorkHistoryUnit('')
+    setEditWorkHistoryStartDate('')
+    setEditWorkHistoryEndDate('')
     setEditCurrentlyWorking(false)
+    setEditWorkHistoryAgency('')
+    setEditWorkHistoryDescription('')
+    setEditChargeExperience(false)
+    setEditChargeExperienceComment('')
     setEditTravelAssignment(false)
     setEditPerDiem(false)
-    setEditChargeExperience(false)
   }
 
   const handleUpdateEducation = () => {
@@ -170,7 +595,7 @@ export default function ProfilePage() {
   }
 
   const handleUpdateReference = () => {
-    toast.success('Reference updated successfully!')
+    toast.success('Professional Reference updated successfully!')
     setShowEditReferenceModal(false)
     setSelectedItem(null)
   }
@@ -291,7 +716,7 @@ export default function ProfilePage() {
     { label: 'Certification Specialties', count: 4, icon: Award },
     { label: 'Work Histories', count: 4, icon: Briefcase },
     { label: 'Education Histories', count: 4, icon: GraduationCap },
-    { label: 'References', count: 4, icon: Users },
+    { label: 'Professional References', count: 4, icon: Users },
   ]
 
   const tabs = [
@@ -300,7 +725,7 @@ export default function ProfilePage() {
     'Specialties',
     'Work History',
     'Education',
-    'References'
+    'Professional References'
   ]
 
   const licenses = [
@@ -791,7 +1216,7 @@ export default function ProfilePage() {
              activeTab === 'Specialties' ? specialties.length :
              activeTab === 'Work History' ? workHistory.length :
              activeTab === 'Education' ? education.length :
-             activeTab === 'References' ? references.length : 0}
+             activeTab === 'Professional References' ? references.length : 0}
                     </motion.span>
                   </div>
                   <p className="text-gray-600">Manage your professional credentials and certifications</p>
@@ -806,7 +1231,7 @@ export default function ProfilePage() {
                       setShowAddWorkHistoryModal(true)
                     } else if (activeTab === 'Education') {
                       setShowAddEducationModal(true)
-                    } else if (activeTab === 'References') {
+                    } else if (activeTab === 'Professional References') {
                       setShowAddReferenceModal(true)
                     } else {
                       setShowAddModal(true)
@@ -822,7 +1247,7 @@ export default function ProfilePage() {
                      activeTab === 'Specialties' ? 'Add Specialty' :
                      activeTab === 'Work History' ? 'Add Work History' :
                      activeTab === 'Education' ? 'Add Education' :
-                     activeTab === 'References' ? 'Add Reference' : 'Add Item'}
+                     activeTab === 'Professional References' ? 'Add Professional Reference' : 'Add Item'}
                   </span>
                 </motion.button>
               </div>
@@ -1551,8 +1976,8 @@ export default function ProfilePage() {
                 </>
               )}
 
-              {/* References Section */}
-              {activeTab === 'References' && (
+              {/* Professional References Section */}
+              {activeTab === 'Professional References' && (
                 <>
                   {references.length === 0 ? (
                     <motion.div
@@ -1580,9 +2005,9 @@ export default function ProfilePage() {
                           <Inbox className="w-6 h-6 text-gray-400" />
                         </div>
                       </div>
-                      <h3 className="text-xl font-semibold text-gray-900 mb-2">No References Found</h3>
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">No Professional References Found</h3>
                       <p className="text-gray-600 text-center max-w-md">
-                        You haven't added any professional references yet. Add references to strengthen your profile.
+                        You haven't added any professional references yet. Add professional references to strengthen your profile.
                       </p>
                     </motion.div>
                   ) : (
@@ -4011,10 +4436,18 @@ export default function ProfilePage() {
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-6"
             onClick={() => {
               setShowAddWorkHistoryModal(false)
+              // Reset all form fields
+              setWorkHistoryTitle('')
+              setWorkHistoryUnit('')
+              setWorkHistoryStartDate('')
+              setWorkHistoryEndDate('')
               setCurrentlyWorking(false)
+              setWorkHistoryAgency('')
+              setWorkHistoryDescription('')
+              setChargeExperience(false)
+              setChargeExperienceComment('')
               setTravelAssignment(false)
               setPerDiem(false)
-              setChargeExperience(false)
             }}
           >
             {/* Modal */}
@@ -4096,151 +4529,185 @@ export default function ProfilePage() {
 
                 {/* Content Area - Scrollable */}
                 <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
                     
-                    {/* Employer Full Name */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.5 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Briefcase className="w-4 h-4 text-primary-600" />
-                        Employer Full Name
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Search facilities..."
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-                      />
-                    </motion.div>
+                    {/* Employer Full Name and Unit - Side by Side */}
+                    {(() => {
+                      // Get unique facilities from jobs
+                      const uniqueFacilities = Array.from(new Set(SAMPLE_JOBS.map(job => job.facilityName).filter(Boolean))).sort()
+                      
+                      // Get unique specialties from jobs
+                      const uniqueSpecialties = Array.from(new Set(
+                        SAMPLE_JOBS.map(job => {
+                          const parts = job.licenseSpecialty?.split(' - ') || []
+                          return parts.length > 1 ? parts.slice(1).join(' - ') : parts[0] || ''
+                        }).filter(s => s.trim() !== '')
+                      )).sort()
+                      
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.5 }}
+                          >
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Employer Full Name <span className="text-red-500">*</span>
+                            </label>
+                            <SearchableDropdown
+                              value={workHistoryTitle}
+                              onChange={(value) => setWorkHistoryTitle(value)}
+                              placeholder="Search facilities..."
+                              options={uniqueFacilities}
+                            />
+                          </motion.div>
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.6 }}
+                          >
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Unit <span className="text-red-500">*</span>
+                            </label>
+                            <SearchableDropdown
+                              value={workHistoryUnit}
+                              onChange={(value) => setWorkHistoryUnit(value)}
+                              placeholder="Search specialties..."
+                              options={uniqueSpecialties}
+                            />
+                          </motion.div>
+                        </div>
+                      )
+                    })()}
 
-                    {/* Unit */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.6 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <MapPin className="w-4 h-4 text-primary-600" />
-                        Unit
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Search specialties..."
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
-                      />
-                    </motion.div>
+                    {/* Start Date and End Date */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.7 }}
+                      >
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Start Date <span className="text-red-500">*</span>
+                        </label>
+                        <CustomDatePicker
+                          value={workHistoryStartDate}
+                          onChange={(value) => {
+                            setWorkHistoryStartDate(value)
+                            if (workHistoryEndDate && isEndDateBeforeStartDate(value, workHistoryEndDate)) {
+                              setWorkHistoryEndDate('')
+                            }
+                          }}
+                          placeholder="Select start date"
+                          showFormat={false}
+                          maxDate="today"
+                        />
+                      </motion.div>
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.8 }}
+                      >
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          End Date {!currentlyWorking && <span className="text-red-500">*</span>}
+                        </label>
+                        <CustomDatePicker
+                          value={workHistoryEndDate}
+                          onChange={(value) => setWorkHistoryEndDate(value)}
+                          placeholder="Select end date"
+                          disabled={currentlyWorking}
+                          showFormat={false}
+                          minDate={workHistoryStartDate || undefined}
+                          maxDate="today"
+                        />
+                      </motion.div>
+                    </div>
 
-                    {/* Start Date */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.7 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Calendar className="w-4 h-4 text-primary-600" />
-                        Start Date
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        placeholder="Select start date"
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700"
-                      />
-                    </motion.div>
-
-                    {/* End Date */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.8 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Calendar className="w-4 h-4 text-primary-600" />
-                        End Date
-                      </label>
-                      <input
-                        type="date"
-                        placeholder="Select end date"
-                        disabled={currentlyWorking}
-                        className={`w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 font-medium text-gray-700 ${
-                          currentlyWorking 
-                            ? 'opacity-50 cursor-not-allowed' 
-                            : 'focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300'
-                        }`}
-                      />
-                    </motion.div>
-
-                    {/* Currently working here - Full Width */}
+                    {/* Currently working here */}
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, delay: 0.9 }}
-                      className="md:col-span-2"
+                      className="flex items-center gap-2"
                     >
-                      <label className="flex items-center gap-3 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={currentlyWorking}
-                          onChange={(e) => setCurrentlyWorking(e.target.checked)}
-                          className="w-5 h-5 rounded border-2 border-gray-300 text-primary-600 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer accent-primary-600"
-                        />
-                        <span className="text-sm font-medium text-gray-700 group-hover:text-primary-600 transition-colors">
-                          Currently working here
-                        </span>
+                      <input
+                        type="checkbox"
+                        id="currentlyWorking"
+                        checked={currentlyWorking}
+                        onChange={(e) => {
+                          setCurrentlyWorking(e.target.checked)
+                          if (e.target.checked) {
+                            setWorkHistoryEndDate('')
+                          }
+                        }}
+                        className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                        style={{ accentColor: '#7F2860' }}
+                      />
+                      <label htmlFor="currentlyWorking" className="text-sm text-gray-700 cursor-pointer">
+                        Currently working here
                       </label>
                     </motion.div>
 
-                    {/* Description - Full Width */}
+                    {/* Description / Special Skills / Experience */}
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, delay: 1.0 }}
-                      className="md:col-span-2"
                     >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
-                        </svg>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Description / Special Skills / Experience
                       </label>
                       <textarea
-                        rows={4}
+                        value={workHistoryDescription}
+                        onChange={(e) => setWorkHistoryDescription(e.target.value)}
                         placeholder="Describe your role and responsibilities..."
+                        rows={4}
                         className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400 resize-none"
                       />
                     </motion.div>
 
-                    {/* Travel Assignment, Per Diem & Charge Experience */}
+                    {/* Travel Assignment, Charge Experience?, and Per Diem */}
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, delay: 1.1 }}
-                      className="md:col-span-2 flex items-center justify-center gap-12"
+                      className="grid grid-cols-1 md:grid-cols-3 gap-4"
                     >
-                      <label className={`flex items-center gap-3 group ${perDiem ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                      <div className="flex items-center gap-2">
                         <input
                           type="checkbox"
+                          id="travelAssignment"
                           checked={travelAssignment}
-                          disabled={perDiem}
-                          onChange={(e) => setTravelAssignment(e.target.checked)}
-                          className={`w-5 h-5 rounded border-2 border-gray-300 text-primary-600 focus:ring-0 focus:ring-offset-0 transition-all accent-primary-600 ${
-                            perDiem ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                          }`}
+                          onChange={(e) => {
+                            setTravelAssignment(e.target.checked)
+                            if (e.target.checked) {
+                              setPerDiem(false)
+                            }
+                          }}
+                          className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                        style={{ accentColor: '#7F2860' }}
                         />
-                        <span className={`text-sm font-medium transition-colors ${
-                          perDiem ? 'text-gray-400' : 'text-gray-700 group-hover:text-primary-600'
-                        }`}>
+                        <label htmlFor="travelAssignment" className="text-sm text-gray-700 cursor-pointer">
                           Travel Assignment
-                        </span>
-                      </label>
-
-                      <label className="flex items-center gap-3 cursor-pointer group">
+                        </label>
+                      </div>
+                      <div className="flex items-center gap-2">
                         <input
                           type="checkbox"
+                          id="chargeExperience"
+                          checked={chargeExperience}
+                          onChange={(e) => setChargeExperience(e.target.checked)}
+                          className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                        style={{ accentColor: '#7F2860' }}
+                        />
+                        <label htmlFor="chargeExperience" className="text-sm text-gray-700 cursor-pointer">
+                          Charge Experience?
+                        </label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="perDiem"
                           checked={perDiem}
                           onChange={(e) => {
                             setPerDiem(e.target.checked)
@@ -4248,67 +4715,52 @@ export default function ProfilePage() {
                               setTravelAssignment(false)
                             }
                           }}
-                          className="w-5 h-5 rounded border-2 border-gray-300 text-primary-600 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer accent-primary-600"
+                          className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                        style={{ accentColor: '#7F2860' }}
                         />
-                        <span className="text-sm font-medium text-gray-700 group-hover:text-primary-600 transition-colors">
+                        <label htmlFor="perDiem" className="text-sm text-gray-700 cursor-pointer">
                           Per Diem
-                        </span>
-                      </label>
-
-                      <label className="flex items-center gap-3 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={chargeExperience}
-                          onChange={(e) => setChargeExperience(e.target.checked)}
-                          className="w-5 h-5 rounded border-2 border-gray-300 text-primary-600 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer accent-primary-600"
-                        />
-                        <span className="text-sm font-medium text-gray-700 group-hover:text-primary-600 transition-colors">
-                          Charge Experience?
-                        </span>
-                      </label>
+                        </label>
+                      </div>
                     </motion.div>
 
-                    {/* Staffing Agency Name - Full Width - Only show if Travel Assignment is checked */}
+                    {/* Staffing Agency Name - Conditional on Travel Assignment */}
                     {travelAssignment && (
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.4 }}
-                        className="md:col-span-2"
                       >
-                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                          <Briefcase className="w-4 h-4 text-primary-600" />
-                          Staffing Agency Name
-                          <span className="text-red-500">*</span>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Staffing Agency Name <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
+                          value={workHistoryAgency}
+                          onChange={(e) => setWorkHistoryAgency(e.target.value)}
                           placeholder="Enter staffing agency name"
                           className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
                         />
                       </motion.div>
                     )}
 
-                    {/* Comment - Full Width - Only show if Charge Experience is checked */}
+                    {/* Comment - Conditional on Charge Experience */}
                     {chargeExperience && (
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.4 }}
-                        className="md:col-span-2"
                       >
-                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                          <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                          </svg>
-                          Comment
-                          <span className="text-red-500">*</span>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Comment <span className="text-red-500">*</span>
                         </label>
                         <textarea
-                          rows={4}
+                          value={chargeExperienceComment}
+                          onChange={(e) => setChargeExperienceComment(e.target.value)}
                           placeholder="Describe your charge experience..."
+                          rows={4}
                           className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400 resize-none"
                         />
                       </motion.div>
@@ -4343,10 +4795,18 @@ export default function ProfilePage() {
                         whileTap={{ scale: 0.98 }}
                         onClick={() => {
                           setShowAddWorkHistoryModal(false)
+                          // Reset all form fields
+                          setWorkHistoryTitle('')
+                          setWorkHistoryUnit('')
+                          setWorkHistoryStartDate('')
+                          setWorkHistoryEndDate('')
                           setCurrentlyWorking(false)
+                          setWorkHistoryAgency('')
+                          setWorkHistoryDescription('')
+                          setChargeExperience(false)
+                          setChargeExperienceComment('')
                           setTravelAssignment(false)
                           setPerDiem(false)
-                          setChargeExperience(false)
                         }}
                         className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow text-sm sm:text-base"
                       >
@@ -4359,15 +4819,13 @@ export default function ProfilePage() {
                         transition={{ duration: 0.3, delay: 1.7 }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          toast.success('Work history added successfully')
-                          setShowAddWorkHistoryModal(false)
-                          setCurrentlyWorking(false)
-                          setTravelAssignment(false)
-                          setPerDiem(false)
-                          setChargeExperience(false)
-                        }}
-                        className="group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden text-sm sm:text-base"
+                        onClick={handleAddWorkHistory}
+                        disabled={!workHistoryTitle.trim() || !workHistoryUnit.trim() || !workHistoryStartDate.trim() || (!currentlyWorking && !workHistoryEndDate.trim()) || (travelAssignment && !workHistoryAgency.trim()) || (chargeExperience && !chargeExperienceComment.trim())}
+                        className={`group relative flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl font-semibold transition-all overflow-hidden text-sm sm:text-base ${
+                          workHistoryTitle.trim() && workHistoryUnit.trim() && workHistoryStartDate.trim() && (currentlyWorking || workHistoryEndDate.trim()) && (!travelAssignment || workHistoryAgency.trim()) && (!chargeExperience || chargeExperienceComment.trim())
+                            ? 'bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40'
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                        }`}
                       >
                         <span className="relative z-10 flex items-center gap-2">
                           <Plus className="w-5 h-5" />
@@ -4685,7 +5143,7 @@ export default function ProfilePage() {
         </>
       )}
 
-      {/* Add Reference Modal */}
+      {/* Add Professional Reference Modal */}
       {showAddReferenceModal && (
         <>
           {/* Backdrop */}
@@ -4838,20 +5296,20 @@ export default function ProfilePage() {
                       </div>
                     </motion.div>
 
-                    {/* Mobile Phone & Email */}
+                    {/* Phone Number & Email */}
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, delay: 0.8 }}
                       className="grid grid-cols-1 md:grid-cols-2 gap-6"
                     >
-                      {/* Mobile Phone */}
+                      {/* Phone Number */}
                       <div>
                         <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                           <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                           </svg>
-                          Mobile Phone
+                          Phone Number
                         </label>
                         <div className="flex gap-2">
                           <input
@@ -4896,7 +5354,7 @@ export default function ProfilePage() {
                         </svg>
                         <div>
                           <p className="text-sm font-semibold text-pink-800 mb-1">Note:</p>
-                          <p className="text-sm text-pink-700">At least one contact method (mobile phone or email) is required.</p>
+                          <p className="text-sm text-pink-700">At least one contact method (phone number or email) is required.</p>
                         </div>
                       </div>
                     </motion.div>
@@ -5673,10 +6131,18 @@ export default function ProfilePage() {
             onClick={() => {
               setShowEditWorkHistoryModal(false)
               setSelectedItem(null)
+              // Reset all form fields
+              setEditWorkHistoryTitle('')
+              setEditWorkHistoryUnit('')
+              setEditWorkHistoryStartDate('')
+              setEditWorkHistoryEndDate('')
               setEditCurrentlyWorking(false)
+              setEditWorkHistoryAgency('')
+              setEditWorkHistoryDescription('')
+              setEditChargeExperience(false)
+              setEditChargeExperienceComment('')
               setEditTravelAssignment(false)
               setEditPerDiem(false)
-              setEditChargeExperience(false)
             }}
           >
             <motion.div
@@ -5731,131 +6197,209 @@ export default function ProfilePage() {
                   <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
                 </div>
                 <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.4 }} className="md:col-span-2">
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Briefcase className="w-4 h-4 text-primary-600" />
-                        Employer Full Name
+                  <div className="space-y-4">
+                    {/* Employer Full Name and Unit - Side by Side */}
+                    {(() => {
+                      // Get unique facilities from jobs
+                      const uniqueFacilities = Array.from(new Set(SAMPLE_JOBS.map(job => job.facilityName).filter(Boolean))).sort()
+                      
+                      // Get unique specialties from jobs
+                      const uniqueSpecialties = Array.from(new Set(
+                        SAMPLE_JOBS.map(job => {
+                          const parts = job.licenseSpecialty?.split(' - ') || []
+                          return parts.length > 1 ? parts.slice(1).join(' - ') : parts[0] || ''
+                        }).filter(s => s.trim() !== '')
+                      )).sort()
+                      
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.4 }}>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Employer Full Name <span className="text-red-500">*</span>
+                            </label>
+                            <SearchableDropdown
+                              value={editWorkHistoryTitle}
+                              onChange={(value) => setEditWorkHistoryTitle(value)}
+                              placeholder="Search facilities..."
+                              options={uniqueFacilities}
+                            />
+                          </motion.div>
+                          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.5 }}>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Unit <span className="text-red-500">*</span>
+                            </label>
+                            <SearchableDropdown
+                              value={editWorkHistoryUnit}
+                              onChange={(value) => setEditWorkHistoryUnit(value)}
+                              placeholder="Search specialties..."
+                              options={uniqueSpecialties}
+                            />
+                          </motion.div>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Start Date and End Date */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.6 }}>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Start Date <span className="text-red-500">*</span>
+                        </label>
+                        <CustomDatePicker
+                          value={editWorkHistoryStartDate}
+                          onChange={(value) => {
+                            setEditWorkHistoryStartDate(value)
+                            if (editWorkHistoryEndDate && isEndDateBeforeStartDate(value, editWorkHistoryEndDate)) {
+                              setEditWorkHistoryEndDate('')
+                            }
+                          }}
+                          placeholder="Select start date"
+                          showFormat={false}
+                          maxDate="today"
+                        />
+                      </motion.div>
+                      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.7 }}>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          End Date {!editCurrentlyWorking && <span className="text-red-500">*</span>}
+                        </label>
+                        <CustomDatePicker
+                          value={editWorkHistoryEndDate}
+                          onChange={(value) => setEditWorkHistoryEndDate(value)}
+                          placeholder="Select end date"
+                          disabled={editCurrentlyWorking}
+                          showFormat={false}
+                          minDate={editWorkHistoryStartDate || undefined}
+                          maxDate="today"
+                        />
+                      </motion.div>
+                    </div>
+
+                    {/* Currently working here */}
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.8 }} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="editCurrentlyWorking"
+                        checked={editCurrentlyWorking}
+                        onChange={(e) => {
+                          setEditCurrentlyWorking(e.target.checked)
+                          if (e.target.checked) {
+                            setEditWorkHistoryEndDate('')
+                          }
+                        }}
+                        className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                        style={{ accentColor: '#7F2860' }}
+                      />
+                      <label htmlFor="editCurrentlyWorking" className="text-sm text-gray-700 cursor-pointer">
+                        Currently working here
                       </label>
-                      <input type="text" defaultValue={selectedItem.title || ''} placeholder="e.g., City Hospital" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400" />
                     </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.5 }}>
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                        Unit
+
+                    {/* Description / Special Skills / Experience */}
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.9 }}>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Description / Special Skills / Experience
                       </label>
-                      <input type="text" defaultValue={selectedItem.unit || ''} placeholder="e.g., ICU" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400" />
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.6 }}>
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Calendar className="w-4 h-4 text-primary-600" />
-                        Start Date
-                      </label>
-                      <input type="text" defaultValue={selectedItem.period?.split(' - ')[0] || ''} placeholder="e.g., Jan 2020" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400" />
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.7 }} className="md:col-span-2">
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <Calendar className="w-4 h-4 text-primary-600" />
-                        End Date
-                      </label>
-                      <input 
-                        type="text" 
-                        defaultValue={selectedItem.period?.split(' - ')[1] || ''} 
-                        placeholder="e.g., Present" 
-                        disabled={editCurrentlyWorking}
-                        className={`w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400 ${editCurrentlyWorking ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                      <textarea
+                        value={editWorkHistoryDescription}
+                        onChange={(e) => setEditWorkHistoryDescription(e.target.value)}
+                        placeholder="Describe your role and responsibilities..."
+                        rows={4}
+                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400 resize-none"
                       />
                     </motion.div>
-                    
-                    {/* Currently Working Here Checkbox */}
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.8 }} className="md:col-span-2">
-                      <label className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="checkbox" 
-                          checked={editCurrentlyWorking}
-                          onChange={(e) => setEditCurrentlyWorking(e.target.checked)}
-                          className="w-5 h-5 text-primary-600 border-2 border-gray-300 rounded focus:ring-0 focus:ring-offset-0 cursor-pointer accent-primary-600" 
-                        />
-                        <span className="text-sm font-semibold text-gray-700 group-hover:text-primary-600 transition-colors">Currently working here</span>
-                      </label>
-                    </motion.div>
 
-                    {selectedItem.description && (
-                      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.9 }} className="md:col-span-2">
-                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                          <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" /></svg>
-                          Description
-                        </label>
-                        <textarea defaultValue={selectedItem.description || ''} rows={3} placeholder="Describe your responsibilities..." className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400 resize-none" />
-                      </motion.div>
-                    )}
-
-                    {/* Travel Assignment, Per Diem, Charge Experience Checkboxes */}
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 1.0 }} className="md:col-span-2 flex items-center justify-center gap-12">
-                      <label className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="checkbox" 
+                    {/* Travel Assignment, Charge Experience?, and Per Diem */}
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 1.0 }} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="editTravelAssignment"
                           checked={editTravelAssignment}
-                          onChange={(e) => setEditTravelAssignment(e.target.checked)}
-                          disabled={editPerDiem}
-                          className={`w-5 h-5 text-primary-600 border-2 border-gray-300 rounded focus:ring-0 focus:ring-offset-0 cursor-pointer accent-primary-600 ${editPerDiem ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          onChange={(e) => {
+                            setEditTravelAssignment(e.target.checked)
+                            if (e.target.checked) {
+                              setEditPerDiem(false)
+                            }
+                          }}
+                          className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                        style={{ accentColor: '#7F2860' }}
                         />
-                        <span className={`text-sm font-semibold text-gray-700 group-hover:text-primary-600 transition-colors ${editPerDiem ? 'opacity-50' : ''}`}>Travel Assignment</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="checkbox" 
+                        <label htmlFor="editTravelAssignment" className="text-sm text-gray-700 cursor-pointer">
+                          Travel Assignment
+                        </label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="editChargeExperience"
+                          checked={editChargeExperience}
+                          onChange={(e) => setEditChargeExperience(e.target.checked)}
+                          className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                        style={{ accentColor: '#7F2860' }}
+                        />
+                        <label htmlFor="editChargeExperience" className="text-sm text-gray-700 cursor-pointer">
+                          Charge Experience?
+                        </label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="editPerDiem"
                           checked={editPerDiem}
                           onChange={(e) => {
                             setEditPerDiem(e.target.checked)
-                            if (e.target.checked) setEditTravelAssignment(false)
+                            if (e.target.checked) {
+                              setEditTravelAssignment(false)
+                            }
                           }}
-                          className="w-5 h-5 text-primary-600 border-2 border-gray-300 rounded focus:ring-0 focus:ring-offset-0 cursor-pointer accent-primary-600" 
+                          className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                        style={{ accentColor: '#7F2860' }}
                         />
-                        <span className="text-sm font-semibold text-gray-700 group-hover:text-primary-600 transition-colors">Per Diem</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="checkbox" 
-                          checked={editChargeExperience}
-                          onChange={(e) => setEditChargeExperience(e.target.checked)}
-                          className="w-5 h-5 text-primary-600 border-2 border-gray-300 rounded focus:ring-0 focus:ring-offset-0 cursor-pointer accent-primary-600" 
-                        />
-                        <span className="text-sm font-semibold text-gray-700 group-hover:text-primary-600 transition-colors">Charge Experience</span>
-                      </label>
+                        <label htmlFor="editPerDiem" className="text-sm text-gray-700 cursor-pointer">
+                          Per Diem
+                        </label>
+                      </div>
                     </motion.div>
 
-                    {/* Staffing Agency Name - Conditional */}
+                    {/* Staffing Agency Name - Conditional on Travel Assignment */}
                     {editTravelAssignment && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }} 
-                        animate={{ opacity: 1, y: 0 }} 
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3 }} 
-                        className="md:col-span-2"
+                        transition={{ duration: 0.4 }}
                       >
-                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                          <Briefcase className="w-4 h-4 text-primary-600" />
-                          Staffing Agency Name
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Staffing Agency Name <span className="text-red-500">*</span>
                         </label>
-                        <input type="text" defaultValue={selectedItem.agency || ''} placeholder="e.g., Healthcare Staffing Solutions" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400" />
+                        <input
+                          type="text"
+                          value={editWorkHistoryAgency}
+                          onChange={(e) => setEditWorkHistoryAgency(e.target.value)}
+                          placeholder="Enter staffing agency name"
+                          className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
+                        />
                       </motion.div>
                     )}
 
-                    {/* Comment - Conditional */}
+                    {/* Comment - Conditional on Charge Experience */}
                     {editChargeExperience && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }} 
-                        animate={{ opacity: 1, y: 0 }} 
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3 }} 
-                        className="md:col-span-2"
+                        transition={{ duration: 0.4 }}
                       >
-                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                          <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
-                          Comment
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Comment <span className="text-red-500">*</span>
                         </label>
-                        <textarea rows={3} defaultValue={selectedItem.chargeExperience || ''} placeholder="Add any additional comments..." className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400 resize-none" />
+                        <textarea
+                          value={editChargeExperienceComment}
+                          onChange={(e) => setEditChargeExperienceComment(e.target.value)}
+                          placeholder="Describe your charge experience..."
+                          rows={4}
+                          className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400 resize-none"
+                        />
                       </motion.div>
                     )}
                   </div>
@@ -5867,8 +6411,36 @@ export default function ProfilePage() {
                       Your information is secure and encrypted
                     </motion.p>
                     <div className="flex items-center gap-3">
-                      <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.0 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setShowEditWorkHistoryModal(false); setSelectedItem(null); setEditCurrentlyWorking(false); setEditTravelAssignment(false); setEditPerDiem(false); setEditChargeExperience(false); }} className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow">Cancel</motion.button>
-                      <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.1 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleUpdateWorkHistory} className="group relative px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all overflow-hidden">
+                      <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3, delay: 1.0 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}                         onClick={() => { 
+                        setShowEditWorkHistoryModal(false)
+                        setSelectedItem(null)
+                        // Reset all form fields
+                        setEditWorkHistoryTitle('')
+                        setEditWorkHistoryUnit('')
+                        setEditWorkHistoryStartDate('')
+                        setEditWorkHistoryEndDate('')
+                        setEditCurrentlyWorking(false)
+                        setEditWorkHistoryAgency('')
+                        setEditWorkHistoryDescription('')
+                        setEditChargeExperience(false)
+                        setEditChargeExperienceComment('')
+                        setEditTravelAssignment(false)
+                        setEditPerDiem(false)
+                      }} className="px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-all shadow-sm hover:shadow">Cancel</motion.button>
+                      <motion.button 
+                        initial={{ opacity: 0, scale: 0.9 }} 
+                        animate={{ opacity: 1, scale: 1 }} 
+                        transition={{ duration: 0.3, delay: 1.1 }} 
+                        whileHover={{ scale: 1.02 }} 
+                        whileTap={{ scale: 0.98 }} 
+                        onClick={handleUpdateWorkHistory}
+                        disabled={!editWorkHistoryTitle.trim() || !editWorkHistoryUnit.trim() || !editWorkHistoryStartDate.trim() || (!editCurrentlyWorking && !editWorkHistoryEndDate.trim()) || (editTravelAssignment && !editWorkHistoryAgency.trim()) || (editChargeExperience && !editChargeExperienceComment.trim())}
+                        className={`group relative px-6 py-3 rounded-xl font-semibold transition-all overflow-hidden ${
+                          editWorkHistoryTitle.trim() && editWorkHistoryUnit.trim() && editWorkHistoryStartDate.trim() && (editCurrentlyWorking || editWorkHistoryEndDate.trim()) && (!editTravelAssignment || editWorkHistoryAgency.trim()) && (!editChargeExperience || editChargeExperienceComment.trim())
+                            ? 'bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40'
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                        }`}
+                      >
                         <span className="relative z-10 flex items-center gap-2">
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                           Update
@@ -6123,7 +6695,7 @@ export default function ProfilePage() {
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.7 }}>
                       <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                         <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                        Mobile Phone
+                        Phone Number
                       </label>
                       <input type="tel" defaultValue={selectedItem.phone || ''} placeholder="e.g., (555) 123-4567" className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400" />
                     </motion.div>
@@ -6424,3 +6996,4 @@ export default function ProfilePage() {
     </ProtectedRoute>
   )
 }
+

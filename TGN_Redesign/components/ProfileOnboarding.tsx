@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
+import { SAMPLE_JOBS } from '@/utils/jobData'
 
 const PROFESSIONS = [
   'Registered Nurse',
@@ -14,6 +15,25 @@ const PROFESSIONS = [
   'Certified Nursing Assistant',
   'LVN/LPN',
   'Other - No License Required'
+]
+
+const REFERENCE_JOB_TITLES = [
+  'Manager',
+  'Supervisor',
+  'Director',
+  'Charge Nurse',
+  'Clinical Manager',
+  'Unit Manager',
+  'Department Head',
+  'Nurse Manager',
+  'Assistant Manager',
+  'Clinical Coordinator',
+  'Head Nurse',
+  'Lead Nurse',
+  'Administrator',
+  'Chief Nursing Officer',
+  'Vice President',
+  'Other'
 ]
 
 const SPECIALTIES = {
@@ -96,6 +116,50 @@ const CERTIFICATION_SPECIALTIES = [
   'Pediatric Emergency',
   'Neonatal Intensive Care Unit (NICU)',
   'Medical-Surgical'
+]
+
+const SCHOOLS = [
+  'University of California, Los Angeles',
+  'Johns Hopkins University',
+  'University of Pennsylvania',
+  'Duke University',
+  'University of Michigan',
+  'New York University',
+  'Columbia University',
+  'University of North Carolina',
+  'Ohio State University',
+  'University of Texas',
+  'University of Washington',
+  'Emory University',
+  'Vanderbilt University',
+  'Georgetown University',
+  'Boston University',
+  'University of Southern California',
+  'Northwestern University',
+  'University of Chicago',
+  'Yale University',
+  'Harvard University'
+]
+
+const COURSE_OF_STUDY = [
+  'Bachelor of Science in Nursing (BSN)',
+  'Associate Degree in Nursing (ADN)',
+  'Master of Science in Nursing (MSN)',
+  'Doctor of Nursing Practice (DNP)',
+  'Licensed Practical Nurse (LPN) Program',
+  'Diploma in Nursing',
+  'Bachelor of Science in Health Sciences',
+  'Master of Public Health (MPH)',
+  'Doctor of Philosophy in Nursing (PhD)'
+]
+
+const DEGREES = [
+  'Associate Degree',
+  'Bachelor\'s Degree',
+  'Master\'s Degree',
+  'Doctorate',
+  'Certificate',
+  'Diploma'
 ]
 
 // Map certifications to their available specialties
@@ -184,7 +248,8 @@ interface ProfileData {
     currentlyWorking: boolean
     agency: string
     description: string
-    chargeExperience: string
+    chargeExperience: boolean
+    chargeExperienceComment: string
     travelAssignment: boolean
     perDiem: boolean
   }>
@@ -194,7 +259,7 @@ interface ProfileData {
     id: string
     title: string
     course: string
-    status: 'Graduated' | 'Did Not Graduate'
+    didGraduate: boolean
     graduated: string
     degree: string
   }>
@@ -204,9 +269,7 @@ interface ProfileData {
     id: string
     name: string
     title: string
-    company: string
-    startDate: string
-    endDate: string
+    workHistoryId: string
     phone: string
     email: string
   }>
@@ -237,6 +300,7 @@ export default function ProfileOnboarding() {
   const [currentSection, setCurrentSection] = useState<SectionType | null>(null)
   const [formData, setFormData] = useState<any>({})
   const [isEditingFromSummary, setIsEditingFromSummary] = useState(false) // Track if editing from summary screen
+  const [touchedFields, setTouchedFields] = useState<{ [key: string]: boolean }>({}) // Track touched fields for validation
   const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; section: SectionType | null; itemId: string | null }>({ show: false, section: null, itemId: null })
   
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -314,6 +378,7 @@ export default function ProfileOnboarding() {
       if ((user as any).firstName) setProfileData(prev => ({ ...prev, firstName: (user as any).firstName }))
       if ((user as any).lastName) setProfileData(prev => ({ ...prev, lastName: (user as any).lastName }))
       if ((user as any).streetAddress) setProfileData(prev => ({ ...prev, streetAddress: (user as any).streetAddress }))
+      if ((user as any).additionalAddress) setProfileData(prev => ({ ...prev, additionalAddress: (user as any).additionalAddress }))
       if ((user as any).city) setProfileData(prev => ({ ...prev, city: (user as any).city }))
       if ((user as any).state) setProfileData(prev => ({ ...prev, state: (user as any).state }))
       if ((user as any).zipCode) setProfileData(prev => ({ ...prev, zipCode: (user as any).zipCode }))
@@ -322,8 +387,39 @@ export default function ProfileOnboarding() {
       if ((user as any).certificates) setProfileData(prev => ({ ...prev, certificates: (user as any).certificates || [] }))
       if ((user as any).specialties) setProfileData(prev => ({ ...prev, specialties: (user as any).specialties || [] }))
       if ((user as any).workHistory) setProfileData(prev => ({ ...prev, workHistory: (user as any).workHistory || [] }))
-      if ((user as any).education) setProfileData(prev => ({ ...prev, education: (user as any).education || [] }))
-      if ((user as any).references) setProfileData(prev => ({ ...prev, references: (user as any).references || [] }))
+      if ((user as any).education) {
+        // Migrate old education data from status to didGraduate
+        const educationData = ((user as any).education || []).map((edu: any) => {
+          if (edu.status && !edu.hasOwnProperty('didGraduate')) {
+            return {
+              ...edu,
+              didGraduate: edu.status === 'Graduated',
+              status: undefined
+            }
+          }
+          return edu
+        })
+        setProfileData(prev => ({ ...prev, education: educationData }))
+      }
+      if ((user as any).references) {
+        // Migrate old references data structure to new one
+        const referencesData = ((user as any).references || []).map((ref: any) => {
+          // If old structure (has company, startDate, endDate), migrate it
+          if (ref.company || ref.startDate || ref.endDate) {
+            return {
+              id: ref.id || `references-${Date.now()}`,
+              name: ref.name || '',
+              title: ref.title || '',
+              workHistoryId: ref.workHistoryId || '',
+              phone: ref.phone || '',
+              email: ref.email || ''
+            }
+          }
+          // Otherwise, return as is (already in new format)
+          return ref
+        })
+        setProfileData(prev => ({ ...prev, references: referencesData }))
+      }
     } else if (user?.profileComplete === true) {
       // Only hide if profile is explicitly marked as complete
       setIsVisible(false)
@@ -450,12 +546,21 @@ export default function ProfileOnboarding() {
       return
     }
 
-    if (currentStep < 12) {
+    // Step 12 (summary) - only accessible via edit buttons, not regular navigation
+    // From step 11, go to step 12 (summary)
+    if (currentStep < 11) {
       setCurrentStep(currentStep + 1)
       setShowDetailsPage(false)
       setEditingItem(null)
       setCurrentSection(null)
-    } else {
+    } else if (currentStep === 11) {
+      // From step 11, go to step 12 (summary)
+      setCurrentStep(12)
+      setShowDetailsPage(false)
+      setEditingItem(null)
+      setCurrentSection(null)
+    } else if (currentStep === 12) {
+      // From step 12 (summary), complete the profile
       handleComplete()
     }
   }
@@ -468,6 +573,11 @@ export default function ProfileOnboarding() {
       setShowDetailsPage(false)
       setEditingItem(null)
       setCurrentSection(null)
+      return
+    }
+
+    // Disable back button on step 12 (summary) - can only navigate via edit buttons
+    if (currentStep === 12) {
       return
     }
 
@@ -519,10 +629,22 @@ export default function ProfileOnboarding() {
     
     // Include profile data from step 5 onwards (now step 1 in visible flow)
     if (currentStep >= 5) {
+      // Personal Information fields
       progressData.name = profileData.name
+      progressData.firstName = profileData.firstName
+      progressData.lastName = profileData.lastName
       progressData.email = profileData.email
+      progressData.phoneNumber = profileData.phoneNumber
+      progressData.address = profileData.address
+      progressData.streetAddress = profileData.streetAddress
+      progressData.additionalAddress = profileData.additionalAddress
+      progressData.city = profileData.city
+      progressData.state = profileData.state
+      progressData.zipCode = profileData.zipCode
       progressData.dob = profileData.dob
       progressData.ssn = profileData.ssn
+      progressData.yearsOfExperience = profileData.yearsOfExperience
+      // Section arrays
       progressData.licenses = profileData.licenses
       progressData.certificates = profileData.certificates
       progressData.specialties = profileData.specialties
@@ -552,10 +674,22 @@ export default function ProfileOnboarding() {
       //   city: location.city,
       //   state: location.state
       // },
+      // Personal Information fields
       name: profileData.name,
+      firstName: profileData.firstName,
+      lastName: profileData.lastName,
       email: profileData.email,
+      phoneNumber: profileData.phoneNumber,
+      address: profileData.address,
+      streetAddress: profileData.streetAddress,
+      additionalAddress: profileData.additionalAddress,
+      city: profileData.city,
+      state: profileData.state,
+      zipCode: profileData.zipCode,
       dob: profileData.dob,
       ssn: profileData.ssn,
+      yearsOfExperience: profileData.yearsOfExperience,
+      // Section arrays
       licenses: profileData.licenses,
       certificates: profileData.certificates,
       specialties: profileData.specialties,
@@ -599,7 +733,16 @@ export default function ProfileOnboarding() {
   const openEditForm = (section: SectionType, item: any) => {
     setCurrentSection(section)
     setEditingItem(item)
-    setFormData(item)
+    // Handle migration from old status field to didGraduate for education
+    if (section === 'education' && item.status) {
+      setFormData({
+        ...item,
+        didGraduate: item.status === 'Graduated',
+        status: undefined // Remove old field
+      })
+    } else {
+      setFormData(item)
+    }
     setShowDetailsPage(true)
   }
   
@@ -614,12 +757,12 @@ export default function ProfileOnboarding() {
       case 'workHistory':
         return {
           title: '', unit: '', startDate: '', endDate: '', currentlyWorking: false,
-          agency: '', description: '', chargeExperience: '', travelAssignment: false, perDiem: false
+          agency: '', description: '', chargeExperience: false, chargeExperienceComment: '', travelAssignment: false, perDiem: false
         }
       case 'education':
-        return { title: '', course: '', status: 'Graduated' as const, graduated: '', degree: '' }
+        return { title: '', course: '', didGraduate: false, graduated: '', degree: '' }
       case 'references':
-        return { name: '', title: '', company: '', startDate: '', endDate: '', phone: '', email: '' }
+        return { name: '', title: '', workHistoryId: '', phone: '', email: '' }
       default:
         return {}
     }
@@ -675,14 +818,30 @@ export default function ProfileOnboarding() {
       return updatedData
     })
     
-    toast.success(editingItem ? 'Item updated successfully' : 'Item added successfully')
+    const sectionTitle = getSectionTitle(currentSection)
+    toast.success(editingItem ? `${sectionTitle} updated successfully` : `${sectionTitle} added successfully`)
     
     setShowDetailsPage(false)
     setEditingItem(null)
     setCurrentSection(null)
     setFormData({})
+    setTouchedFields({}) // Reset touched fields when closing form
   }
   
+  // Helper function to validate email format
+  const isValidEmail = (email: string): boolean => {
+    if (!email || !email.trim()) return false
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email.trim())
+  }
+
+  // Helper function to validate phone number (exactly 10 digits)
+  const isValidPhone = (phone: string): boolean => {
+    if (!phone || !phone.trim()) return false
+    const phoneRegex = /^\d{10}$/
+    return phoneRegex.test(phone.trim())
+  }
+
   // Helper function to check if a date is in the past
   const isDateInPast = (dateString: string): boolean => {
     if (!dateString) return false
@@ -740,25 +899,39 @@ export default function ProfileOnboarding() {
         return availableSpecialties.includes(data.specialty)
       case 'workHistory':
         if (!data.title?.trim()) return false
+        if (!data.unit?.trim()) return false
+        if (!data.startDate?.trim()) return false
         // If start date is provided, it shouldn't be in the future
         if (data.startDate && isDateInFuture(data.startDate)) return false
-        // If not currently working and end date is provided, validate it
-        if (!data.currentlyWorking && data.endDate) {
+        // If not currently working, end date is required
+        if (!data.currentlyWorking) {
+          if (!data.endDate?.trim()) return false
           if (isDateInFuture(data.endDate)) return false
           if (data.startDate && isEndDateBeforeStartDate(data.startDate, data.endDate)) return false
         }
+        // If travel assignment is checked, agency is required
+        if (data.travelAssignment && !data.agency?.trim()) return false
+        // If charge experience is checked, comment is required
+        if (data.chargeExperience && !data.chargeExperienceComment?.trim()) return false
         return true
       case 'education':
-        return !!(data.title?.trim())
+        if (!data.title?.trim()) return false
+        if (!data.course?.trim()) return false
+        // If didGraduate is checked, graduation date and degree are required
+        if (data.didGraduate) {
+          if (!data.graduated?.trim()) return false
+          if (!data.degree?.trim()) return false
+        }
+        return true
       case 'references':
         if (!data.name?.trim()) return false
-        // If start date is provided, it shouldn't be in the future
-        if (data.startDate && isDateInFuture(data.startDate)) return false
-        // If end date is provided, validate it
-        if (data.endDate) {
-          if (isDateInFuture(data.endDate)) return false
-          if (data.startDate && isEndDateBeforeStartDate(data.startDate, data.endDate)) return false
-        }
+        if (!data.title?.trim()) return false
+        // At least one contact method (phone or email) is required
+        if (!data.phone?.trim() && !data.email?.trim()) return false
+        // If phone is provided, it must be exactly 10 digits
+        if (data.phone?.trim() && !isValidPhone(data.phone)) return false
+        // If email is provided, it must be valid format
+        if (data.email?.trim() && !isValidEmail(data.email)) return false
         return true
       default:
         return true
@@ -811,7 +984,15 @@ export default function ProfileOnboarding() {
         return true
       case 'workHistory':
         if (!data.title) {
-          toast.error('Please enter facility/company name')
+          toast.error('Please enter employer full name')
+          return false
+        }
+        if (!data.unit) {
+          toast.error('Please enter unit')
+          return false
+        }
+        if (!data.startDate) {
+          toast.error('Please select start date')
           return false
         }
         // Validate start date is not in the future
@@ -819,38 +1000,12 @@ export default function ProfileOnboarding() {
           toast.error('Start date cannot be in the future')
           return false
         }
-        // If not currently working, end date should be provided and valid
+        // If not currently working, end date is required
         if (!data.currentlyWorking) {
-          if (data.endDate) {
-            if (isDateInFuture(data.endDate)) {
-              toast.error('End date cannot be in the future')
-              return false
-            }
-            if (data.startDate && isEndDateBeforeStartDate(data.startDate, data.endDate)) {
-              toast.error('End date cannot be before start date')
-              return false
-            }
+          if (!data.endDate) {
+            toast.error('Please select end date')
+            return false
           }
-        }
-        return true
-      case 'education':
-        if (!data.title) {
-          toast.error('Please enter school/institution name')
-          return false
-        }
-        return true
-      case 'references':
-        if (!data.name) {
-          toast.error('Please enter reference name')
-          return false
-        }
-        // Validate start date is not in the future
-        if (data.startDate && isDateInFuture(data.startDate)) {
-          toast.error('Start date cannot be in the future')
-          return false
-        }
-        // If end date is provided, validate it
-        if (data.endDate) {
           if (isDateInFuture(data.endDate)) {
             toast.error('End date cannot be in the future')
             return false
@@ -859,6 +1014,62 @@ export default function ProfileOnboarding() {
             toast.error('End date cannot be before start date')
             return false
           }
+        }
+        // If travel assignment is checked, agency is required
+        if (data.travelAssignment && !data.agency?.trim()) {
+          toast.error('Please enter staffing agency name')
+          return false
+        }
+        // If charge experience is checked, comment is required
+        if (data.chargeExperience && !data.chargeExperienceComment?.trim()) {
+          toast.error('Please describe your charge experience')
+          return false
+        }
+        return true
+      case 'education':
+        if (!data.title) {
+          toast.error('Please enter school name')
+          return false
+        }
+        if (!data.course) {
+          toast.error('Please select course of study')
+          return false
+        }
+        // If didGraduate is checked, graduation date and degree are required
+        if (data.didGraduate) {
+          if (!data.graduated) {
+            toast.error('Please select graduation date')
+            return false
+          }
+          if (!data.degree) {
+            toast.error('Please select degree')
+            return false
+          }
+        }
+        return true
+      case 'references':
+        if (!data.name) {
+          toast.error('Please enter full name')
+          return false
+        }
+        if (!data.title) {
+          toast.error('Please select reference job title')
+          return false
+        }
+        // At least one contact method (phone or email) is required
+        if (!data.phone?.trim() && !data.email?.trim()) {
+          toast.error('Please provide at least one contact method (phone number or email)')
+          return false
+        }
+        // If phone is provided, validate it's exactly 10 digits
+        if (data.phone?.trim() && !isValidPhone(data.phone)) {
+          toast.error('Please enter a valid 10-digit phone number')
+          return false
+        }
+        // If email is provided, validate it's a valid email format
+        if (data.email?.trim() && !isValidEmail(data.email)) {
+          toast.error('Please enter a valid email address')
+          return false
         }
         return true
       default:
@@ -871,7 +1082,8 @@ export default function ProfileOnboarding() {
       ...prev,
       [section]: prev[section].filter((item: any) => item.id !== itemId)
     }))
-    toast.success('Item deleted successfully')
+    const sectionTitle = getSectionTitle(section)
+    toast.success(`${sectionTitle} deleted successfully`)
   }
   
   const getSectionIcon = (section: SectionType) => {
@@ -892,7 +1104,7 @@ export default function ProfileOnboarding() {
       case 'specialties': return 'Certification Specialty'
       case 'workHistory': return 'Work History'
       case 'education': return 'Education'
-      case 'references': return 'Reference'
+      case 'references': return 'Professional Reference'
     }
   }
   
@@ -1215,6 +1427,160 @@ export default function ProfileOnboarding() {
     )
   }
 
+  // Searchable Dropdown Component
+  const SearchableDropdown = ({ 
+    value, 
+    onChange, 
+    placeholder = "Search...", 
+    options, 
+    disabled = false 
+  }: { 
+    value: string, 
+    onChange: (value: string) => void, 
+    placeholder?: string, 
+    options: string[], 
+    disabled?: boolean 
+  }) => {
+    const [isOpen, setIsOpen] = useState(false)
+    const [searchTerm, setSearchTerm] = useState('')
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0, isAbove: false })
+    const [isPositionCalculated, setIsPositionCalculated] = useState(false)
+    const dropdownRef = useRef<HTMLDivElement>(null)
+    const inputRef = useRef<HTMLInputElement>(null)
+    const containerRef = useRef<HTMLDivElement>(null)
+
+    // Filter options based on search term
+    const filteredOptions = options.filter(option =>
+      option.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    // Calculate dropdown position
+    useEffect(() => {
+      if (isOpen && containerRef.current && !isPositionCalculated) {
+        const containerRect = containerRef.current.getBoundingClientRect()
+        const spaceBelow = window.innerHeight - containerRect.bottom
+        const spaceAbove = containerRect.top
+        const estimatedDropdownHeight = Math.min(256, filteredOptions.length * 48 + 16)
+        const isAbove = spaceBelow < estimatedDropdownHeight && spaceAbove > spaceBelow
+        
+        setDropdownPosition({
+          top: isAbove ? containerRect.top - estimatedDropdownHeight - 8 : containerRect.bottom + 8,
+          left: containerRect.left,
+          width: containerRect.width,
+          isAbove
+        })
+        setIsPositionCalculated(true)
+      }
+    }, [isOpen, filteredOptions.length, isPositionCalculated])
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (dropdownRef.current && containerRef.current && 
+            !dropdownRef.current.contains(event.target as Node) && 
+            !containerRef.current.contains(event.target as Node)) {
+          setIsOpen(false)
+          setIsPositionCalculated(false)
+          setSearchTerm('')
+        }
+      }
+      
+      if (isOpen) {
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+      }
+    }, [isOpen])
+
+    // Focus input when dropdown opens
+    useEffect(() => {
+      if (isOpen && inputRef.current) {
+        inputRef.current.focus()
+      }
+    }, [isOpen])
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value
+      setSearchTerm(newValue)
+      onChange(newValue)
+      if (!isOpen) {
+        setIsOpen(true)
+      }
+    }
+
+    const handleInputFocus = () => {
+      setIsOpen(true)
+    }
+
+    const handleOptionClick = (option: string) => {
+      onChange(option)
+      setSearchTerm('')
+      setIsOpen(false)
+      setIsPositionCalculated(false)
+    }
+
+    return (
+      <div className="relative" ref={containerRef}>
+        <div className="relative">
+          <input
+            ref={inputRef}
+            type="text"
+            value={value}
+            onChange={handleInputChange}
+            onFocus={handleInputFocus}
+            placeholder={placeholder}
+            disabled={disabled}
+            className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none pr-10"
+          />
+          <ChevronDown 
+            className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          />
+        </div>
+
+        {/* Dropdown Menu */}
+        {isOpen && !disabled && isPositionCalculated && filteredOptions.length > 0 && (
+          <>
+            <div 
+              className="fixed inset-0 z-[100004]" 
+              style={{ pointerEvents: 'auto', backgroundColor: 'transparent' }}
+              onClick={() => {
+                setIsOpen(false)
+                setIsPositionCalculated(false)
+                setSearchTerm('')
+              }}
+            />
+            <div
+              ref={dropdownRef}
+              style={{
+                position: 'fixed',
+                top: `${dropdownPosition.top}px`,
+                left: `${dropdownPosition.left}px`,
+                width: `${dropdownPosition.width}px`,
+              }}
+              className="bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-[100005] max-h-64 overflow-y-auto"
+            >
+              <div className="p-2 space-y-1">
+                {filteredOptions.map((option, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleOptionClick(option)}
+                    className={`w-full flex items-center px-4 py-3 rounded-lg transition-all text-left ${
+                      value === option
+                        ? 'bg-primary-50 text-primary-700 font-semibold'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="truncate">{option}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    )
+  }
+
   const getStepTitle = (step: number) => {
     switch (step) {
       // First 4 steps commented out
@@ -1228,7 +1594,7 @@ export default function ProfileOnboarding() {
       case 8: return 'Certification Specialties'
       case 9: return 'Work History'
       case 10: return 'Education History'
-      case 11: return 'References'
+      case 11: return 'Professional References'
       case 12: return 'Complete'
       default: return ''
     }
@@ -1241,7 +1607,7 @@ export default function ProfileOnboarding() {
       case 8: return 'Certification Specialty'
       case 9: return 'Work History'
       case 10: return 'Education History'
-      case 11: return 'Reference'
+      case 11: return 'Professional Reference'
       default: return 'Item'
     }
   }
@@ -1275,7 +1641,7 @@ export default function ProfileOnboarding() {
         }
       case 'references':
         return {
-          title: 'No References Added',
+          title: 'No Professional References Added',
           description: 'Add professional references to strengthen your profile and credibility.'
         }
       default:
@@ -1555,29 +1921,53 @@ export default function ProfileOnboarding() {
                     </div>
                   </>
                 )}
-                {currentSection === 'workHistory' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Facility/Company Name <span className="text-red-500">*</span></label>
-                      <input type="text" value={formData.title || ''} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Enter facility or company name" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Unit/Position</label>
-                      <input type="text" value={formData.unit || ''} onChange={(e) => setFormData({ ...formData, unit: e.target.value })} placeholder="Enter unit or position" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+                {currentSection === 'workHistory' && (() => {
+                  // Get unique facilities from jobs
+                  const uniqueFacilities = Array.from(new Set(SAMPLE_JOBS.map(job => job.facilityName).filter(Boolean))).sort()
+                  
+                  // Get unique specialties from jobs
+                  const uniqueSpecialties = Array.from(new Set(
+                    SAMPLE_JOBS.map(job => {
+                      const parts = job.licenseSpecialty?.split(' - ') || []
+                      return parts.length > 1 ? parts.slice(1).join(' - ') : parts[0] || ''
+                    }).filter(s => s.trim() !== '')
+                  )).sort()
+                  
+                  return (
+                    <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-                        <CustomDatePicker
-                          value={formData.startDate || ''}
-                          onChange={(value) => setFormData({ ...formData, startDate: value, endDate: formData.endDate && isEndDateBeforeStartDate(value, formData.endDate) ? '' : formData.endDate })}
-                          placeholder="Select start date"
-                          showFormat={false}
-                          maxDate="today"
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Employer Full Name <span className="text-red-500">*</span></label>
+                        <SearchableDropdown
+                          value={formData.title || ''}
+                          onChange={(value) => setFormData({ ...formData, title: value })}
+                          placeholder="Search facilities..."
+                          options={uniqueFacilities}
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Unit <span className="text-red-500">*</span></label>
+                        <SearchableDropdown
+                          value={formData.unit || ''}
+                          onChange={(value) => setFormData({ ...formData, unit: value })}
+                          placeholder="Search specialties..."
+                          options={uniqueSpecialties}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Start Date <span className="text-red-500">*</span></label>
+                          <CustomDatePicker
+                            value={formData.startDate || ''}
+                            onChange={(value) => setFormData({ ...formData, startDate: value, endDate: formData.endDate && isEndDateBeforeStartDate(value, formData.endDate) ? '' : formData.endDate })}
+                            placeholder="Select start date"
+                            showFormat={false}
+                            maxDate="today"
+                          />
+                        </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          End Date {!formData.currentlyWorking && <span className="text-red-500">*</span>}
+                        </label>
                         <CustomDatePicker
                           value={formData.endDate || ''}
                           onChange={(value) => setFormData({ ...formData, endDate: value })}
@@ -1588,123 +1978,264 @@ export default function ProfileOnboarding() {
                           maxDate="today"
                         />
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input type="checkbox" id="currentlyWorking" checked={formData.currentlyWorking || false} onChange={(e) => setFormData({ ...formData, currentlyWorking: e.target.checked, endDate: e.target.checked ? '' : formData.endDate })} className="w-4 h-4 text-primary-600 rounded" />
-                      <label htmlFor="currentlyWorking" className="text-sm text-gray-700">I currently work here</label>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Agency (if applicable)</label>
-                      <input type="text" value={formData.agency || ''} onChange={(e) => setFormData({ ...formData, agency: e.target.value })} placeholder="Enter agency name" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                      <textarea value={formData.description || ''} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Enter job description" rows={3} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Charge Experience</label>
-                      <input type="text" value={formData.chargeExperience || ''} onChange={(e) => setFormData({ ...formData, chargeExperience: e.target.value })} placeholder="Enter charge experience" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <input type="checkbox" id="travelAssignment" checked={formData.travelAssignment || false} onChange={(e) => setFormData({ ...formData, travelAssignment: e.target.checked })} className="w-4 h-4 text-primary-600 rounded" />
-                        <label htmlFor="travelAssignment" className="text-sm text-gray-700">Travel Assignment</label>
                       </div>
                       <div className="flex items-center gap-2">
-                        <input type="checkbox" id="perDiem" checked={formData.perDiem || false} onChange={(e) => setFormData({ ...formData, perDiem: e.target.checked })} className="w-4 h-4 text-primary-600 rounded" />
-                        <label htmlFor="perDiem" className="text-sm text-gray-700">Per Diem</label>
+                        <input 
+                          type="checkbox" 
+                          id="currentlyWorking" 
+                          checked={formData.currentlyWorking || false} 
+                          onChange={(e) => setFormData({ ...formData, currentlyWorking: e.target.checked, endDate: e.target.checked ? '' : formData.endDate })} 
+                          className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                          style={{ accentColor: '#7F2860' }}
+                        />
+                        <label htmlFor="currentlyWorking" className="text-sm text-gray-700 cursor-pointer">Currently working here</label>
                       </div>
-                    </div>
-                  </>
-                )}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Description / Special Skills / Experience</label>
+                        <textarea 
+                          value={formData.description || ''} 
+                          onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
+                          placeholder="Describe your role and responsibilities..."
+                          rows={3} 
+                          className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="checkbox" 
+                            id="travelAssignment" 
+                            checked={formData.travelAssignment || false} 
+                            onChange={(e) => setFormData({ ...formData, travelAssignment: e.target.checked, perDiem: e.target.checked ? false : formData.perDiem })} 
+                            className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                            style={{ accentColor: '#7F2860' }}
+                          />
+                          <label htmlFor="travelAssignment" className="text-sm text-gray-700 cursor-pointer">Travel Assignment</label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="checkbox" 
+                            id="chargeExperience" 
+                            checked={formData.chargeExperience || false} 
+                            onChange={(e) => setFormData({ ...formData, chargeExperience: e.target.checked })} 
+                            className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                            style={{ accentColor: '#7F2860' }}
+                          />
+                          <label htmlFor="chargeExperience" className="text-sm text-gray-700 cursor-pointer">Charge Experience?</label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="checkbox" 
+                            id="perDiem" 
+                            checked={formData.perDiem || false} 
+                            onChange={(e) => setFormData({ ...formData, perDiem: e.target.checked, travelAssignment: e.target.checked ? false : formData.travelAssignment })} 
+                            className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                            style={{ accentColor: '#7F2860' }}
+                          />
+                          <label htmlFor="perDiem" className="text-sm text-gray-700 cursor-pointer">Per Diem</label>
+                        </div>
+                      </div>
+                      {formData.travelAssignment && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Staffing Agency Name <span className="text-red-500">*</span></label>
+                          <input 
+                            type="text" 
+                            value={formData.agency || ''} 
+                            onChange={(e) => setFormData({ ...formData, agency: e.target.value })} 
+                            placeholder="Enter staffing agency name" 
+                            className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
+                          />
+                        </div>
+                      )}
+                      {formData.chargeExperience && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Comment <span className="text-red-500">*</span></label>
+                          <textarea 
+                            value={formData.chargeExperienceComment || ''} 
+                            onChange={(e) => setFormData({ ...formData, chargeExperienceComment: e.target.value })} 
+                            placeholder="Describe your charge experience..."
+                            rows={3} 
+                            className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
+                          />
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
                 {currentSection === 'education' && (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">School/Institution Name <span className="text-red-500">*</span></label>
-                      <input type="text" value={formData.title || ''} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Enter school or institution name" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                      <label className="block text-sm font-medium text-gray-700 mb-2">School Name <span className="text-red-500">*</span></label>
+                      <SearchableDropdown
+                        value={formData.title || ''}
+                        onChange={(value) => setFormData({ ...formData, title: value })}
+                        placeholder="Search schools..."
+                        options={SCHOOLS}
+                      />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Course/Program</label>
-                      <input type="text" value={formData.course || ''} onChange={(e) => setFormData({ ...formData, course: e.target.value })} placeholder="Enter course or program" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Course of Study <span className="text-red-500">*</span></label>
                       <CustomSelect
-                        value={formData.status || 'Graduated'}
-                        onChange={(value) => setFormData({ ...formData, status: value as 'Graduated' | 'Did Not Graduate' })}
-                        placeholder="Select status"
+                        value={formData.course || ''}
+                        onChange={(value) => setFormData({ ...formData, course: value })}
+                        placeholder="Select course of study"
                         icon={GraduationCap}
                       >
-                        <option value="Graduated">Graduated</option>
-                        <option value="Did Not Graduate">Did Not Graduate</option>
+                        <option value="">Select course of study</option>
+                        {COURSE_OF_STUDY.map(course => (
+                          <option key={course} value={course}>{course}</option>
+                        ))}
                       </CustomSelect>
                     </div>
-                    {formData.status === 'Graduated' && (
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="checkbox" 
+                        id="didGraduate" 
+                        checked={formData.didGraduate || false} 
+                        onChange={(e) => setFormData({ ...formData, didGraduate: e.target.checked, graduated: e.target.checked ? formData.graduated : '', degree: e.target.checked ? formData.degree : '' })} 
+                        className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                        style={{ accentColor: '#7F2860' }}
+                      />
+                      <label htmlFor="didGraduate" className="text-sm text-gray-700 cursor-pointer">Did you Graduate?</label>
+                    </div>
+                    {formData.didGraduate && (
                       <>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Graduation Date</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Graduation Date <span className="text-red-500">*</span></label>
                           <CustomDatePicker
                             value={formData.graduated || ''}
                             onChange={(value) => setFormData({ ...formData, graduated: value })}
-                            placeholder="Select graduation date"
-                            showFormat={false}
+                            placeholder="dd/mm/yyyy"
+                            showFormat={true}
+                            maxDate="today"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Degree</label>
-                          <input type="text" value={formData.degree || ''} onChange={(e) => setFormData({ ...formData, degree: e.target.value })} placeholder="Enter degree (e.g., Bachelor of Science)" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Degree <span className="text-red-500">*</span></label>
+                          <CustomSelect
+                            value={formData.degree || ''}
+                            onChange={(value) => setFormData({ ...formData, degree: value })}
+                            placeholder="Select degree"
+                            icon={GraduationCap}
+                          >
+                            <option value="">Select degree</option>
+                            {DEGREES.map(degree => (
+                              <option key={degree} value={degree}>{degree}</option>
+                            ))}
+                          </CustomSelect>
                         </div>
                       </>
                     )}
                   </>
                 )}
-                {currentSection === 'references' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Name <span className="text-red-500">*</span></label>
-                      <input type="text" value={formData.name || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Enter reference name" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
-                      <input type="text" value={formData.title || ''} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Enter job title" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
-                      <input type="text" value={formData.company || ''} onChange={(e) => setFormData({ ...formData, company: e.target.value })} placeholder="Enter company name" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+                {currentSection === 'references' && (() => {
+                  // Get work history items for the dropdown
+                  const workHistoryOptions = profileData.workHistory.map(work => ({
+                    id: work.id,
+                    label: `${work.title}${work.unit ? ` - ${work.unit}` : ''}${work.startDate ? ` (${formatDateToDDMMYYYY(work.startDate)} - ${work.currentlyWorking ? 'Present' : (work.endDate ? formatDateToDDMMYYYY(work.endDate) : 'N/A')})` : ''}`
+                  }))
+                  
+                  return (
+                    <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-                        <CustomDatePicker
-                          value={formData.startDate || ''}
-                          onChange={(value) => setFormData({ ...formData, startDate: value, endDate: formData.endDate && isEndDateBeforeStartDate(value, formData.endDate) ? '' : formData.endDate })}
-                          placeholder="Select start date"
-                          showFormat={false}
-                          maxDate="today"
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Full Name <span className="text-red-500">*</span></label>
+                        <input 
+                          type="text" 
+                          value={formData.name || ''} 
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+                          placeholder="Enter full name" 
+                          className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-                        <CustomDatePicker
-                          value={formData.endDate || ''}
-                          onChange={(value) => setFormData({ ...formData, endDate: value })}
-                          placeholder="Select end date"
-                          showFormat={false}
-                          minDate={formData.startDate || undefined}
-                          maxDate="today"
-                        />
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Reference Job Title <span className="text-red-500">*</span></label>
+                        <CustomSelect
+                          value={formData.title || ''}
+                          onChange={(value) => setFormData({ ...formData, title: value })}
+                          placeholder="Select job title"
+                          icon={Briefcase}
+                        >
+                          <option value="">Select job title</option>
+                          {REFERENCE_JOB_TITLES.map(title => (
+                            <option key={title} value={title}>{title}</option>
+                          ))}
+                        </CustomSelect>
                       </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                      <input type="tel" value={formData.phone || ''} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="Enter phone number" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                      <input type="email" value={formData.email || ''} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="Enter email address" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                    </div>
-                  </>
-                    )}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Where did you work together?</label>
+                        <CustomSelect
+                          value={formData.workHistoryId || ''}
+                          onChange={(value) => setFormData({ ...formData, workHistoryId: value })}
+                          placeholder="Select from your work history"
+                          icon={Briefcase}
+                          disabled={workHistoryOptions.length === 0}
+                        >
+                          <option value="">Select from your work history</option>
+                          {workHistoryOptions.map(work => (
+                            <option key={work.id} value={work.id}>{work.label}</option>
+                          ))}
+                        </CustomSelect>
+                        {workHistoryOptions.length === 0 && (
+                          <p className="mt-1.5 text-xs text-gray-500">Add work history first to select a reference</p>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                          <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 font-medium">+1</div>
+                            <input 
+                              type="tel" 
+                              value={formData.phone || ''} 
+                              onChange={(e) => {
+                                // Only allow digits and limit to 10 digits
+                                const value = e.target.value.replace(/\D/g, '').slice(0, 10)
+                                setFormData({ ...formData, phone: value })
+                              }}
+                              onBlur={() => setTouchedFields(prev => ({ ...prev, phone: true }))}
+                              placeholder="Enter 10 digits" 
+                              className={`w-full pl-12 pr-4 py-3 bg-white border-2 rounded-xl focus:outline-none ${
+                                touchedFields.phone && formData.phone && formData.phone.trim() && !isValidPhone(formData.phone)
+                                  ? 'border-red-300 focus:border-red-500'
+                                  : 'border-gray-200 focus:border-primary-500'
+                              }`}
+                              maxLength={10}
+                            />
+                          </div>
+                          {touchedFields.phone && formData.phone && formData.phone.trim() && !isValidPhone(formData.phone) && (
+                            <p className="mt-1.5 text-xs text-red-600">Please enter exactly 10 digits</p>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                          <input 
+                            type="email" 
+                            value={formData.email || ''} 
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            onBlur={() => setTouchedFields(prev => ({ ...prev, email: true }))}
+                            placeholder="Enter email address" 
+                            className={`w-full px-4 py-3 bg-white border-2 rounded-xl focus:outline-none ${
+                              touchedFields.email && formData.email && formData.email.trim() && !isValidEmail(formData.email)
+                                ? 'border-red-300 focus:border-red-500'
+                                : 'border-gray-200 focus:border-primary-500'
+                            }`}
+                          />
+                          {touchedFields.email && formData.email && formData.email.trim() && !isValidEmail(formData.email) && (
+                            <p className="mt-1.5 text-xs text-red-600">Please enter a valid email address</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-2 p-3 bg-pink-50 border border-pink-200 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 text-pink-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-xs text-pink-700">
+                            Note: At least one contact method (phone number or email) is required.
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  )
+                })()}
                   </div>
                 </div>
                 
@@ -1717,6 +2248,7 @@ export default function ProfileOnboarding() {
                         setEditingItem(null)
                         setCurrentSection(null)
                         setFormData({})
+                        setTouchedFields({}) // Reset touched fields when canceling
                       }} 
                       className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
                     >
@@ -1778,47 +2310,51 @@ export default function ProfileOnboarding() {
                   />
                 </div>
 
-                {/* Close Button */}
-                <button
-                  onClick={handleClose}
-                  className="relative p-2.5 text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200"
-                  aria-label="Close"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                {/* Close Button - Hidden on summary screen */}
+                {currentStep !== 12 && (
+                  <button
+                    onClick={handleClose}
+                    className="relative p-2.5 text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all duration-200"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
               </div>
 
-              {/* Progress Bar - Clean Professional Design */}
-              <div className="px-4 sm:px-6">
-                <div className="max-w-2xl mx-auto">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600 font-medium">
-                      Step {currentStep - 4} of {totalSteps}
-                    </span>
-                  </div>
-                  <div className="flex gap-1.5">
-                    {Array.from({ length: totalSteps }).map((_, index) => {
-                      const visualStep = currentStep - 4
-                      const stepNumber = index + 1
-                      const isCompleted = stepNumber < visualStep
-                      const isActive = stepNumber === visualStep
-                      
-                      return (
-                        <div
-                          key={index}
-                          className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${
-                            isCompleted
-                              ? 'bg-primary-600'
-                              : isActive
-                              ? 'bg-primary-600'
-                              : 'bg-gray-200'
-                          }`}
-                        />
-                      )
-                    })}
+              {/* Progress Bar - Clean Professional Design - Hidden on summary screen */}
+              {currentStep !== 12 && (
+                <div className="px-4 sm:px-6">
+                  <div className="max-w-2xl mx-auto">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-600 font-medium">
+                        Step {currentStep - 4} of {totalSteps}
+                      </span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      {Array.from({ length: totalSteps }).map((_, index) => {
+                        const visualStep = currentStep - 4
+                        const stepNumber = index + 1
+                        const isCompleted = stepNumber < visualStep
+                        const isActive = stepNumber === visualStep
+                        
+                        return (
+                          <div
+                            key={index}
+                            className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${
+                              isCompleted
+                                ? 'bg-primary-600'
+                                : isActive
+                                ? 'bg-primary-600'
+                                : 'bg-gray-200'
+                            }`}
+                          />
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Content */}
@@ -2298,13 +2834,21 @@ export default function ProfileOnboarding() {
                         {/* Phone Number */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                          <input 
-                            type="tel" 
-                            value={profileData.phoneNumber} 
-                            onChange={(e) => setProfileData(prev => ({ ...prev, phoneNumber: e.target.value }))} 
-                            placeholder="Enter phone number" 
-                            className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
-                          />
+                          <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 font-medium">+1</div>
+                            <input 
+                              type="tel" 
+                              value={profileData.phoneNumber || ''} 
+                              onChange={(e) => {
+                                // Only allow digits and limit to 10 digits
+                                const value = e.target.value.replace(/\D/g, '').slice(0, 10)
+                                setProfileData(prev => ({ ...prev, phoneNumber: value }))
+                              }}
+                              placeholder="Enter 10 digits" 
+                              className="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
+                              maxLength={10}
+                            />
+                          </div>
                         </div>
                       </div>
 
@@ -2537,36 +3081,51 @@ export default function ProfileOnboarding() {
                                     )}
                                     {section === 'workHistory' && (
                                       <>
-                                        {item.unit && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Unit/Position:</span> <span className="ml-2">{item.unit}</span></div>}
-                                        {item.startDate && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Start Date:</span> <span className="ml-2">{formatDateToDDMMYYYY(item.startDate)}</span></div>}
-                                        {!item.currentlyWorking && item.endDate && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">End Date:</span> <span className="ml-2">{formatDateToDDMMYYYY(item.endDate)}</span></div>}
-                                        {item.currentlyWorking && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Currently Working:</span> <span className="ml-2">Yes</span></div>}
-                                        {item.agency && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Agency:</span> <span className="ml-2">{item.agency}</span></div>}
+                                        {item.unit && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Unit:</span> <span className="ml-2">{item.unit}</span></div>}
+                                        {item.startDate && (
+                                          <div className="text-sm text-gray-700">
+                                            <span className="text-gray-500 font-medium">Period:</span> 
+                                            <span className="ml-2">
+                                              {formatDateToDDMMYYYY(item.startDate)} - {item.currentlyWorking ? 'Present' : (item.endDate ? formatDateToDDMMYYYY(item.endDate) : 'N/A')}
+                                            </span>
+                                          </div>
+                                        )}
+                                        {item.travelAssignment && item.agency && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Agency:</span> <span className="ml-2">{item.agency}</span></div>}
                                         {item.description && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Description:</span> <span className="ml-2">{item.description}</span></div>}
-                                        {item.chargeExperience && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Charge Experience:</span> <span className="ml-2">{item.chargeExperience}</span></div>}
+                                        {item.chargeExperienceComment && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Charge Experience:</span> <span className="ml-2">{item.chargeExperienceComment}</span></div>}
                                         {(item.travelAssignment || item.perDiem) && (
-                                          <div className="flex flex-wrap gap-2 pt-1">
-                                            {item.travelAssignment && <span className="text-xs px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md font-medium border border-blue-100">Travel Assignment</span>}
-                                            {item.perDiem && <span className="text-xs px-2.5 py-1 bg-green-50 text-green-700 rounded-md font-medium border border-green-100">Per Diem</span>}
+                                          <div className="flex flex-wrap gap-2 mt-1">
+                                            {item.travelAssignment && (
+                                              <span className="inline-flex items-center text-xs font-medium text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded">
+                                                Travel Assignment
+                                              </span>
+                                            )}
+                                            {item.perDiem && (
+                                              <span className="inline-flex items-center text-xs font-medium text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded">
+                                                Per Diem
+                                              </span>
+                                            )}
                                           </div>
                                         )}
                                       </>
                                     )}
                                     {section === 'education' && (
                                       <>
-                                        {item.course && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Course/Program:</span> <span className="ml-2">{item.course}</span></div>}
-                                        {item.status && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Status:</span> <span className="ml-2">{item.status}</span></div>}
-                                        {item.status === 'Graduated' && item.graduated && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Graduation Date:</span> <span className="ml-2">{formatDateToDDMMYYYY(item.graduated)}</span></div>}
-                                        {item.status === 'Graduated' && item.degree && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Degree:</span> <span className="ml-2">{item.degree}</span></div>}
+                                        {item.course && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Course of Study:</span> <span className="ml-2">{item.course}</span></div>}
+                                        {item.didGraduate && item.graduated && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Graduation Date:</span> <span className="ml-2">{formatDateToDDMMYYYY(item.graduated)}</span></div>}
+                                        {item.didGraduate && item.degree && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Degree:</span> <span className="ml-2">{item.degree}</span></div>}
                                       </>
                                     )}
                                     {section === 'references' && (
                                       <>
-                                        {item.title && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Title:</span> <span className="ml-2">{item.title}</span></div>}
-                                        {item.company && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Company:</span> <span className="ml-2">{item.company}</span></div>}
-                                        {item.startDate && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Start Date:</span> <span className="ml-2">{formatDateToDDMMYYYY(item.startDate)}</span></div>}
-                                        {item.endDate && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">End Date:</span> <span className="ml-2">{formatDateToDDMMYYYY(item.endDate)}</span></div>}
-                                        {item.phone && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Phone:</span> <span className="ml-2">{item.phone}</span></div>}
+                                        {item.title && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Reference Job Title:</span> <span className="ml-2">{item.title}</span></div>}
+                                        {item.workHistoryId && (() => {
+                                          const workHistory = profileData.workHistory.find(work => work.id === item.workHistoryId)
+                                          return workHistory ? (
+                                            <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Where did you work together?:</span> <span className="ml-2">{workHistory.title}{workHistory.unit ? ` - ${workHistory.unit}` : ''}</span></div>
+                                          ) : null
+                                        })()}
+                                        {item.phone && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Phone Number:</span> <span className="ml-2">+1 {item.phone}</span></div>}
                                         {item.email && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Email:</span> <span className="ml-2">{item.email}</span></div>}
                                       </>
                                     )}
@@ -2592,9 +3151,9 @@ export default function ProfileOnboarding() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  {/* Sticky Header */}
+                  {/* Sticky Header - Reduced padding when progress bar is hidden */}
                   <div className="sticky top-0 z-50 bg-white">
-                    <div className="px-4 sm:px-6 pt-6 pb-4">
+                    <div className="px-4 sm:px-6 pt-4 pb-4">
                       <div className="max-w-2xl mx-auto">
                         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
                           Profile Summary
@@ -2610,21 +3169,35 @@ export default function ProfileOnboarding() {
 
                   <div className="space-y-0">
                     {/* Step 5: Personal Information */}
-                    <div className="py-4">
+                    <div className="py-6">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4 flex-1">
                           <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
                             <Users className="w-5 h-5 text-primary-600" />
                           </div>
                           <div className="flex-1">
-                            <h2 className="text-base font-bold text-gray-900 mb-1">Personal information</h2>
-                            <div className="space-y-1">
-                              {profileData.name && <p className="text-sm text-gray-600"><span className="font-medium">Name:</span> {profileData.name}</p>}
+                            <h2 className="text-base font-bold text-gray-900 mb-4">Personal information</h2>
+                            <div className="space-y-2.5">
+                              {((profileData.firstName || profileData.lastName)) && (
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-medium">Full Name:</span> {[profileData.firstName, profileData.lastName].filter(Boolean).join(' ')}
+                                </p>
+                              )}
                               {profileData.email && <p className="text-sm text-gray-600"><span className="font-medium">Email:</span> {profileData.email}</p>}
-                              {profileData.address && <p className="text-sm text-gray-600"><span className="font-medium">Address:</span> {profileData.address}</p>}
+                              {profileData.phoneNumber && <p className="text-sm text-gray-600"><span className="font-medium">Phone Number:</span> +1 {profileData.phoneNumber}</p>}
                               {profileData.dob && <p className="text-sm text-gray-600"><span className="font-medium">Date of Birth:</span> {formatDateToDDMMYYYY(profileData.dob)}</p>}
                               {profileData.ssn && <p className="text-sm text-gray-600"><span className="font-medium">SSN:</span> ****{profileData.ssn.slice(-4)}</p>}
-                              {!profileData.name && !profileData.email && !profileData.address && !profileData.dob && !profileData.ssn && (
+                              {profileData.yearsOfExperience && <p className="text-sm text-gray-600"><span className="font-medium">Years of Experience:</span> {profileData.yearsOfExperience}</p>}
+                              {(profileData.streetAddress || profileData.additionalAddress || profileData.city || profileData.state || profileData.zipCode) && (
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-medium">Address:</span> {[
+                                    profileData.streetAddress,
+                                    profileData.additionalAddress,
+                                    [profileData.city, profileData.state, profileData.zipCode].filter(Boolean).join(', ')
+                                  ].filter(Boolean).join(', ')}
+                                </p>
+                              )}
+                              {!profileData.firstName && !profileData.lastName && !profileData.email && !profileData.phoneNumber && !profileData.dob && !profileData.ssn && !profileData.yearsOfExperience && !profileData.streetAddress && !profileData.city && !profileData.state && !profileData.zipCode && (
                                 <p className="text-sm text-gray-400 italic">No information added</p>
                               )}
                             </div>
@@ -2644,23 +3217,23 @@ export default function ProfileOnboarding() {
                     <div className="h-px bg-gray-200"></div>
 
                     {/* Step 6: Licenses */}
-                    <div className="py-4">
+                    <div className="py-6">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4 flex-1">
                           <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
                             <Shield className="w-5 h-5 text-primary-600" />
                           </div>
                           <div className="flex-1">
-                            <h2 className="text-base font-bold text-gray-900 mb-1">Professional Licenses</h2>
-                            <div className="space-y-1">
+                            <h2 className="text-base font-bold text-gray-900 mb-4">Professional Licenses</h2>
+                            <div className="space-y-4">
                               {profileData.licenses.length > 0 ? (
                                 [...profileData.licenses].reverse().map((license: any, index: number, array: any[]) => (
-                                  <div key={license.id || index} className="space-y-1">
-                                    {license.type && <p className="text-sm text-gray-600"><span className="font-medium">Type:</span> {license.type}</p>}
+                                  <div key={license.id || index} className="space-y-2">
+                                    {license.type && <p className="text-sm font-semibold text-gray-900 mb-2">{license.type}</p>}
+                                    {license.number && <p className="text-sm text-gray-600"><span className="font-medium">License Number:</span> {license.number}</p>}
                                     {license.state && <p className="text-sm text-gray-600"><span className="font-medium">State:</span> {license.state}</p>}
-                                    {license.number && <p className="text-sm text-gray-600"><span className="font-medium">Number:</span> {license.number}</p>}
-                                    {license.expiration && <p className="text-sm text-gray-600"><span className="font-medium">Expiration:</span> {formatDateToDDMMYYYY(license.expiration)}</p>}
-                                    {index < array.length - 1 && <div className="h-px bg-gray-200 my-2"></div>}
+                                    {license.expiration && <p className="text-sm text-gray-600"><span className="font-medium">Expiration Date:</span> {formatDateToDDMMYYYY(license.expiration)}</p>}
+                                    {index < array.length - 1 && <div className="h-px bg-gray-200 my-4"></div>}
                                   </div>
                                 ))
                               ) : (
@@ -2683,22 +3256,22 @@ export default function ProfileOnboarding() {
                     <div className="h-px bg-gray-200"></div>
 
                     {/* Step 7: Certificates */}
-                    <div className="py-4">
+                    <div className="py-6">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4 flex-1">
                           <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
                             <Award className="w-5 h-5 text-primary-600" />
                           </div>
                           <div className="flex-1">
-                            <h2 className="text-base font-bold text-gray-900 mb-1">Certificates</h2>
-                            <div className="space-y-1">
+                            <h2 className="text-base font-bold text-gray-900 mb-4">Certificates</h2>
+                            <div className="space-y-4">
                               {profileData.certificates.length > 0 ? (
                                 [...profileData.certificates].reverse().map((cert: any, index: number, array: any[]) => (
-                                  <div key={cert.id || index} className="space-y-1">
-                                    {cert.type && <p className="text-sm text-gray-600"><span className="font-medium">Type:</span> {cert.type}</p>}
-                                    {cert.number && <p className="text-sm text-gray-600"><span className="font-medium">Number:</span> {cert.number}</p>}
-                                    {cert.expiration && <p className="text-sm text-gray-600"><span className="font-medium">Expiration:</span> {formatDateToDDMMYYYY(cert.expiration)}</p>}
-                                    {index < array.length - 1 && <div className="h-px bg-gray-200 my-2"></div>}
+                                  <div key={cert.id || index} className="space-y-2">
+                                    {cert.type && <p className="text-sm font-semibold text-gray-900 mb-2">{cert.type}</p>}
+                                    {cert.number && <p className="text-sm text-gray-600"><span className="font-medium">Certificate Number:</span> {cert.number}</p>}
+                                    {cert.expiration && <p className="text-sm text-gray-600"><span className="font-medium">Expiration Date:</span> {formatDateToDDMMYYYY(cert.expiration)}</p>}
+                                    {index < array.length - 1 && <div className="h-px bg-gray-200 my-4"></div>}
                                   </div>
                                 ))
                               ) : (
@@ -2721,21 +3294,21 @@ export default function ProfileOnboarding() {
                     <div className="h-px bg-gray-200"></div>
 
                     {/* Step 8: Certification Specialties */}
-                    <div className="py-4">
+                    <div className="py-6">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4 flex-1">
                           <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
                             <Award className="w-5 h-5 text-primary-600" />
                           </div>
                           <div className="flex-1">
-                            <h2 className="text-base font-bold text-gray-900 mb-1">Certification Specialties</h2>
-                            <div className="space-y-1">
+                            <h2 className="text-base font-bold text-gray-900 mb-4">Certification Specialties</h2>
+                            <div className="space-y-4">
                               {profileData.specialties.length > 0 ? (
                                 [...profileData.specialties].reverse().map((spec: any, index: number, array: any[]) => (
-                                  <div key={spec.id || index} className="space-y-1">
-                                    {spec.certification && <p className="text-sm text-gray-600"><span className="font-medium">Certification:</span> {spec.certification}</p>}
+                                  <div key={spec.id || index} className="space-y-2">
+                                    {spec.certification && <p className="text-sm font-semibold text-gray-900 mb-2">{spec.certification}</p>}
                                     {spec.specialty && <p className="text-sm text-gray-600"><span className="font-medium">Specialty:</span> {spec.specialty}</p>}
-                                    {index < array.length - 1 && <div className="h-px bg-gray-200 my-2"></div>}
+                                    {index < array.length - 1 && <div className="h-px bg-gray-200 my-4"></div>}
                                   </div>
                                 ))
                               ) : (
@@ -2758,25 +3331,39 @@ export default function ProfileOnboarding() {
                     <div className="h-px bg-gray-200"></div>
 
                     {/* Step 9: Work History */}
-                    <div className="py-4">
+                    <div className="py-6">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4 flex-1">
                           <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
                             <Briefcase className="w-5 h-5 text-primary-600" />
                           </div>
                           <div className="flex-1">
-                            <h2 className="text-base font-bold text-gray-900 mb-1">Work History</h2>
-                            <div className="space-y-1">
+                            <h2 className="text-base font-bold text-gray-900 mb-4">Work History</h2>
+                            <div className="space-y-4">
                               {profileData.workHistory.length > 0 ? (
                                 [...profileData.workHistory].reverse().map((work: any, index: number, array: any[]) => (
-                                  <div key={work.id || index} className="space-y-1">
-                                    {work.title && <p className="text-sm text-gray-600"><span className="font-medium">Facility/Company:</span> {work.title}</p>}
-                                    {work.unit && <p className="text-sm text-gray-600"><span className="font-medium">Unit/Position:</span> {work.unit}</p>}
+                                  <div key={work.id || index} className="space-y-2">
+                                    {work.title && <p className="text-sm font-semibold text-gray-900 mb-2">{work.title}</p>}
+                                    {work.unit && <p className="text-sm text-gray-600"><span className="font-medium">Unit:</span> {work.unit}</p>}
                                     {work.startDate && <p className="text-sm text-gray-600"><span className="font-medium">Period:</span> {formatDateToDDMMYYYY(work.startDate)} - {work.currentlyWorking ? 'Present' : (work.endDate ? formatDateToDDMMYYYY(work.endDate) : 'N/A')}</p>}
-                                    {work.agency && <p className="text-sm text-gray-600"><span className="font-medium">Agency:</span> {work.agency}</p>}
+                                    {work.travelAssignment && work.agency && <p className="text-sm text-gray-600"><span className="font-medium">Agency:</span> {work.agency}</p>}
                                     {work.description && <p className="text-sm text-gray-600"><span className="font-medium">Description:</span> {work.description}</p>}
-                                    {work.chargeExperience && <p className="text-sm text-gray-600"><span className="font-medium">Charge Experience:</span> {work.chargeExperience}</p>}
-                                    {index < array.length - 1 && <div className="h-px bg-gray-200 my-2"></div>}
+                                    {work.chargeExperienceComment && <p className="text-sm text-gray-600"><span className="font-medium">Charge Experience:</span> {work.chargeExperienceComment}</p>}
+                                    {(work.travelAssignment || work.perDiem) && (
+                                      <div className="flex flex-wrap gap-2 mt-2">
+                                        {work.travelAssignment && (
+                                          <span className="inline-flex items-center text-xs font-medium text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded">
+                                            Travel Assignment
+                                          </span>
+                                        )}
+                                        {work.perDiem && (
+                                          <span className="inline-flex items-center text-xs font-medium text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded">
+                                            Per Diem
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                    {index < array.length - 1 && <div className="h-px bg-gray-200 my-4"></div>}
                                   </div>
                                 ))
                               ) : (
@@ -2799,24 +3386,23 @@ export default function ProfileOnboarding() {
                     <div className="h-px bg-gray-200"></div>
 
                     {/* Step 10: Education */}
-                    <div className="py-4">
+                    <div className="py-6">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4 flex-1">
                           <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
                             <GraduationCap className="w-5 h-5 text-primary-600" />
                           </div>
                           <div className="flex-1">
-                            <h2 className="text-base font-bold text-gray-900 mb-1">Education History</h2>
-                            <div className="space-y-1">
+                            <h2 className="text-base font-bold text-gray-900 mb-4">Education History</h2>
+                            <div className="space-y-4">
                               {profileData.education.length > 0 ? (
                                 [...profileData.education].reverse().map((edu: any, index: number, array: any[]) => (
-                                  <div key={edu.id || index} className="space-y-1">
-                                    {edu.title && <p className="text-sm text-gray-600"><span className="font-medium">School/Institution:</span> {edu.title}</p>}
-                                    {edu.course && <p className="text-sm text-gray-600"><span className="font-medium">Course/Program:</span> {edu.course}</p>}
-                                    {edu.status && <p className="text-sm text-gray-600"><span className="font-medium">Status:</span> {edu.status}</p>}
-                                    {edu.graduated && <p className="text-sm text-gray-600"><span className="font-medium">Graduated:</span> {formatDateToDDMMYYYY(edu.graduated)}</p>}
-                                    {edu.degree && <p className="text-sm text-gray-600"><span className="font-medium">Degree:</span> {edu.degree}</p>}
-                                    {index < array.length - 1 && <div className="h-px bg-gray-200 my-2"></div>}
+                                  <div key={edu.id || index} className="space-y-2">
+                                    {edu.title && <p className="text-sm font-semibold text-gray-900 mb-2">{edu.title}</p>}
+                                    {edu.course && <p className="text-sm text-gray-600"><span className="font-medium">Course of Study:</span> {edu.course}</p>}
+                                    {edu.didGraduate && edu.graduated && <p className="text-sm text-gray-600"><span className="font-medium">Graduation Date:</span> {formatDateToDDMMYYYY(edu.graduated)}</p>}
+                                    {edu.didGraduate && edu.degree && <p className="text-sm text-gray-600"><span className="font-medium">Degree:</span> {edu.degree}</p>}
+                                    {index < array.length - 1 && <div className="h-px bg-gray-200 my-4"></div>}
                                   </div>
                                 ))
                               ) : (
@@ -2838,27 +3424,30 @@ export default function ProfileOnboarding() {
                     </div>
                     <div className="h-px bg-gray-200"></div>
 
-                    {/* Step 11: References */}
-                    <div className="py-4">
+                    {/* Step 11: Professional References */}
+                    <div className="py-6">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4 flex-1">
                           <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
                             <Users className="w-5 h-5 text-primary-600" />
                           </div>
                           <div className="flex-1">
-                            <h2 className="text-base font-bold text-gray-900 mb-1">References</h2>
-                            <div className="space-y-1">
+                            <h2 className="text-base font-bold text-gray-900 mb-4">Professional References</h2>
+                            <div className="space-y-4">
                               {profileData.references.length > 0 ? (
                                 [...profileData.references].reverse().map((ref: any, index: number, array: any[]) => (
-                                  <div key={ref.id || index} className="space-y-1">
-                                    {ref.name && <p className="text-sm text-gray-600"><span className="font-medium">Name:</span> {ref.name}</p>}
-                                    {ref.title && <p className="text-sm text-gray-600"><span className="font-medium">Title:</span> {ref.title}</p>}
-                                    {ref.company && <p className="text-sm text-gray-600"><span className="font-medium">Company:</span> {ref.company}</p>}
-                                    {ref.startDate && <p className="text-sm text-gray-600"><span className="font-medium">Start Date:</span> {formatDateToDDMMYYYY(ref.startDate)}</p>}
-                                    {ref.endDate && <p className="text-sm text-gray-600"><span className="font-medium">End Date:</span> {formatDateToDDMMYYYY(ref.endDate)}</p>}
-                                    {ref.phone && <p className="text-sm text-gray-600"><span className="font-medium">Phone:</span> {ref.phone}</p>}
+                                  <div key={ref.id || index} className="space-y-2">
+                                    {ref.name && <p className="text-sm font-semibold text-gray-900 mb-2">{ref.name}</p>}
+                                    {ref.title && <p className="text-sm text-gray-600"><span className="font-medium">Reference Job Title:</span> {ref.title}</p>}
+                                    {ref.workHistoryId && (() => {
+                                      const workHistory = profileData.workHistory.find(work => work.id === ref.workHistoryId)
+                                      return workHistory ? (
+                                        <p className="text-sm text-gray-600"><span className="font-medium">Where did you work together?:</span> {workHistory.title}{workHistory.unit ? ` - ${workHistory.unit}` : ''}</p>
+                                      ) : null
+                                    })()}
+                                    {ref.phone && <p className="text-sm text-gray-600"><span className="font-medium">Phone Number:</span> +1 {ref.phone}</p>}
                                     {ref.email && <p className="text-sm text-gray-600"><span className="font-medium">Email:</span> {ref.email}</p>}
-                                    {index < array.length - 1 && <div className="h-px bg-gray-200 my-2"></div>}
+                                    {index < array.length - 1 && <div className="h-px bg-gray-200 my-4"></div>}
                                   </div>
                                 ))
                               ) : (
@@ -2887,9 +3476,10 @@ export default function ProfileOnboarding() {
             </div>
 
             {/* Footer with Next Button */}
-            <div className="px-4 sm:px-6 py-4 border-t border-gray-200 bg-white">
+            <div className="px-4 sm:px-6 py-4 bg-white">
               <div className="max-w-2xl mx-auto flex items-center gap-3">
-                {(currentStep > 5 || isEditingFromSummary) && ( // Show Previous if not on step 5, or if editing from summary
+                {/* Hide back button on step 12 (summary) and when editing from summary - can only navigate via edit buttons */}
+                {currentStep > 5 && currentStep !== 12 && !isEditingFromSummary ? (
                   <button
                     onClick={handlePrevious}
                     className="relative px-6 py-3 h-[48px] text-gray-600 hover:text-gray-900 border-2 border-gray-200 rounded-xl transition-all duration-200 flex items-center justify-center hover:border-gray-300"
@@ -2897,7 +3487,7 @@ export default function ProfileOnboarding() {
                   >
                     <ChevronLeft className="w-6 h-6" />
                   </button>
-                )}
+                ) : null}
                 <button
                   onClick={handleNext}
                   disabled={!canProceed}
@@ -2907,7 +3497,7 @@ export default function ProfileOnboarding() {
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   }`}
                 >
-                  {currentStep === 12 ? 'Complete' : isEditingFromSummary ? 'Update' : 'Next'}
+                  {currentStep === 12 ? 'Complete Profile' : isEditingFromSummary ? 'Update' : 'Next'}
                 </button>
               </div>
             </div>

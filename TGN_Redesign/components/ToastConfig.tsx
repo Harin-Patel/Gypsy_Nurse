@@ -4,25 +4,42 @@ import { Toaster } from 'react-hot-toast'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { useEffect } from 'react'
 
+// Add global styles to hide left icon only
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style')
+  style.textContent = `
+    /* Hide left icon (success/error icon) */
+    [data-testid="toast-icon"],
+    [role="status"] > div:first-child > svg,
+    [role="status"] svg:first-of-type {
+      display: none !important;
+    }
+  `
+  if (!document.head.querySelector('style[data-toast-hide-left-icon]')) {
+    style.setAttribute('data-toast-hide-left-icon', 'true')
+    document.head.appendChild(style)
+  }
+}
+
 export default function ToastConfig() {
   const isMobile = useIsMobile()
 
-  // Set z-index for toast container on mobile
+  // Set z-index for toast container
   useEffect(() => {
-    if (isMobile && typeof document !== 'undefined') {
-      const updateToastZIndex = () => {
+    if (typeof document !== 'undefined') {
+      const updateToastStyles = () => {
         // Update all toast elements and their containers
         const toastElements = document.querySelectorAll('[role="status"]')
         toastElements.forEach((toast) => {
           const toastEl = toast as HTMLElement
-          toastEl.style.zIndex = '10001'
+          toastEl.style.zIndex = '100000' // Higher than onboarding modal (99999)
           
           // Update all parent containers up to body
           let parent = toastEl.parentElement
           while (parent && parent !== document.body) {
             const style = window.getComputedStyle(parent)
             if (style.position === 'fixed' || style.position === 'absolute') {
-              parent.style.zIndex = '10000'
+              parent.style.zIndex = '100000'
             }
             parent = parent.parentElement
           }
@@ -34,17 +51,17 @@ export default function ToastConfig() {
           const htmlDiv = div as HTMLElement
           // Check if this div contains toast elements
           if (htmlDiv.querySelector('[role="status"]')) {
-            htmlDiv.style.zIndex = '10000'
+            htmlDiv.style.zIndex = '100000'
           }
         })
       }
       
       // Initial update with delay to ensure DOM is ready
-      const timeoutId = setTimeout(updateToastZIndex, 100)
+      const timeoutId = setTimeout(updateToastStyles, 100)
       
       // Watch for new toasts
       const observer = new MutationObserver(() => {
-        setTimeout(updateToastZIndex, 50)
+        setTimeout(updateToastStyles, 50)
       })
       observer.observe(document.body, {
         childList: true,
@@ -56,94 +73,89 @@ export default function ToastConfig() {
         observer.disconnect()
       }
     }
-  }, [isMobile])
+  }, [])
 
-  // Mobile-specific toast styles - Native mobile app feel
-  const mobileToastStyle = {
-    background: '#1F2937', // Dark gray background like iOS/Android
-    color: '#FFFFFF',
-    padding: '12px 16px',
-    borderRadius: '12px',
+  // Native web toast styles - Clean, modern, standard web appearance
+  const baseToastStyle = {
+    background: '#FFFFFF',
+    color: '#1F2937',
+    padding: isMobile ? '14px 20px' : '16px 24px', // Increased right padding to fill space
+    borderRadius: isMobile ? '8px' : '12px',
     fontWeight: '500',
-    fontSize: '14px',
-    maxWidth: 'calc(100% - 32px)',
-    margin: '0 16px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1)',
-    border: 'none',
+    fontSize: isMobile ? '15px' : '16px',
+    maxWidth: isMobile ? 'calc(100% - 32px)' : '500px',
+    minWidth: isMobile ? '280px' : '320px',
+    margin: isMobile ? '0 16px' : '0',
+    boxShadow: isMobile 
+      ? '0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)' 
+      : '0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.08)',
+    border: '1px solid rgba(0, 0, 0, 0.08)',
+    zIndex: 100000,
   }
 
-  // Mobile success toast style
-  const mobileSuccessStyle = {
-    ...mobileToastStyle,
-    background: '#10B981', // Green for success
+  // Theme color - Primary brand color
+  const themeColor = '#7F2860'
+  
+  // Success toast style - Using theme color
+  const successToastStyle = {
+    ...baseToastStyle,
+    background: '#FFFFFF',
+    borderLeft: `4px solid ${themeColor}`,
+    color: '#1F2937',
   }
 
-  // Mobile error toast style
-  const mobileErrorStyle = {
-    ...mobileToastStyle,
-    background: '#EF4444', // Red for error
+  // Error toast style - Using theme color
+  const errorToastStyle = {
+    ...baseToastStyle,
+    background: '#FFFFFF',
+    borderLeft: `4px solid ${themeColor}`,
+    color: '#1F2937',
   }
 
-  // Desktop toast styles (keep existing)
-  const desktopToastStyle = {
-    background: 'linear-gradient(135deg, rgba(252, 231, 243, 0.95) 0%, rgba(249, 213, 232, 0.95) 100%)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    border: '1px solid rgba(127, 40, 96, 0.3)',
-    boxShadow: '0 20px 40px rgba(127, 40, 96, 0.25), 0 0 0 1px rgba(127, 40, 96, 0.1) inset',
-    color: '#7F2860',
-    padding: '16px 24px',
-    borderRadius: '16px',
-    fontWeight: '600',
-    fontSize: '15px',
-    maxWidth: '420px',
+  // Default toast style
+  const defaultToastStyle = {
+    ...baseToastStyle,
   }
 
   return (
     <Toaster 
       position={isMobile ? "top-center" : "top-right"}
-      containerStyle={isMobile ? {
-        top: '20px',
+      containerStyle={{
+        top: isMobile ? '20px' : '24px',
+        right: isMobile ? 'auto' : '24px',
         bottom: 'auto',
-        zIndex: 10000, // Higher than bottom nav (9999)
-      } : {}}
+        left: isMobile ? 'auto' : 'auto',
+        zIndex: 100000, // Higher than onboarding modal (99999)
+      }}
       toastOptions={{
         duration: 3000,
-        style: isMobile ? {
-          ...mobileToastStyle,
-          zIndex: 10000,
-        } : desktopToastStyle,
+        style: defaultToastStyle,
         success: {
+          icon: null, // Hide the left icon
           iconTheme: {
             primary: '#FFFFFF',
-            secondary: isMobile ? '#10B981' : '#7F2860',
+            secondary: themeColor,
           },
-          style: isMobile ? {
-            ...mobileSuccessStyle,
-            zIndex: 10000,
-          } : desktopToastStyle,
+          style: successToastStyle,
         },
         error: {
+          icon: null, // Hide the left icon
           iconTheme: {
             primary: '#FFFFFF',
-            secondary: isMobile ? '#EF4444' : '#7F2860',
+            secondary: themeColor,
           },
-          style: isMobile ? {
-            ...mobileErrorStyle,
-            zIndex: 10000,
-          } : desktopToastStyle,
+          style: errorToastStyle,
         },
         loading: {
+          icon: null, // Hide the left icon
           iconTheme: {
             primary: '#FFFFFF',
-            secondary: isMobile ? '#1F2937' : '#7F2860',
+            secondary: themeColor,
           },
-          style: isMobile ? {
-            ...mobileToastStyle,
-            zIndex: 10000,
-          } : desktopToastStyle,
+          style: defaultToastStyle,
         },
       }}
+      gutter={8}
     />
   )
 }

@@ -222,7 +222,6 @@ export default function ProfilePage() {
     }
     return 'MD - Maryland'
   })
-  const [showStateDropdown, setShowStateDropdown] = useState(false)
   
   // Update selectedState when authUser changes
   useEffect(() => {
@@ -845,6 +844,49 @@ export default function ProfilePage() {
     )
   }
 
+  // Helper function to save user data to localStorage
+  const saveUserDataToLocalStorage = (section: string, newItem: any, isUpdate: boolean = false, itemId?: string) => {
+    if (typeof window === 'undefined') return
+    
+    try {
+      const storedUser = localStorage.getItem('auth_user')
+      if (!storedUser) return
+      
+      const user = JSON.parse(storedUser)
+      
+      // Initialize section array if it doesn't exist
+      if (!user[section]) {
+        user[section] = []
+      }
+      
+      if (isUpdate && itemId) {
+        // Update existing item
+        user[section] = user[section].map((item: any) => 
+          item.id === itemId ? { ...newItem, id: itemId } : item
+        )
+      } else {
+        // Add new item
+        const itemWithId = {
+          ...newItem,
+          id: newItem.id || `${section}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        }
+        user[section] = [...(user[section] || []), itemWithId]
+      }
+      
+      // Save back to localStorage
+      localStorage.setItem('auth_user', JSON.stringify(user))
+      
+      // Trigger a custom event to notify other components
+      window.dispatchEvent(new CustomEvent('userDataUpdated', { detail: { section, user } }))
+      
+      // Force a page reload to refresh the data
+      window.location.reload()
+    } catch (error) {
+      console.error('Error saving user data:', error)
+      toast.error('Failed to save data. Please try again.')
+    }
+  }
+
   // Validation functions
   const isValidPhone = (phone: string): boolean => {
     return /^\d{10}$/.test(phone.replace(/\D/g, ''))
@@ -1138,15 +1180,18 @@ export default function ProfilePage() {
       currentlyWorking: currentlyWorking,
       travelAssignment: travelAssignment,
       agency: workHistoryAgency,
+      description: workHistoryDescription,
       chargeExperience: chargeExperience,
-      chargeExperienceComment: chargeExperienceComment
+      chargeExperienceComment: chargeExperienceComment,
+      perDiem: perDiem
     }
 
     if (!validateWorkHistory(workHistoryData)) {
       return
     }
 
-    // Here you would typically call an API to save the work history
+    // Save to localStorage
+    saveUserDataToLocalStorage('workHistory', workHistoryData)
     toast.success('Work history added successfully')
     setShowAddWorkHistoryModal(false)
     // Reset all form fields
@@ -2059,131 +2104,61 @@ export default function ProfilePage() {
                       </p>
                     </motion.div>
                   ) : (
-                    <div className={`${isMobile ? 'space-y-3' : 'grid grid-cols-1 md:grid-cols-2 gap-6'}`}>
-                      {licenses.map((license, index) => (
+                    <div className="space-y-3">
+                      {licenses.map((license, index) => {
+                        // Find the original license data to get all fields
+                        const originalLicense = (authUser?.licenses || []).find((l: any) => l.type === license.title)
+                        return (
                     <motion.div
                       key={index}
-                      initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
-                      animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
                       transition={{ 
-                        duration: 0.5, 
-                        delay: index * 0.1,
-                        ease: [0.34, 1.56, 0.64, 1]
-                      }}
-                      whileHover={isMobile ? undefined : {
-                        y: -10,
-                        rotateY: 2,
-                        transition: { duration: 0.3 }
-                      }}
-                      className="group relative"
-                    >
-                      {/* Animated background glow - Desktop Only */}
-                      {!isMobile && (
-                      <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
-                      )}
-                      
-                      {/* Main card - Mobile Native Style */}
-                      <div className={`relative ${isMobile ? 'bg-white rounded-xl p-4 border border-gray-200' : 'bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300'} transition-all duration-300 overflow-hidden ${isMobile ? 'shadow-sm' : 'shadow-lg group-hover:shadow-2xl'} ${isMobile ? '' : 'h-full'} flex flex-col`}>
-                        {/* Decorative corner accent - Desktop Only */}
-                        {!isMobile && (
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
-                        )}
-                        
-                        {/* Title - Mobile Native Style */}
-                        <div className={`relative ${isMobile ? 'flex items-start justify-between mb-4' : ''}`}>
-                          <h3 className={`${isMobile ? 'text-base font-semibold' : 'text-lg font-semibold'} text-gray-900 ${isMobile ? 'flex-1 pr-2' : 'mb-6 pr-24'} leading-tight`}>
+                              duration: 0.3, 
+                              delay: index * 0.03
+                            }}
+                            className="group"
+                          >
+                            <div className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 overflow-hidden">
+                              <div className="p-5">
+                                <div className="flex items-start justify-between mb-4">
+                                  <h3 className="text-base font-semibold text-gray-900 leading-snug pr-4">
                             {license.title}
                           </h3>
-
-                          {/* Action buttons - Mobile Native Style */}
-                          <div className={`${isMobile ? 'flex items-center gap-2' : 'absolute top-4 right-4 flex items-center gap-2 z-10'}`}>
+                                  <div className="flex-shrink-0 flex items-center gap-2">
                           <motion.button
                             onClick={() => {
                               setSelectedItem(license)
                               setShowEditLicenseModal(true)
                             }}
-                              whileHover={isMobile ? undefined : { scale: 1.1, rotate: 5 }}
+                                      whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                              className={`${isMobile ? 'p-1.5' : 'p-2'} ${isMobile ? 'bg-gray-100 active:bg-gray-200' : 'bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300'} text-primary-600 ${isMobile ? 'rounded-lg' : 'rounded-lg transition-all shadow-md'}`}
+                                      className="p-2 hover:bg-gray-100 text-gray-600 hover:text-primary-600 rounded-md transition-colors"
+                                      title="Edit"
                           >
                             <Edit className="w-4 h-4" />
                           </motion.button>
                           <motion.button
                             onClick={() => handleDeleteClick(license, 'License')}
-                              whileHover={isMobile ? undefined : { scale: 1.1, rotate: -5 }}
+                                      whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                              className={`${isMobile ? 'p-1.5' : 'p-2'} ${isMobile ? 'bg-gray-100 active:bg-gray-200' : 'bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300'} text-red-600 ${isMobile ? 'rounded-lg' : 'rounded-lg transition-all shadow-md'}`}
+                                      className="p-2 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-md transition-colors"
+                                      title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
                           </motion.button>
                           </div>
                         </div>
-
-                        {/* Content */}
-                        <div className="relative flex-grow">
-
-                          {/* License details - Mobile Native Style */}
-                          {isMobile ? (
                             <div className="space-y-2">
-                              {license.number && (
-                                <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                  <p className="text-xs text-gray-500 font-medium">License Number</p>
-                                  <p className="text-sm font-semibold text-gray-900">{license.number}</p>
-                                </div>
-                              )}
-                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <p className="text-xs text-gray-500 font-medium">State</p>
-                                <p className="text-sm font-semibold text-gray-900">{license.state}</p>
-                              </div>
-                              <div className="flex items-center justify-between py-2">
-                                <p className="text-xs text-gray-500 font-medium">Expiration Date</p>
-                                <p className="text-sm font-semibold text-gray-900">{license.expiration}</p>
-                              </div>
-                            </div>
-                          ) : (
-                          <div className="space-y-3">
-                            {/* License Number */}
-                            {license.number && (
-                              <div className="group/item">
-                                <p className="text-xs text-gray-500 mb-1.5 font-semibold">License Number</p>
-                                <div className="relative overflow-hidden">
-                                  <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                    <p className="text-sm font-semibold text-gray-900">{license.number}</p>
-                                  </div>
+                                  {license.number && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">License Number:</span> <span className="ml-2">{license.number}</span></div>}
+                                  {license.state && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">State:</span> <span className="ml-2">{license.state}</span></div>}
+                                  {license.expiration && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Expiration Date:</span> <span className="ml-2">{license.expiration}</span></div>}
                                 </div>
                               </div>
-                            )}
-
-                            {/* State */}
-                            <div className="group/item">
-                              <p className="text-xs text-gray-500 mb-1.5 font-semibold">State</p>
-                              <div className="relative overflow-hidden">
-                                <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                        <p className="text-sm font-semibold text-gray-900">{license.state}</p>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Expiration Date */}
-                            <div className="group/item">
-                              <p className="text-xs text-gray-500 mb-1.5 font-semibold">Expiration Date</p>
-                              <div className="relative overflow-hidden">
-                                <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                        <p className="text-sm font-semibold text-gray-900">{license.expiration}</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          )}
-                        </div>
-
-                        {/* Animated bottom accent line - Desktop Only */}
-                        {!isMobile && (
-                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        )}
                       </div>
                       </motion.div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
                 </>
@@ -2224,91 +2199,53 @@ export default function ProfilePage() {
                       </p>
                     </motion.div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-3">
                       {certificates.map((cert, index) => (
                     <motion.div
                       key={index}
-                      initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
-                      animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
                       transition={{ 
-                        duration: 0.5, 
-                        delay: index * 0.1,
-                        ease: [0.34, 1.56, 0.64, 1]
-                      }}
-                      whileHover={{
-                        y: -10,
-                        rotateY: 2,
-                        transition: { duration: 0.3 }
-                      }}
-                      className="group relative"
-                    >
-                      {/* Animated background glow */}
-                      <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
-                      
-                      {/* Main card */}
-                      <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
-                        {/* Decorative corner accent */}
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
-                        
-                        {/* Title at top-left */}
-                        <div className="relative">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                            duration: 0.3, 
+                            delay: index * 0.03
+                          }}
+                          className="group"
+                        >
+                          <div className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 overflow-hidden">
+                            <div className="p-5">
+                              <div className="flex items-start justify-between mb-4">
+                                <h3 className="text-base font-semibold text-gray-900 leading-snug pr-4">
                             {cert.title}
                           </h3>
-                        </div>
-
-                        {/* Action buttons */}
-                        <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                <div className="flex-shrink-0 flex items-center gap-2">
                           <motion.button
                             onClick={() => {
                               setSelectedItem(cert)
                               setShowEditCertificateModal(true)
                             }}
-                            whileHover={{ scale: 1.1, rotate: 5 }}
+                                    whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                                    className="p-2 hover:bg-gray-100 text-gray-600 hover:text-primary-600 rounded-md transition-colors"
+                                    title="Edit"
                           >
                             <Edit className="w-4 h-4" />
                           </motion.button>
                           <motion.button
                             onClick={() => handleDeleteClick(cert, 'Certificate')}
-                            whileHover={{ scale: 1.1, rotate: -5 }}
+                                    whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                                    className="p-2 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-md transition-colors"
+                                    title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
                           </motion.button>
                         </div>
-
-                        {/* Content */}
-                        <div className="relative flex-grow">
-
-                          {/* Certificate details with modern styling */}
-                          <div className="space-y-3">
-                            {/* Certificate Number */}
-                            <div className="group/item">
-                              <p className="text-xs text-gray-500 mb-1.5 font-semibold">Certificate Number</p>
-                              <div className="relative overflow-hidden">
-                                <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                        <p className="text-sm font-semibold text-gray-900">{cert.number}</p>
                                 </div>
+                              <div className="space-y-2">
+                                {cert.number && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Certificate Number:</span> <span className="ml-2">{cert.number}</span></div>}
+                                {cert.expiration && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Expiration Date:</span> <span className="ml-2">{cert.expiration}</span></div>}
                               </div>
                             </div>
-
-                            {/* Expiration Date */}
-                            <div className="group/item">
-                              <p className="text-xs text-gray-500 mb-1.5 font-semibold">Expiration Date</p>
-                              <div className="relative overflow-hidden">
-                                <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                        <p className="text-sm font-semibold text-gray-900">{cert.expiration}</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Animated bottom accent line */}
-                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </div>
                       </motion.div>
                       ))}
@@ -2352,89 +2289,65 @@ export default function ProfilePage() {
                       </p>
                     </motion.div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {specialties.map((specialty, index) => (
+                    <div className="space-y-3">
+                      {specialties.map((specialty, index) => {
+                        // Find the original specialty data to get all fields
+                        const originalSpecialty = (authUser?.specialties || []).find((s: any) => s.certification === specialty.title)
+                        return (
                     <motion.div
                       key={index}
-                      initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
-                      animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
                       transition={{ 
-                        duration: 0.5, 
-                        delay: index * 0.1,
-                        ease: [0.34, 1.56, 0.64, 1]
-                      }}
-                      whileHover={{
-                        y: -10,
-                        rotateY: 2,
-                        transition: { duration: 0.3 }
-                      }}
-                      className="group relative"
-                    >
-                      {/* Animated background glow */}
-                      <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
-                      
-                      {/* Main card */}
-                      <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
-                        {/* Decorative corner accent */}
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
-                        
-                        {/* Title at top-left */}
-                        <div className="relative">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                              duration: 0.3, 
+                              delay: index * 0.03
+                            }}
+                            className="group"
+                          >
+                            <div className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 overflow-hidden">
+                              <div className="p-5">
+                                <div className="flex items-start justify-between mb-4">
+                                  <h3 className="text-base font-semibold text-gray-900 leading-snug pr-4">
                             {specialty.title}
                           </h3>
-                        </div>
-
-                        {/* Action buttons */}
-                        <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                  <div className="flex-shrink-0 flex items-center gap-2">
                           <motion.button
                             onClick={() => {
                               setSelectedItem(specialty)
                               setShowEditSpecialtyModal(true)
                             }}
-                            whileHover={{ scale: 1.1, rotate: 5 }}
+                                      whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                                      className="p-2 hover:bg-gray-100 text-gray-600 hover:text-primary-600 rounded-md transition-colors"
+                                      title="Edit"
                           >
                             <Edit className="w-4 h-4" />
                           </motion.button>
                           <motion.button
                             onClick={() => handleDeleteClick(specialty, 'Specialty')}
-                            whileHover={{ scale: 1.1, rotate: -5 }}
+                                      whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                                      className="p-2 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-md transition-colors"
+                                      title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
                           </motion.button>
                         </div>
-
-                        {/* Content */}
-                        <div className="relative flex-grow">
-                          {/* Specialty details with modern styling */}
-                          <div className="space-y-3">
-                            {/* Specialty */}
-                            <div className="group/item">
-                              <p className="text-xs text-gray-500 mb-1.5 font-semibold">Specialty</p>
-                              <div className="relative overflow-hidden">
-                                <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                        <p className="text-sm font-semibold text-gray-900">{specialty.specialty}</p>
                                 </div>
+                                <div className="space-y-2">
+                                  {specialty.specialty && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Specialty:</span> <span className="ml-2">{specialty.specialty}</span></div>}
                               </div>
                             </div>
-                          </div>
-                        </div>
-
-                        {/* Animated bottom accent line */}
-                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </div>
                       </motion.div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
                 </>
               )}
 
-              {/* Work History Section with Creative UI */}
+              {/* Work History Section */}
               {activeTab === 'Work History' && (
                 <>
                   {workHistory.length === 0 ? (
@@ -2469,129 +2382,84 @@ export default function ProfilePage() {
                       </p>
                     </motion.div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {workHistory.map((work, index) => (
+                    <div className="space-y-3">
+                      {workHistory.map((work, index) => {
+                        // Find the original work history data to get all fields
+                        const originalWork = (authUser?.workHistory || []).find((wh: any) => wh.title === work.title)
+                        return (
                         <motion.div
                           key={index}
-                          initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
-                          animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
                           transition={{ 
-                            duration: 0.5, 
-                            delay: index * 0.1,
-                            ease: [0.34, 1.56, 0.64, 1]
-                          }}
-                          whileHover={{
-                            y: -10,
-                            rotateY: 2,
-                            transition: { duration: 0.3 }
-                          }}
-                          className="group relative"
-                        >
-                          {/* Animated background glow */}
-                          <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
-                          
-                          {/* Main card */}
-                          <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
-                            {/* Decorative corner accent */}
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
-                            
-                            {/* Title at top-left */}
-                            <div className="relative">
-                              <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                              duration: 0.3, 
+                              delay: index * 0.03
+                            }}
+                            className="group"
+                          >
+                            <div className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 overflow-hidden">
+                              <div className="p-5">
+                                <div className="flex items-start justify-between mb-4">
+                                  <h3 className="text-base font-semibold text-gray-900 leading-snug pr-4">
                                 {work.title}
                               </h3>
-                            </div>
-
-                            {/* Action buttons */}
-                            <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                  <div className="flex-shrink-0 flex items-center gap-2">
                               <motion.button
                                 onClick={() => {
                                   setSelectedItem(work)
                                   setShowEditWorkHistoryModal(true)
                                 }}
-                                whileHover={{ scale: 1.1, rotate: 5 }}
+                                      whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                                      className="p-2 hover:bg-gray-100 text-gray-600 hover:text-primary-600 rounded-md transition-colors"
+                                      title="Edit"
                               >
                                 <Edit className="w-4 h-4" />
                               </motion.button>
                               <motion.button
                                 onClick={() => handleDeleteClick(work, 'Work History')}
-                                whileHover={{ scale: 1.1, rotate: -5 }}
+                                      whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                                      className="p-2 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-md transition-colors"
+                                      title="Delete"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </motion.button>
                             </div>
-
-                            {/* Content */}
-                            <div className="relative flex-grow">
-                              {/* Work details with modern styling */}
-                              <div className="space-y-3">
-                                {/* Unit */}
-                                <div className="group/item">
-                                  <p className="text-xs text-gray-500 mb-1.5 font-semibold">Unit</p>
-                                  <div className="relative overflow-hidden">
-                                    <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                      <p className="text-sm font-semibold text-gray-900">{work.unit}</p>
                                     </div>
-                                  </div>
-                                </div>
-
-                                {/* Period */}
-                                <div className="group/item">
-                                  <p className="text-xs text-gray-500 mb-1.5 font-semibold">Period</p>
-                                  <div className="relative overflow-hidden">
-                                    <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                      <p className="text-sm font-semibold text-gray-900">{work.period}</p>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Agency - only show if not empty */}
-                                {work.agency && (
-                                  <div className="group/item">
-                                    <p className="text-xs text-gray-500 mb-1.5 font-semibold">Agency</p>
-                                    <div className="relative overflow-hidden">
-                                      <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                        <p className="text-sm font-semibold text-gray-900">{work.agency}</p>
-                                      </div>
-                                    </div>
+                                <div className="space-y-2">
+                                  {work.unit && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Unit:</span> <span className="ml-2">{work.unit}</span></div>}
+                                  {originalWork?.startDate && (
+                                    <div className="text-sm text-gray-700">
+                                      <span className="text-gray-500 font-medium">Period:</span> 
+                                      <span className="ml-2">
+                                        {formatDateToDDMMYYYY(originalWork.startDate)} - {originalWork.currentlyWorking ? 'Present' : (originalWork.endDate ? formatDateToDDMMYYYY(originalWork.endDate) : 'N/A')}
+                                      </span>
                                   </div>
                                 )}
-
-                                {/* Description - only show if not empty */}
-                                {work.description && (
-                                  <div className="group/item">
-                                    <p className="text-xs text-gray-500 mb-1.5 font-semibold">Description</p>
-                                    <div className="relative overflow-hidden">
-                                      <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                        <p className="text-sm font-semibold text-gray-900">{work.description}</p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Charge Experience - only show if not empty */}
-                                {work.chargeExperience && (
-                                  <div className="group/item">
-                                    <p className="text-xs text-gray-500 mb-1.5 font-semibold">Charge Experience</p>
-                                    <div className="relative overflow-hidden">
-                                      <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                        <p className="text-sm font-semibold text-gray-900">{work.chargeExperience}</p>
-                                      </div>
-                                    </div>
+                                  {originalWork?.travelAssignment && originalWork?.agency && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Agency:</span> <span className="ml-2">{work.agency}</span></div>}
+                                  {work.description && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Description:</span> <span className="ml-2">{work.description}</span></div>}
+                                  {originalWork?.chargeExperienceComment && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Charge Experience:</span> <span className="ml-2">{originalWork.chargeExperienceComment}</span></div>}
+                                  {(originalWork?.travelAssignment || originalWork?.perDiem) && (
+                                    <div className="flex flex-wrap gap-2 mt-1">
+                                      {originalWork.travelAssignment && (
+                                        <span className="inline-flex items-center text-xs font-medium text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded">
+                                          Travel Assignment
+                                        </span>
+                                      )}
+                                      {originalWork.perDiem && (
+                                        <span className="inline-flex items-center text-xs font-medium text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded">
+                                          Per Diem
+                                        </span>
+                                      )}
                                   </div>
                                 )}
                               </div>
                             </div>
-
-                            {/* Animated bottom accent line */}
-                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                           </div>
                         </motion.div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
                 </>
@@ -3106,102 +2974,54 @@ export default function ProfilePage() {
                           </p>
                         </motion.div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-3">
                           {licenses.map((license, index) => (
                             <motion.div
                               key={index}
-                              initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
-                              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
                               transition={{ 
-                                duration: 0.5, 
-                                delay: index * 0.1,
-                                ease: [0.34, 1.56, 0.64, 1]
+                                duration: 0.3, 
+                                delay: index * 0.03
                               }}
-                              whileHover={{
-                                y: -10,
-                                rotateY: 2,
-                                transition: { duration: 0.3 }
-                              }}
-                              className="group relative"
+                              className="group"
                             >
-                              {/* Animated background glow */}
-                              <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
-                              
-                              {/* Main card */}
-                              <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
-                                {/* Decorative corner accent */}
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
-                                
-                                {/* Title at top-left */}
-                                <div className="relative">
-                                  <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                              <div className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 overflow-hidden">
+                                <div className="p-5">
+                                  <div className="flex items-start justify-between mb-4">
+                                    <h3 className="text-base font-semibold text-gray-900 leading-snug pr-4">
                                     {license.title}
                                   </h3>
-                                </div>
-
-                                {/* Action buttons */}
-                                <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                    <div className="flex-shrink-0 flex items-center gap-2">
                                   <motion.button
                                     onClick={() => {
                                       setSelectedItem(license)
                                       setShowEditLicenseModal(true)
                                     }}
-                                    whileHover={{ scale: 1.1, rotate: 5 }}
+                                        whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                                        className="p-2 hover:bg-gray-100 text-gray-600 hover:text-primary-600 rounded-md transition-colors"
+                                        title="Edit"
                                   >
                                     <Edit className="w-4 h-4" />
                                   </motion.button>
                                   <motion.button
                                     onClick={() => handleDeleteClick(license, 'License')}
-                                    whileHover={{ scale: 1.1, rotate: -5 }}
+                                        whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                                        className="p-2 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-md transition-colors"
+                                        title="Delete"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </motion.button>
                                 </div>
-
-                                {/* Content */}
-                                <div className="relative flex-grow">
-                                  {/* License details with modern styling */}
-                                  <div className="space-y-3">
-                                    {/* License Number */}
-                                    {license.number && (
-                                      <div className="group/item">
-                                        <p className="text-xs text-gray-500 mb-1.5 font-semibold">License Number</p>
-                                        <div className="relative overflow-hidden">
-                                          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                            <p className="text-sm font-semibold text-gray-900">{license.number}</p>
                                           </div>
+                                  <div className="space-y-2">
+                                    {license.number && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">License Number:</span> <span className="ml-2">{license.number}</span></div>}
+                                    {license.state && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">State:</span> <span className="ml-2">{license.state}</span></div>}
+                                    {license.expiration && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Expiration Date:</span> <span className="ml-2">{license.expiration}</span></div>}
                                         </div>
                                       </div>
-                                    )}
-
-                                    {/* State */}
-                                    <div className="group/item">
-                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">State</p>
-                                      <div className="relative overflow-hidden">
-                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                          <p className="text-sm font-semibold text-gray-900">{license.state}</p>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {/* Expiration Date */}
-                                    <div className="group/item">
-                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Expiration Date</p>
-                                      <div className="relative overflow-hidden">
-                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                          <p className="text-sm font-semibold text-gray-900">{license.expiration}</p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Animated bottom accent line */}
-                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                               </div>
                             </motion.div>
                           ))}
@@ -3245,90 +3065,53 @@ export default function ProfilePage() {
                           </p>
                         </motion.div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-3">
                           {certificates.map((cert, index) => (
                             <motion.div
                               key={index}
-                              initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
-                              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
                               transition={{ 
-                                duration: 0.5, 
-                                delay: index * 0.1,
-                                ease: [0.34, 1.56, 0.64, 1]
+                                duration: 0.3, 
+                                delay: index * 0.03
                               }}
-                              whileHover={{
-                                y: -10,
-                                rotateY: 2,
-                                transition: { duration: 0.3 }
-                              }}
-                              className="group relative"
+                              className="group"
                             >
-                              {/* Animated background glow */}
-                              <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
-                              
-                              {/* Main card */}
-                              <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
-                                {/* Decorative corner accent */}
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
-                                
-                                {/* Title at top-left */}
-                                <div className="relative">
-                                  <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                              <div className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 overflow-hidden">
+                                <div className="p-5">
+                                  <div className="flex items-start justify-between mb-4">
+                                    <h3 className="text-base font-semibold text-gray-900 leading-snug pr-4">
                                     {cert.title}
                                   </h3>
-                                </div>
-
-                                {/* Action buttons */}
-                                <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                    <div className="flex-shrink-0 flex items-center gap-2">
                                   <motion.button
                                     onClick={() => {
                                       setSelectedItem(cert)
                                       setShowEditCertificateModal(true)
                                     }}
-                                    whileHover={{ scale: 1.1, rotate: 5 }}
+                                        whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                                        className="p-2 hover:bg-gray-100 text-gray-600 hover:text-primary-600 rounded-md transition-colors"
+                                        title="Edit"
                                   >
                                     <Edit className="w-4 h-4" />
                                   </motion.button>
                                   <motion.button
                                     onClick={() => handleDeleteClick(cert, 'Certificate')}
-                                    whileHover={{ scale: 1.1, rotate: -5 }}
+                                        whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                                        className="p-2 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-md transition-colors"
+                                        title="Delete"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </motion.button>
                                 </div>
-
-                                {/* Content */}
-                                <div className="relative flex-grow">
-                                  {/* Certificate details with modern styling */}
-                                  <div className="space-y-3">
-                                    {/* Certificate Number */}
-                                    <div className="group/item">
-                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Certificate Number</p>
-                                      <div className="relative overflow-hidden">
-                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                          <p className="text-sm font-semibold text-gray-900">{cert.number}</p>
                                         </div>
+                                  <div className="space-y-2">
+                                    {cert.number && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Certificate Number:</span> <span className="ml-2">{cert.number}</span></div>}
+                                    {cert.expiration && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Expiration Date:</span> <span className="ml-2">{cert.expiration}</span></div>}
                                       </div>
                                     </div>
-
-                                    {/* Expiration Date */}
-                                    <div className="group/item">
-                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Expiration Date</p>
-                                      <div className="relative overflow-hidden">
-                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                          <p className="text-sm font-semibold text-gray-900">{cert.expiration}</p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Animated bottom accent line */}
-                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                               </div>
                             </motion.div>
                           ))}
@@ -3372,69 +3155,59 @@ export default function ProfilePage() {
                           </p>
                         </motion.div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {specialties.map((specialty, index) => (
+                        <div className="space-y-3">
+                          {specialties.map((specialty, index) => {
+                            // Find the original specialty data to get all fields
+                            const originalSpecialty = (authUser?.specialties || []).find((s: any) => s.certification === specialty.title)
+                            return (
                             <motion.div
                               key={index}
-                              initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
-                              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
                               transition={{ 
-                                duration: 0.5, 
-                                delay: index * 0.1,
-                                ease: [0.34, 1.56, 0.64, 1]
-                              }}
-                              whileHover={{
-                                y: -10,
-                                rotateY: 2,
-                                transition: { duration: 0.3 }
-                              }}
-                              className="group relative"
-                            >
-                              <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
-                              <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
-                                <div className="relative">
-                                  <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                                  duration: 0.3, 
+                                  delay: index * 0.03
+                                }}
+                                className="group"
+                              >
+                                <div className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 overflow-hidden">
+                                  <div className="p-5">
+                                    <div className="flex items-start justify-between mb-4">
+                                      <h3 className="text-base font-semibold text-gray-900 leading-snug pr-4">
                                     {specialty.title}
                                   </h3>
-                                </div>
-                                <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                      <div className="flex-shrink-0 flex items-center gap-2">
                                   <motion.button
                                     onClick={() => {
                                       setSelectedItem(specialty)
                                       setShowEditSpecialtyModal(true)
                                     }}
-                                    whileHover={{ scale: 1.1, rotate: 5 }}
+                                          whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                                          className="p-2 hover:bg-gray-100 text-gray-600 hover:text-primary-600 rounded-md transition-colors"
+                                          title="Edit"
                                   >
                                     <Edit className="w-4 h-4" />
                                   </motion.button>
                                   <motion.button
                                     onClick={() => handleDeleteClick(specialty, 'Specialty')}
-                                    whileHover={{ scale: 1.1, rotate: -5 }}
+                                          whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                                          className="p-2 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-md transition-colors"
+                                          title="Delete"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </motion.button>
                                 </div>
-                                <div className="relative flex-grow">
-                                  <div className="space-y-3">
-                                    <div className="group/item">
-                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Specialty</p>
-                                      <div className="relative overflow-hidden">
-                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                          <p className="text-sm font-semibold text-gray-900">{specialty.specialty}</p>
                                         </div>
+                                    <div className="space-y-2">
+                                      {specialty.specialty && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Specialty:</span> <span className="ml-2">{specialty.specialty}</span></div>}
                                       </div>
                                     </div>
-                                  </div>
-                                </div>
-                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                               </div>
                             </motion.div>
-                          ))}
+                            )
+                          })}
                         </div>
                       )}
                     </>
@@ -3475,107 +3248,84 @@ export default function ProfilePage() {
                           </p>
                         </motion.div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {workHistory.map((work, index) => (
+                        <div className="space-y-3">
+                          {workHistory.map((work, index) => {
+                            // Find the original work history data to get all fields
+                            const originalWork = (authUser?.workHistory || []).find((wh: any) => wh.title === work.title)
+                            return (
                             <motion.div
                               key={index}
-                              initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
-                              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
                               transition={{ 
-                                duration: 0.5, 
-                                delay: index * 0.1,
-                                ease: [0.34, 1.56, 0.64, 1]
-                              }}
-                              whileHover={{
-                                y: -10,
-                                rotateY: 2,
-                                transition: { duration: 0.3 }
-                              }}
-                              className="group relative"
-                            >
-                              <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
-                              <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
-                                <div className="relative">
-                                  <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                                  duration: 0.3, 
+                                  delay: index * 0.03
+                                }}
+                                className="group"
+                              >
+                                <div className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 overflow-hidden">
+                                  <div className="p-5">
+                                    <div className="flex items-start justify-between mb-4">
+                                      <h3 className="text-base font-semibold text-gray-900 leading-snug pr-4">
                                     {work.title}
                                   </h3>
-                                </div>
-                                <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                      <div className="flex-shrink-0 flex items-center gap-2">
                                   <motion.button
                                     onClick={() => {
                                       setSelectedItem(work)
                                       setShowEditWorkHistoryModal(true)
                                     }}
-                                    whileHover={{ scale: 1.1, rotate: 5 }}
+                                          whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                                          className="p-2 hover:bg-gray-100 text-gray-600 hover:text-primary-600 rounded-md transition-colors"
+                                          title="Edit"
                                   >
                                     <Edit className="w-4 h-4" />
                                   </motion.button>
                                   <motion.button
                                     onClick={() => handleDeleteClick(work, 'Work History')}
-                                    whileHover={{ scale: 1.1, rotate: -5 }}
+                                          whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                                          className="p-2 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-md transition-colors"
+                                          title="Delete"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </motion.button>
                                 </div>
-                                <div className="relative flex-grow">
-                                  <div className="space-y-3">
-                                    <div className="group/item">
-                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Unit</p>
-                                      <div className="relative overflow-hidden">
-                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                          <p className="text-sm font-semibold text-gray-900">{work.unit}</p>
                                         </div>
-                                      </div>
-                                    </div>
-                                    <div className="group/item">
-                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Period</p>
-                                      <div className="relative overflow-hidden">
-                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                          <p className="text-sm font-semibold text-gray-900">{work.period}</p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    {work.agency && (
-                                      <div className="group/item">
-                                        <p className="text-xs text-gray-500 mb-1.5 font-semibold">Agency</p>
-                                        <div className="relative overflow-hidden">
-                                          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                            <p className="text-sm font-semibold text-gray-900">{work.agency}</p>
-                                          </div>
-                                        </div>
+                                    <div className="space-y-2">
+                                      {work.unit && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Unit:</span> <span className="ml-2">{work.unit}</span></div>}
+                                      {originalWork?.startDate && (
+                                        <div className="text-sm text-gray-700">
+                                          <span className="text-gray-500 font-medium">Period:</span> 
+                                          <span className="ml-2">
+                                            {formatDateToDDMMYYYY(originalWork.startDate)} - {originalWork.currentlyWorking ? 'Present' : (originalWork.endDate ? formatDateToDDMMYYYY(originalWork.endDate) : 'N/A')}
+                                          </span>
                                       </div>
                                     )}
-                                    {work.description && (
-                                      <div className="group/item">
-                                        <p className="text-xs text-gray-500 mb-1.5 font-semibold">Description</p>
-                                        <div className="relative overflow-hidden">
-                                          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                            <p className="text-sm font-semibold text-gray-900">{work.description}</p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-                                    {work.chargeExperience && (
-                                      <div className="group/item">
-                                        <p className="text-xs text-gray-500 mb-1.5 font-semibold">Charge Experience</p>
-                                        <div className="relative overflow-hidden">
-                                          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                            <p className="text-sm font-semibold text-gray-900">{work.chargeExperience}</p>
-                                          </div>
-                                        </div>
+                                      {originalWork?.travelAssignment && originalWork?.agency && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Agency:</span> <span className="ml-2">{work.agency}</span></div>}
+                                      {work.description && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Description:</span> <span className="ml-2">{work.description}</span></div>}
+                                      {originalWork?.chargeExperienceComment && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Charge Experience:</span> <span className="ml-2">{originalWork.chargeExperienceComment}</span></div>}
+                                      {(originalWork?.travelAssignment || originalWork?.perDiem) && (
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                          {originalWork.travelAssignment && (
+                                            <span className="inline-flex items-center text-xs font-medium text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded">
+                                              Travel Assignment
+                                            </span>
+                                          )}
+                                          {originalWork.perDiem && (
+                                            <span className="inline-flex items-center text-xs font-medium text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded">
+                                              Per Diem
+                                            </span>
+                                          )}
                                       </div>
                                     )}
                                   </div>
                                 </div>
-                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                               </div>
                             </motion.div>
-                          ))}
+                            )
+                          })}
                         </div>
                       )}
                     </>
@@ -3615,97 +3365,61 @@ export default function ProfilePage() {
                           </p>
                         </motion.div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {education.map((edu, index) => (
+                        <div className="space-y-3">
+                          {education.map((edu, index) => {
+                            // Find the original education data to get all fields
+                            const originalEdu = (authUser?.education || []).find((e: any) => e.title === edu.title)
+                            return (
                             <motion.div
                               key={index}
-                              initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
-                              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
                               transition={{ 
-                                duration: 0.5, 
-                                delay: index * 0.1,
-                                ease: [0.34, 1.56, 0.64, 1]
-                              }}
-                              whileHover={{
-                                y: -10,
-                                rotateY: 2,
-                                transition: { duration: 0.3 }
-                              }}
-                              className="group relative"
-                            >
-                              <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
-                              <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
-                                <div className="relative">
-                                  <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                                  duration: 0.3, 
+                                  delay: index * 0.03
+                                }}
+                                className="group"
+                              >
+                                <div className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 overflow-hidden">
+                                  <div className="p-5">
+                                    <div className="flex items-start justify-between mb-4">
+                                      <h3 className="text-base font-semibold text-gray-900 leading-snug pr-4">
                                     {edu.title}
                                   </h3>
-                                </div>
-                                <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                      <div className="flex-shrink-0 flex items-center gap-2">
                                   <motion.button
                                     onClick={() => {
                                       setSelectedItem(edu)
                                       setShowEditEducationModal(true)
                                     }}
-                                    whileHover={{ scale: 1.1, rotate: 5 }}
+                                          whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                                          className="p-2 hover:bg-gray-100 text-gray-600 hover:text-primary-600 rounded-md transition-colors"
+                                          title="Edit"
                                   >
                                     <Edit className="w-4 h-4" />
                                   </motion.button>
                                   <motion.button
                                     onClick={() => handleDeleteClick(edu, 'Education')}
-                                    whileHover={{ scale: 1.1, rotate: -5 }}
+                                          whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                                          className="p-2 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-md transition-colors"
+                                          title="Delete"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </motion.button>
                                 </div>
-                                <div className="relative flex-grow">
-                                  <div className="space-y-3">
-                                    <div className="group/item">
-                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Course</p>
-                                      <div className="relative overflow-hidden">
-                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                          <p className="text-sm font-semibold text-gray-900">{edu.course}</p>
                                         </div>
+                                    <div className="space-y-2">
+                                      {edu.course && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Course of Study:</span> <span className="ml-2">{edu.course}</span></div>}
+                                      {originalEdu?.didGraduate && originalEdu?.graduated && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Graduation Date:</span> <span className="ml-2">{formatDateToDDMMYYYY(originalEdu.graduated)}</span></div>}
+                                      {originalEdu?.didGraduate && originalEdu?.degree && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Degree:</span> <span className="ml-2">{edu.degree}</span></div>}
                                       </div>
                                     </div>
-                                    <div className="group/item">
-                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Status</p>
-                                      <div className="relative overflow-hidden">
-                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                          <p className="text-sm font-semibold text-gray-900">{edu.status}</p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    {edu.graduated && (
-                                      <div className="group/item">
-                                        <p className="text-xs text-gray-500 mb-1.5 font-semibold">Graduated</p>
-                                        <div className="relative overflow-hidden">
-                                          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                            <p className="text-sm font-semibold text-gray-900">{edu.graduated}</p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-                                    {edu.degree && (
-                                      <div className="group/item">
-                                        <p className="text-xs text-gray-500 mb-1.5 font-semibold">Degree</p>
-                                        <div className="relative overflow-hidden">
-                                          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                            <p className="text-sm font-semibold text-gray-900">{edu.degree}</p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                               </div>
                             </motion.div>
-                          ))}
+                            )
+                          })}
                         </div>
                       )}
                     </>
@@ -3745,103 +3459,67 @@ export default function ProfilePage() {
                           </p>
                         </motion.div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {references.map((ref, index) => (
+                        <div className="space-y-3">
+                          {references.map((ref, index) => {
+                            // Find the original reference data to get all fields
+                            const originalRef = (referencesState.length > 0 ? referencesState : (authUser?.references || [])).find((r: any) => r.name === ref.name)
+                            return (
                             <motion.div
                               key={index}
-                              initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
-                              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
                               transition={{ 
-                                duration: 0.5, 
-                                delay: index * 0.1,
-                                ease: [0.34, 1.56, 0.64, 1]
-                              }}
-                              whileHover={{
-                                y: -10,
-                                rotateY: 2,
-                                transition: { duration: 0.3 }
-                              }}
-                              className="group relative"
-                            >
-                              <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-primary-500 to-primary-600 rounded-2xl opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500" />
-                              <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 pb-3 border-2 border-gray-200 group-hover:border-primary-300 transition-all duration-300 overflow-hidden shadow-lg group-hover:shadow-2xl h-full flex flex-col">
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary-500/10 to-transparent rounded-bl-[100px] transition-all duration-300 group-hover:from-primary-500/20" />
-                                <div className="relative">
-                                  <h3 className="text-lg font-semibold text-gray-900 mb-6 pr-24 leading-tight">
+                                  duration: 0.3, 
+                                  delay: index * 0.03
+                                }}
+                                className="group"
+                              >
+                                <div className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 overflow-hidden">
+                                  <div className="p-5">
+                                    <div className="flex items-start justify-between mb-4">
+                                      <h3 className="text-base font-semibold text-gray-900 leading-snug pr-4">
                                     {ref.name}
                                   </h3>
-                                </div>
-                                <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                      <div className="flex-shrink-0 flex items-center gap-2">
                                   <motion.button
                                     onClick={() => {
                                       setSelectedItem(ref)
                                       setShowEditReferenceModal(true)
                                     }}
-                                    whileHover={{ scale: 1.1, rotate: 5 }}
+                                          whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-primary-50 border border-gray-200 hover:border-primary-300 text-primary-600 rounded-lg transition-all shadow-md"
+                                          className="p-2 hover:bg-gray-100 text-gray-600 hover:text-primary-600 rounded-md transition-colors"
+                                          title="Edit"
                                   >
                                     <Edit className="w-4 h-4" />
                                   </motion.button>
                                   <motion.button
                                     onClick={() => handleDeleteClick(ref, 'Reference')}
-                                    whileHover={{ scale: 1.1, rotate: -5 }}
+                                          whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="p-2 bg-white/90 backdrop-blur-md hover:bg-red-50 border border-gray-200 hover:border-red-300 text-red-600 rounded-lg transition-all shadow-md"
+                                          className="p-2 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-md transition-colors"
+                                          title="Delete"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </motion.button>
                                 </div>
-                                <div className="relative flex-grow">
-                                  <div className="space-y-3">
-                                    <div className="group/item">
-                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Title</p>
-                                      <div className="relative overflow-hidden">
-                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                          <p className="text-sm font-semibold text-gray-900">{ref.title}</p>
                                         </div>
+                                    <div className="space-y-2">
+                                      {ref.title && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Reference Job Title:</span> <span className="ml-2">{ref.title}</span></div>}
+                                      {originalRef?.workHistoryId && (() => {
+                                        const workHistory = (authUser?.workHistory || []).find((wh: any) => wh.id === originalRef.workHistoryId)
+                                        return workHistory ? (
+                                          <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Where did you work together?:</span> <span className="ml-2">{workHistory.title}{workHistory.unit ? ` - ${workHistory.unit}` : ''}</span></div>
+                                        ) : null
+                                      })()}
+                                      {ref.phone && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Phone Number:</span> <span className="ml-2">+1 {ref.phone}</span></div>}
+                                      {ref.email && <div className="text-sm text-gray-700"><span className="text-gray-500 font-medium">Email:</span> <span className="ml-2">{ref.email}</span></div>}
                                       </div>
                                     </div>
-                                    <div className="group/item">
-                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Company</p>
-                                      <div className="relative overflow-hidden">
-                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                          <p className="text-sm font-semibold text-gray-900">{ref.company}</p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="group/item">
-                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Period</p>
-                                      <div className="relative overflow-hidden">
-                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                          <p className="text-sm font-semibold text-gray-900">{ref.period}</p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="group/item">
-                                      <p className="text-xs text-gray-500 mb-1.5 font-semibold">Phone</p>
-                                      <div className="relative overflow-hidden">
-                                        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                          <p className="text-sm font-semibold text-gray-900">{ref.phone}</p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    {ref.email && (
-                                      <div className="group/item">
-                                        <p className="text-xs text-gray-500 mb-1.5 font-semibold">Email</p>
-                                        <div className="relative overflow-hidden">
-                                          <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100/50 border border-gray-200 rounded-xl transition-all duration-300 group-hover/item:border-primary-200 group-hover/item:from-primary-50/30 group-hover/item:to-primary-100/30">
-                                            <p className="text-sm font-semibold text-gray-900">{ref.email}</p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                           </div>
                         </motion.div>
-                      ))}
+                            )
+                          })}
                     </div>
                   )}
                 </>
@@ -3984,456 +3662,226 @@ export default function ProfilePage() {
                   </div>
                 )}
                 
-                {/* Header Section */}
-                <div className={`relative ${isMobile ? 'px-4 pt-4 pb-3' : 'px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6'} flex-shrink-0 ${isMobile ? 'flex items-center justify-between' : ''}`}>
-                  {isMobile ? (
-                    <>
+                {/* Header */}
+                <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+                        <Edit className="w-6 h-6 text-white" />
+                      </div>
                       <div>
-                        <h2 className="text-xl font-bold text-gray-900">
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">
                           Edit Profile Information
-                        </h2>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Update your information
+                        </h1>
+                        <p className="text-sm font-medium text-gray-500">
+                          Personal Information
                         </p>
                       </div>
-                      <button
-                        onClick={() => setShowEditModal(false)}
-                        className="p-2 rounded-lg bg-gray-100 active:bg-gray-200"
-                      >
-                        <X className="w-5 h-5 text-gray-600" />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                  {/* Icon and Title */}
-                  <div className="flex items-start gap-5">
-                    {/* Animated Icon */}
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ 
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 15,
-                        delay: 0.1
-                      }}
-                      className="relative"
-                    >
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <Edit className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
                       </div>
-                      {/* Pulsing ring */}
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [0.5, 0, 0.5]
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                        className="absolute inset-0 bg-primary-500 rounded-2xl"
-                      />
-                    </motion.div>
-                    
-                    {/* Title and Description */}
-                    <div className="flex-1 pt-1">
-                      <motion.h2
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-xl sm:text-2xl font-bold text-gray-900 mb-1"
-                      >
-                        Edit Profile Information
-                      </motion.h2>
-                      <motion.p
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="text-sm text-gray-600"
-                      >
-                        Update your personal and address information
-                      </motion.p>
                     </div>
-                  </div>
-                    </>
-                  )}
                 </div>
-
-                {/* Divider - Desktop Only */}
-                {!isMobile && (
-                <div className="px-4 sm:px-6 md:px-8">
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </div>
-                )}
 
               {/* Content Area - Scrollable */}
               <div className={`${isMobile ? 'px-4 py-4' : 'px-4 sm:px-6 md:px-8 py-4 sm:py-6'} overflow-y-auto flex-1`} style={{ maxHeight: isMobile ? 'calc(90vh - 180px)' : 'calc(90vh - 200px)' }}>
-                <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} ${isMobile ? 'gap-4' : 'gap-6'}`}>
+                <div className={`max-w-2xl ${isMobile ? '' : 'mx-auto'}`}>
+                  <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-4 mb-4`}>
                   {/* First Name */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.5 }}
-                    whileHover={{ scale: 1.01 }}
-                  >
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                      <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      First Name
-                      <span className="text-red-500">*</span>
-                    </label>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">First Name <span className="text-red-500">*</span></label>
                     <input
                       type="text"
-                      defaultValue={authUser?.firstName || ''}
-                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700`}
+                        defaultValue={authUser?.firstName || ''}
+                        placeholder="Enter first name"
+                        className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
                     />
-                  </motion.div>
+                    </div>
 
                   {/* Last Name */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.6 }}
-                    whileHover={{ scale: 1.01 }}
-                  >
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                      <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      Last Name
-                      <span className="text-red-500">*</span>
-                    </label>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Last Name <span className="text-red-500">*</span></label>
                     <input
                       type="text"
-                      defaultValue={authUser?.lastName || ''}
-                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700`}
-                    />
-                  </motion.div>
-
-                  {/* Date of Birth */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.7 }}
-                    whileHover={{ scale: 1.01 }}
-                  >
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                      <Calendar className="w-4 h-4 text-primary-600" />
-                      Date of Birth
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      defaultValue={convertDateForInput(authUser?.dob || '')}
-                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700`}
-                    />
-                    <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
-                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                      </svg>
-                      Format: MM/DD/YYYY
-                    </p>
-                  </motion.div>
-
-                  {/* Social Security Number */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.8 }}
-                    whileHover={{ scale: 1.01 }}
-                  >
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                      <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                      </svg>
-                      Social Security Number
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      defaultValue={authUser?.ssn || ''}
-                      placeholder="123456789"
-                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700 placeholder:text-gray-400`}
-                    />
-                    <p className="mt-1.5 text-xs text-gray-500">Enter exactly 9 digits (e.g., 123456789)</p>
-                  </motion.div>
-
-                  {/* Years of Experience */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.9 }}
-                    whileHover={{ scale: 1.01 }}
-                  >
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                      <Briefcase className="w-4 h-4 text-primary-600" />
-                      Years of Experience
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      defaultValue={authUser?.yearsOfExperience || ''}
-                      min="1"
-                      max="50"
-                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700`}
-                    />
-                    <p className="mt-1.5 text-xs text-gray-500">Must be between 1 and 50 years</p>
-                  </motion.div>
-
-                  {/* Address Information Header */}
-                  <div className={`${isMobile ? '' : 'md:col-span-2'} ${isMobile ? 'pt-2' : 'pt-4'}`}>
-                    <div className="flex items-center gap-2 mb-4">
-                      <MapPin className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-primary-600`} />
-                      <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-bold text-gray-900`}>Address Information</h3>
+                        defaultValue={authUser?.lastName || ''}
+                        placeholder="Enter last name"
+                        className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                      />
                     </div>
                   </div>
 
-                  {/* Street Address */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    whileHover={{ scale: 1.01 }}
-                    transition={{ type: "spring", stiffness: 400 }}
-                  >
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      Street Address <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      defaultValue={authUser?.streetAddress || authUser?.address || ''}
-                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'}`}
-                    />
-                  </motion.div>
-
-                  {/* Additional Address Line */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    whileHover={{ scale: 1.01 }}
-                    transition={{ type: "spring", stiffness: 400 }}
-                  >
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      Additional Address Line
-                    </label>
-                    <input
-                      type="text"
-                      defaultValue={authUser?.additionalAddress || ''}
-                      placeholder="Apartment, suite, etc. (optional)"
-                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'}`}
-                    />
-                  </motion.div>
-
-                  {/* City & State */}
-                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} ${isMobile ? 'gap-4' : 'gap-4'}`}>
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      whileHover={{ scale: 1.01 }}
-                      transition={{ type: "spring", stiffness: 400 }}
-                    >
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        City <span className="text-red-500">*</span>
-                      </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    {/* Email */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Email <span className="text-red-500">*</span></label>
                       <input
-                        type="text"
-                        defaultValue={authUser?.city || ''}
-                        className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'}`}
+                        type="email"
+                        defaultValue={authUser?.email || ''}
+                        placeholder="Enter your email"
+                        className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
                       />
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      whileHover={{ scale: 1.01 }}
-                      transition={{ type: "spring", stiffness: 400 }}
-                    >
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                        <MapPin className="w-4 h-4 text-primary-600" />
-                        State
-                        <span className="text-red-500">*</span>
-                      </label>
+                    </div>
+                    {/* Phone Number */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                       <div className="relative">
-                        {/* Custom Dropdown Button */}
-                        <motion.button
-                          type="button"
-                          onClick={() => setShowStateDropdown(!showStateDropdown)}
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.99 }}
-                          className={`w-full pl-4 pr-12 ${isMobile ? 'py-3' : 'py-3.5'} bg-gray-50 border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'} cursor-pointer text-left ${isMobile ? '' : 'hover:border-gray-300'} font-medium text-gray-700 relative flex items-center`}
-                        >
-                          <span className="flex-1 text-left truncate leading-normal">
-                            {selectedState}
-                          </span>
-                          <motion.div
-                            animate={{ rotate: showStateDropdown ? 180 : 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="absolute right-4 pointer-events-none flex items-center"
-                            style={{ height: '1.25rem', top: '50%', marginTop: '-0.625rem' }}
-                          >
-                            <ChevronDown className="w-5 h-5 text-gray-400" />
-                          </motion.div>
-                        </motion.button>
-
-                        {/* Custom Dropdown Menu */}
-                        <AnimatePresence>
-                          {showStateDropdown && (
-                            <>
-                              {/* Backdrop to close on outside click */}
-                              <div 
-                                className="fixed inset-0 z-40" 
-                                onClick={() => setShowStateDropdown(false)}
-                              />
-                              
-                              <motion.div
-                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                transition={{ duration: 0.2, ease: "easeOut" }}
-                                className="absolute top-full left-0 mt-2 w-full bg-white/95 backdrop-blur-2xl rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden z-50"
-                              >
-                                <div className="p-2">
-                                  {[
-                                    'MD - Maryland',
-                                    'CA - California',
-                                    'NY - New York',
-                                    'TX - Texas'
-                                  ].map((state, idx) => (
-                                    <motion.button
-                                      key={state}
-                                      type="button"
-                                      onClick={() => {
-                                        setSelectedState(state)
-                                        setShowStateDropdown(false)
-                                      }}
-                                      initial={{ opacity: 0, x: -10 }}
-                                      animate={{ opacity: 1, x: 0 }}
-                                      transition={{ delay: idx * 0.02 }}
-                                      whileHover={{ x: 4, backgroundColor: 'rgba(127, 40, 96, 0.05)' }}
-                                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
-                                        selectedState === state
-                                          ? 'bg-primary-50 text-primary-700 font-semibold'
-                                          : 'text-gray-700 hover:bg-gray-50'
-                                      }`}
-                                    >
-                                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                                        selectedState === state
-                                          ? 'border-primary-600 bg-primary-600'
-                                          : 'border-gray-300'
-                                      }`}>
-                                        {selectedState === state && (
-                                          <motion.svg
-                                            initial={{ scale: 0 }}
-                                            animate={{ scale: 1 }}
-                                            className="w-3 h-3 text-white"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                          >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                          </motion.svg>
-                                        )}
-                                      </div>
-                                      <span>{state}</span>
-                                    </motion.button>
-                                  ))}
-                                </div>
-                              </motion.div>
-                            </>
-                          )}
-                        </AnimatePresence>
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 font-medium">+1</div>
+                        <input
+                          type="tel"
+                          defaultValue={authUser?.phoneNumber || ''}
+                          placeholder="Enter 10 digits"
+                          className="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                          maxLength={10}
+                        />
                       </div>
-                    </motion.div>
+                    </div>
                   </div>
 
-                  {/* Zipcode */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    whileHover={{ scale: 1.01 }}
-                    transition={{ type: "spring", stiffness: 400 }}
-                  >
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                      Zipcode <span className="text-red-500">*</span>
-                    </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  {/* Date of Birth */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth <span className="text-red-500">*</span></label>
+                    <input
+                      type="date"
+                        defaultValue={convertDateForInput(authUser?.dob || '')}
+                        className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                      />
+                    </div>
+                  {/* Social Security Number */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Social Security Number <span className="text-red-500">*</span></label>
                     <input
                       type="text"
-                      defaultValue={authUser?.zipCode || ''}
-                      placeholder="12345"
-                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-4 py-3.5'} bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 ${isMobile ? 'rounded-lg' : 'rounded-xl'} outline-none transition-all duration-300 focus:border-primary-500 focus:from-white focus:to-white ${isMobile ? '' : 'focus:shadow-lg focus:shadow-primary-100/50'}`}
+                        defaultValue={authUser?.ssn || ''}
+                      placeholder="123456789"
+                        maxLength={9}
+                        className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Format: 12345 (5 digits only)</p>
-                  </motion.div>
+                      <p className="mt-1.5 text-xs text-gray-500">Enter exactly 9 digits</p>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                  {/* Years of Experience */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Years of Experience <span className="text-red-500">*</span></label>
+                    <input
+                      type="number"
+                        defaultValue={authUser?.yearsOfExperience || ''}
+                        placeholder="Enter years of experience"
+                      min="1"
+                      max="50"
+                        className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                    />
+                    <p className="mt-1.5 text-xs text-gray-500">Must be between 1 and 50 years</p>
+                    </div>
+                  </div>
+
+                  {/* Address Information Header */}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-primary-600" />
+                      Address Information
+                    </h3>
+                  </div>
+
+                  <div className="space-y-4">
+                  {/* Street Address */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Street Address <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                        defaultValue={authUser?.streetAddress || authUser?.address || ''}
+                        placeholder="Enter street address"
+                        className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                    />
+                    </div>
+                  {/* Additional Address Line */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Additional Address Line</label>
+                    <input
+                      type="text"
+                        defaultValue={authUser?.additionalAddress || ''}
+                      placeholder="Apartment, suite, etc. (optional)"
+                        className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                    />
+                    </div>
+
+                  {/* City & State */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">City <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                          defaultValue={authUser?.city || ''}
+                          placeholder="Enter city"
+                          className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">State <span className="text-red-500">*</span></label>
+                        <CustomSelect
+                          value={selectedState}
+                          onChange={(value) => setSelectedState(value)}
+                          placeholder="Select state"
+                          icon={MapPin}
+                        >
+                          <option value="">Select state</option>
+                          {US_STATES.map(state => {
+                            // Create abbreviation for state
+                            const stateAbbreviations: { [key: string]: string } = {
+                              'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR',
+                              'California': 'CA', 'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE',
+                              'Florida': 'FL', 'Georgia': 'GA', 'Hawaii': 'HI', 'Idaho': 'ID',
+                              'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA', 'Kansas': 'KS',
+                              'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+                              'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS',
+                              'Missouri': 'MO', 'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV',
+                              'New Hampshire': 'NH', 'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY',
+                              'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH', 'Oklahoma': 'OK',
+                              'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+                              'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT',
+                              'Vermont': 'VT', 'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV',
+                              'Wisconsin': 'WI', 'Wyoming': 'WY'
+                            }
+                            const abbreviation = stateAbbreviations[state] || state.substring(0, 2).toUpperCase()
+                            const stateValue = `${abbreviation} - ${state}`
+                            return <option key={state} value={stateValue}>{stateValue}</option>
+                          })}
+                        </CustomSelect>
+                                      </div>
+                  </div>
+
+                    {/* ZIP Code */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                        defaultValue={authUser?.zipCode || ''}
+                        placeholder="Enter ZIP code"
+                        className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
                     </div>
                   </div>
 
               {/* Footer */}
-              <div className={`${isMobile ? 'px-4 py-4' : 'px-4 sm:px-6 md:px-8 py-4 sm:py-6'} ${isMobile ? 'bg-white border-t border-gray-200' : 'bg-gray-50 border-t border-gray-100'} flex-shrink-0`}>
-                <div className={`flex ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'} ${isMobile ? 'gap-3' : 'items-stretch sm:items-center justify-between gap-4'}`}>
-                  {/* Info text - Desktop Only */}
-                  {!isMobile && (
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.4, delay: 0.9 }}
-                    className="text-xs text-gray-500 flex items-center gap-1.5 text-center sm:text-left"
-                  >
-                    <svg className="w-4 h-4 text-primary-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span className="hidden sm:inline">Your information is secure and encrypted</span>
-                    <span className="sm:hidden">Secure & encrypted</span>
-                  </motion.p>
-                  )}
-                  
-                  {/* Action buttons */}
-                  <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-3'} w-full ${isMobile ? '' : 'sm:w-auto'}`}>
-                    <motion.button
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: 1.0 }}
-                      whileHover={isMobile ? undefined : { scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+              <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <div className="flex items-center gap-4">
+                  <button 
                       onClick={() => setShowEditModal(false)}
-                      className={`flex-1 ${isMobile ? 'px-4 py-3' : 'sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3'} bg-white border-2 border-gray-200 ${isMobile ? 'active:bg-gray-50' : 'hover:border-gray-300'} text-gray-700 ${isMobile ? 'rounded-lg' : 'rounded-xl'} font-semibold transition-all ${isMobile ? '' : 'shadow-sm hover:shadow'} text-sm sm:text-base`}
+                    className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
                     >
                       Cancel
-                    </motion.button>
-                    
-                    <motion.button
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: 1.1 }}
-                      whileHover={isMobile ? undefined : { scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                  </button>
+                  <button 
                       onClick={() => {
                         toast.success('Profile updated successfully')
                         setShowEditModal(false)
                       }}
-                      className={`group relative flex-1 ${isMobile ? 'px-4 py-3' : 'sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3'} bg-gradient-to-r from-primary-600 to-primary-700 ${isMobile ? 'active:from-primary-700 active:to-primary-800' : 'hover:from-primary-700 hover:to-primary-800'} text-white ${isMobile ? 'rounded-lg' : 'rounded-xl'} font-semibold ${isMobile ? 'shadow-sm' : 'shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40'} transition-all overflow-hidden text-sm sm:text-base`}
+                    className="flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 active:scale-95 shadow-lg bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 hover:shadow-xl shadow-primary-500/30"
                     >
-                      <span className="relative z-10 flex items-center justify-center gap-2">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
                         Update Profile
-                      </span>
-                      {/* Shine effect - Desktop Only */}
-                      {!isMobile && (
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-                        animate={{ x: ['-200%', '200%'] }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          repeatDelay: 1,
-                          ease: "easeInOut"
-                        }}
-                      />
-                      )}
-                    </motion.button>
-                  </div>
+                  </button>
                 </div>
               </div>
               </div>
@@ -4445,34 +3893,34 @@ export default function ProfilePage() {
       {/* Add License Modal */}
       {showAddModal && (
         <AnimatePresence>
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+        <>
+          {/* Backdrop */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
-              onClick={() => setShowAddModal(false)}
+            onClick={() => setShowAddModal(false)}
             />
             
             {/* Modal Container */}
             <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.3, type: "spring" }}
                 className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
+              onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
                         <Shield className="w-6 h-6 text-white" />
-                      </div>
+                  </div>
                       <div>
                         <h1 className="text-2xl font-bold text-gray-900 mb-1">
                           Add Professional License
@@ -4481,10 +3929,10 @@ export default function ProfilePage() {
                           Professional Licenses
                         </p>
                       </div>
+                      </div>
                     </div>
-                  </div>
                 </div>
-                
+
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
                   <div className="space-y-4">
@@ -4498,16 +3946,16 @@ export default function ProfilePage() {
                         placeholder="Select license type"
                         icon={Shield}
                       >
-                        <option value="">Select license type</option>
+                          <option value="">Select license type</option>
                         {LICENSE_TYPES.map(type => (
                           <option key={type} value={type}>{type}</option>
                         ))}
                       </CustomSelect>
-                    </div>
+                        </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">License Number</label>
                       <input type="text" value={addLicenseNumber} onChange={(e) => setAddLicenseNumber(e.target.value)} placeholder="Enter license number" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                    </div>
+                      </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
                       <CustomSelect
@@ -4531,7 +3979,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Footer */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                   <div className="flex items-center gap-4">
@@ -4544,11 +3992,11 @@ export default function ProfilePage() {
                         setAddLicenseExpiration('')
                       }} 
                       className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
-                    >
-                      Cancel
+                      >
+                        Cancel
                     </button>
                     <button 
-                      onClick={() => {
+                        onClick={() => {
                         const formData = {
                           type: addLicenseType,
                           number: addLicenseNumber,
@@ -4566,8 +4014,10 @@ export default function ProfilePage() {
                           }
                           return
                         }
-                        toast.success('License added successfully')
-                        setShowAddModal(false)
+                        // Save to localStorage
+                        saveUserDataToLocalStorage('licenses', formData)
+                          toast.success('License added successfully')
+                          setShowAddModal(false)
                         setAddLicenseType('')
                         setAddLicenseNumber('')
                         setAddLicenseState('')
@@ -4592,38 +4042,38 @@ export default function ProfilePage() {
                     >
                       Add
                     </button>
-                  </div>
                 </div>
-              </motion.div>
+              </div>
+            </motion.div>
             </div>
-          </>
+        </>
         </AnimatePresence>
       )}
 
       {/* Add Certificate Modal */}
       {showAddCertificateModal && (
         <AnimatePresence>
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+        <>
+          {/* Backdrop */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
-              onClick={() => setShowAddCertificateModal(false)}
+            onClick={() => setShowAddCertificateModal(false)}
             />
             
             {/* Modal Container */}
             <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.3, type: "spring" }}
                 className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
+              onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
                   <div className="flex items-center justify-between">
@@ -4638,11 +4088,11 @@ export default function ProfilePage() {
                         <p className="text-sm font-medium text-gray-500">
                           Professional Certificates
                         </p>
-                      </div>
                     </div>
                   </div>
                 </div>
-                
+                </div>
+
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
                   <div className="space-y-4">
@@ -4659,11 +4109,11 @@ export default function ProfilePage() {
                         <option value="">Select certificate type</option>
                         {CERTIFICATE_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
                       </CustomSelect>
-                    </div>
+                        </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Certificate Number</label>
                       <input type="text" value={addCertificateNumber} onChange={(e) => setAddCertificateNumber(e.target.value)} placeholder="Enter certificate number" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                    </div>
+                      </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Expiration Date</label>
                       <CustomDatePicker
@@ -4675,7 +4125,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Footer */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                   <div className="flex items-center gap-4">
@@ -4687,11 +4137,11 @@ export default function ProfilePage() {
                         setAddCertificateExpiration('')
                       }} 
                       className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
-                    >
-                      Cancel
+                      >
+                        Cancel
                     </button>
                     <button 
-                      onClick={() => {
+                        onClick={() => {
                         const formData = {
                           type: addCertificateType,
                           number: addCertificateNumber,
@@ -4708,8 +4158,10 @@ export default function ProfilePage() {
                           }
                           return
                         }
-                        toast.success('Certificate added successfully')
-                        setShowAddCertificateModal(false)
+                        // Save to localStorage
+                        saveUserDataToLocalStorage('certificates', formData)
+                          toast.success('Certificate added successfully')
+                          setShowAddCertificateModal(false)
                         setAddCertificateType('')
                         setAddCertificateNumber('')
                         setAddCertificateExpiration('')
@@ -4731,38 +4183,38 @@ export default function ProfilePage() {
                     >
                       Add
                     </button>
-                  </div>
                 </div>
-              </motion.div>
+              </div>
+            </motion.div>
             </div>
-          </>
+        </>
         </AnimatePresence>
       )}
 
       {/* Add Specialty Modal */}
       {showAddSpecialtyModal && (
         <AnimatePresence>
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+        <>
+          {/* Backdrop */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
-              onClick={() => setShowAddSpecialtyModal(false)}
+            onClick={() => setShowAddSpecialtyModal(false)}
             />
             
             {/* Modal Container */}
             <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.3, type: "spring" }}
                 className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
+              onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
                   <div className="flex items-center justify-between">
@@ -4772,16 +4224,16 @@ export default function ProfilePage() {
                       </div>
                       <div>
                         <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                          Add Certification Specialty
+                        Add Certification Specialty
                         </h1>
                         <p className="text-sm font-medium text-gray-500">
                           Nursing Specialties
                         </p>
-                      </div>
                     </div>
                   </div>
                 </div>
-                
+                </div>
+
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
                   <div className="space-y-4">
@@ -4798,10 +4250,10 @@ export default function ProfilePage() {
                         placeholder="Select certification"
                         icon={Award}
                       >
-                        <option value="">Select certification</option>
+                          <option value="">Select certification</option>
                         {CERTIFICATIONS.map(cert => <option key={cert} value={cert}>{cert}</option>)}
                       </CustomSelect>
-                    </div>
+                        </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Specialty <span className="text-red-500">*</span>
@@ -4820,7 +4272,7 @@ export default function ProfilePage() {
                               onChange={(value) => setAddSpecialtySpecialty(value)}
                               placeholder={selectedCertification ? "Select specialty" : "Select certification first"}
                               icon={Award}
-                              disabled={!selectedCertification || hasNoSpecialties}
+                              disabled={!selectedCertification || !!hasNoSpecialties}
                             >
                               <option value="">Select specialty</option>
                               {availableSpecialties.map(spec => <option key={spec} value={spec}>{spec}</option>)}
@@ -4842,7 +4294,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Footer */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                   <div className="flex items-center gap-4">
@@ -4853,11 +4305,11 @@ export default function ProfilePage() {
                         setAddSpecialtySpecialty('')
                       }} 
                       className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
-                    >
-                      Cancel
+                      >
+                        Cancel
                     </button>
                     <button 
-                      onClick={() => {
+                        onClick={() => {
                         const formData = {
                           certification: addSpecialtyCertification,
                           specialty: addSpecialtySpecialty
@@ -4882,8 +4334,10 @@ export default function ProfilePage() {
                           }
                           return
                         }
-                        toast.success('Specialty added successfully')
-                        setShowAddSpecialtyModal(false)
+                        // Save to localStorage
+                        saveUserDataToLocalStorage('specialties', formData)
+                          toast.success('Specialty added successfully')
+                          setShowAddSpecialtyModal(false)
                         setAddSpecialtyCertification('')
                         setAddSpecialtySpecialty('')
                       }}
@@ -4902,52 +4356,52 @@ export default function ProfilePage() {
                     >
                       Add
                     </button>
-                  </div>
                 </div>
-              </motion.div>
+              </div>
+            </motion.div>
             </div>
-          </>
+        </>
         </AnimatePresence>
       )}
 
       {/* Add Work History Modal */}
       {showAddWorkHistoryModal && (
         <AnimatePresence>
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+        <>
+          {/* Backdrop */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
-              onClick={() => {
-                setShowAddWorkHistoryModal(false)
+            onClick={() => {
+              setShowAddWorkHistoryModal(false)
                 // Reset all form fields
                 setWorkHistoryTitle('')
                 setWorkHistoryUnit('')
                 setWorkHistoryStartDate('')
                 setWorkHistoryEndDate('')
-                setCurrentlyWorking(false)
+              setCurrentlyWorking(false)
                 setWorkHistoryAgency('')
                 setWorkHistoryDescription('')
                 setChargeExperience(false)
                 setChargeExperienceComment('')
-                setTravelAssignment(false)
-                setPerDiem(false)
+              setTravelAssignment(false)
+              setPerDiem(false)
               }}
             />
             
             {/* Modal Container */}
             <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.3, type: "spring" }}
                 className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
+              onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
                   <div className="flex items-center justify-between">
@@ -4957,21 +4411,19 @@ export default function ProfilePage() {
                       </div>
                       <div>
                         <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                          Add Work History
+                        Add Work History
                         </h1>
                         <p className="text-sm font-medium text-gray-500">
                           Work History
                         </p>
-                      </div>
                     </div>
                   </div>
                 </div>
-                
+                </div>
+
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
                   <div className="space-y-4">
-                    
-                    {/* Employer Full Name and Unit - Side by Side */}
                     {(() => {
                       // Get unique facilities from jobs
                       const uniqueFacilities = Array.from(new Set(SAMPLE_JOBS.map(job => job.facilityName).filter(Boolean))).sort()
@@ -4985,169 +4437,114 @@ export default function ProfilePage() {
                       )).sort()
                       
                       return (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, delay: 0.5 }}
-                          >
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Employer Full Name <span className="text-red-500">*</span>
-                            </label>
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Employer Full Name <span className="text-red-500">*</span></label>
                             <SearchableDropdown
                               value={workHistoryTitle}
                               onChange={(value) => setWorkHistoryTitle(value)}
-                              placeholder="Search facilities..."
+                        placeholder="Search facilities..."
                               options={uniqueFacilities}
                             />
-                          </motion.div>
-                          <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, delay: 0.6 }}
-                          >
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Unit <span className="text-red-500">*</span>
-                            </label>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Unit <span className="text-red-500">*</span></label>
                             <SearchableDropdown
                               value={workHistoryUnit}
                               onChange={(value) => setWorkHistoryUnit(value)}
-                              placeholder="Search specialties..."
+                        placeholder="Search specialties..."
                               options={uniqueSpecialties}
                             />
-                          </motion.div>
-                        </div>
-                      )
-                    })()}
-
-                    {/* Start Date and End Date */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: 0.7 }}
-                      >
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Start Date <span className="text-red-500">*</span>
-                        </label>
-                        <CustomDatePicker
-                          value={workHistoryStartDate}
-                          onChange={(value) => {
-                            setWorkHistoryStartDate(value)
-                            if (workHistoryEndDate && isEndDateBeforeStartDate(value, workHistoryEndDate)) {
-                              setWorkHistoryEndDate('')
-                            }
-                          }}
-                          placeholder="Select start date"
-                          showFormat={false}
-                          maxDate="today"
-                        />
-                      </motion.div>
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: 0.8 }}
-                      >
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          End Date {!currentlyWorking && <span className="text-red-500">*</span>}
-                        </label>
-                        <CustomDatePicker
-                          value={workHistoryEndDate}
-                          onChange={(value) => setWorkHistoryEndDate(value)}
-                          placeholder="Select end date"
-                          disabled={currentlyWorking}
-                          showFormat={false}
-                          minDate={workHistoryStartDate || undefined}
-                          maxDate="today"
-                        />
-                      </motion.div>
-                    </div>
-
-                    {/* Currently working here */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.9 }}
-                      className="flex items-center gap-2"
-                    >
-                      <input
-                        type="checkbox"
-                        id="currentlyWorking"
-                        checked={currentlyWorking}
-                        onChange={(e) => {
-                          setCurrentlyWorking(e.target.checked)
-                          if (e.target.checked) {
-                            setWorkHistoryEndDate('')
-                          }
-                        }}
-                        className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
-                        style={{ accentColor: '#7F2860' }}
-                      />
-                      <label htmlFor="currentlyWorking" className="text-sm text-gray-700 cursor-pointer">
-                        Currently working here
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Start Date <span className="text-red-500">*</span></label>
+                              <CustomDatePicker
+                                value={workHistoryStartDate}
+                                onChange={(value) => {
+                                  setWorkHistoryStartDate(value)
+                                  if (workHistoryEndDate && isEndDateBeforeStartDate(value, workHistoryEndDate)) {
+                                    setWorkHistoryEndDate('')
+                                  }
+                                }}
+                        placeholder="Select start date"
+                                showFormat={false}
+                                maxDate="today"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                End Date {!currentlyWorking && <span className="text-red-500">*</span>}
                       </label>
-                    </motion.div>
-
-                    {/* Description / Special Skills / Experience */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 1.0 }}
-                    >
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Description / Special Skills / Experience
-                      </label>
+                              <CustomDatePicker
+                                value={workHistoryEndDate}
+                                onChange={(value) => setWorkHistoryEndDate(value)}
+                        placeholder="Select end date"
+                        disabled={currentlyWorking}
+                                showFormat={false}
+                                minDate={workHistoryStartDate || undefined}
+                                maxDate="today"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                              id="currentlyWorking" 
+                          checked={currentlyWorking}
+                              onChange={(e) => {
+                                setCurrentlyWorking(e.target.checked)
+                                if (e.target.checked) {
+                                  setWorkHistoryEndDate('')
+                                }
+                              }} 
+                              className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                              style={{ accentColor: '#7F2860' }}
+                            />
+                            <label htmlFor="currentlyWorking" className="text-sm text-gray-700 cursor-pointer">Currently working here</label>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Description / Special Skills / Experience</label>
                       <textarea
-                        value={workHistoryDescription}
-                        onChange={(e) => setWorkHistoryDescription(e.target.value)}
+                              value={workHistoryDescription} 
+                              onChange={(e) => setWorkHistoryDescription(e.target.value)} 
                         placeholder="Describe your role and responsibilities..."
-                        rows={4}
-                        className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400 resize-none"
-                      />
-                    </motion.div>
-
-                    {/* Travel Assignment, Charge Experience?, and Per Diem */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 1.1 }}
-                      className="grid grid-cols-1 md:grid-cols-3 gap-4"
-                    >
-                      <div className="flex items-center gap-2">
+                              rows={3} 
+                              className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
+                            />
+                          </div>
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2">
                         <input
                           type="checkbox"
-                          id="travelAssignment"
+                                id="travelAssignment" 
                           checked={travelAssignment}
-                          onChange={(e) => {
-                            setTravelAssignment(e.target.checked)
-                            if (e.target.checked) {
-                              setPerDiem(false)
-                            }
-                          }}
-                          className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
-                        style={{ accentColor: '#7F2860' }}
-                        />
-                        <label htmlFor="travelAssignment" className="text-sm text-gray-700 cursor-pointer">
-                          Travel Assignment
-                        </label>
-                      </div>
-                      <div className="flex items-center gap-2">
+                                onChange={(e) => {
+                                  setTravelAssignment(e.target.checked)
+                                  if (e.target.checked) {
+                                    setPerDiem(false)
+                                  }
+                                }} 
+                                className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                                style={{ accentColor: '#7F2860' }}
+                              />
+                              <label htmlFor="travelAssignment" className="text-sm text-gray-700 cursor-pointer">Travel Assignment</label>
+                            </div>
+                            <div className="flex items-center gap-2">
                         <input
                           type="checkbox"
-                          id="chargeExperience"
-                          checked={chargeExperience}
-                          onChange={(e) => setChargeExperience(e.target.checked)}
-                          className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
-                        style={{ accentColor: '#7F2860' }}
-                        />
-                        <label htmlFor="chargeExperience" className="text-sm text-gray-700 cursor-pointer">
-                          Charge Experience?
-                        </label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="perDiem"
+                                id="chargeExperience" 
+                                checked={chargeExperience} 
+                                onChange={(e) => setChargeExperience(e.target.checked)} 
+                                className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                                style={{ accentColor: '#7F2860' }}
+                              />
+                              <label htmlFor="chargeExperience" className="text-sm text-gray-700 cursor-pointer">Charge Experience?</label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input 
+                                type="checkbox" 
+                                id="perDiem" 
                           checked={perDiem}
                           onChange={(e) => {
                             setPerDiem(e.target.checked)
@@ -5155,56 +4552,39 @@ export default function ProfilePage() {
                               setTravelAssignment(false)
                             }
                           }}
-                          className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
-                        style={{ accentColor: '#7F2860' }}
-                        />
-                        <label htmlFor="perDiem" className="text-sm text-gray-700 cursor-pointer">
-                          Per Diem
-                        </label>
-                      </div>
-                    </motion.div>
-
-                    {/* Staffing Agency Name - Conditional on Travel Assignment */}
+                                className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
+                                style={{ accentColor: '#7F2860' }}
+                              />
+                              <label htmlFor="perDiem" className="text-sm text-gray-700 cursor-pointer">Per Diem</label>
+                            </div>
+                          </div>
                     {travelAssignment && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.4 }}
-                      >
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Staffing Agency Name <span className="text-red-500">*</span>
-                        </label>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Staffing Agency Name <span className="text-red-500">*</span></label>
                         <input
                           type="text"
-                          value={workHistoryAgency}
-                          onChange={(e) => setWorkHistoryAgency(e.target.value)}
+                                value={workHistoryAgency} 
+                                onChange={(e) => setWorkHistoryAgency(e.target.value)} 
                           placeholder="Enter staffing agency name"
-                          className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400"
+                                className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
                         />
-                      </motion.div>
+                            </div>
                     )}
-
-                    {/* Comment - Conditional on Charge Experience */}
                     {chargeExperience && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.4 }}
-                      >
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Comment <span className="text-red-500">*</span>
-                        </label>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Comment <span className="text-red-500">*</span></label>
                         <textarea
-                          value={chargeExperienceComment}
-                          onChange={(e) => setChargeExperienceComment(e.target.value)}
+                                value={chargeExperienceComment} 
+                                onChange={(e) => setChargeExperienceComment(e.target.value)} 
                           placeholder="Describe your charge experience..."
-                          rows={4}
-                          className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none transition-all duration-300 focus:border-primary-500 focus:bg-white focus:shadow-lg focus:shadow-primary-100/50 hover:border-gray-300 font-medium text-gray-700 placeholder:text-gray-400 resize-none"
+                                rows={3} 
+                                className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
                         />
-                      </motion.div>
+                            </div>
                     )}
+                        </>
+                      )
+                    })()}
 
                   </div>
                 </div>
@@ -5213,24 +4593,24 @@ export default function ProfilePage() {
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                   <div className="flex items-center gap-4">
                     <button 
-                      onClick={() => {
-                        setShowAddWorkHistoryModal(false)
+                        onClick={() => {
+                          setShowAddWorkHistoryModal(false)
                         // Reset all form fields
                         setWorkHistoryTitle('')
                         setWorkHistoryUnit('')
                         setWorkHistoryStartDate('')
                         setWorkHistoryEndDate('')
-                        setCurrentlyWorking(false)
+                          setCurrentlyWorking(false)
                         setWorkHistoryAgency('')
                         setWorkHistoryDescription('')
                         setChargeExperience(false)
                         setChargeExperienceComment('')
-                        setTravelAssignment(false)
-                        setPerDiem(false)
-                      }} 
+                          setTravelAssignment(false)
+                          setPerDiem(false)
+                        }}
                       className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
-                    >
-                      Cancel
+                      >
+                        Cancel
                     </button>
                     <button 
                       onClick={handleAddWorkHistory}
@@ -5263,41 +4643,41 @@ export default function ProfilePage() {
                     >
                       Add
                     </button>
-                  </div>
                 </div>
-              </motion.div>
+              </div>
+            </motion.div>
             </div>
-          </>
+        </>
         </AnimatePresence>
       )}
 
       {/* Add Education Modal */}
       {showAddEducationModal && (
         <AnimatePresence>
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+        <>
+          {/* Backdrop */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
-              onClick={() => {
-                setShowAddEducationModal(false)
-                setDidGraduate(false)
-              }}
+            onClick={() => {
+              setShowAddEducationModal(false)
+              setDidGraduate(false)
+            }}
             />
             
             {/* Modal Container */}
             <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.3, type: "spring" }}
                 className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
+              onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
                   <div className="flex items-center justify-between">
@@ -5312,11 +4692,11 @@ export default function ProfilePage() {
                         <p className="text-sm font-medium text-gray-500">
                           Education
                         </p>
-                      </div>
                     </div>
                   </div>
                 </div>
-                
+                </div>
+
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
                   <div className="space-y-4">
@@ -5337,17 +4717,17 @@ export default function ProfilePage() {
                         placeholder="Select course of study"
                         icon={GraduationCap}
                       >
-                        <option value="">Select course of study</option>
+                          <option value="">Select course of study</option>
                         {COURSE_OF_STUDY.map(course => (
                           <option key={course} value={course}>{course}</option>
                         ))}
                       </CustomSelect>
-                    </div>
+                        </div>
                     <div className="flex items-center gap-2">
-                      <input 
-                        type="checkbox" 
+                        <input
+                          type="checkbox"
                         id="didGraduate" 
-                        checked={didGraduate} 
+                          checked={didGraduate}
                         onChange={(e) => {
                           setDidGraduate(e.target.checked)
                           if (!e.target.checked) {
@@ -5367,7 +4747,7 @@ export default function ProfilePage() {
                           <CustomDatePicker
                             value={addEducationGraduated}
                             onChange={(value) => setAddEducationGraduated(value)}
-                            placeholder="dd/mm/yyyy"
+                          placeholder="dd/mm/yyyy"
                             showFormat={true}
                             maxDate="today"
                           />
@@ -5385,7 +4765,7 @@ export default function ProfilePage() {
                               <option key={degree} value={degree}>{degree}</option>
                             ))}
                           </CustomSelect>
-                        </div>
+                          </div>
                       </>
                     )}
                   </div>
@@ -5395,20 +4775,20 @@ export default function ProfilePage() {
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                   <div className="flex items-center gap-4">
                     <button 
-                      onClick={() => {
-                        setShowAddEducationModal(false)
-                        setDidGraduate(false)
+                        onClick={() => {
+                          setShowAddEducationModal(false)
+                          setDidGraduate(false)
                         setAddEducationTitle('')
                         setAddEducationCourse('')
                         setAddEducationGraduated('')
                         setAddEducationDegree('')
-                      }} 
+                        }}
                       className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
-                    >
-                      Cancel
+                      >
+                        Cancel
                     </button>
                     <button 
-                      onClick={() => {
+                        onClick={() => {
                         const formData = {
                           title: addEducationTitle,
                           course: addEducationCourse,
@@ -5437,9 +4817,18 @@ export default function ProfilePage() {
                           }
                           return
                         }
-                        toast.success('Education added successfully')
-                        setShowAddEducationModal(false)
-                        setDidGraduate(false)
+                        // Save to localStorage
+                        const educationData = {
+                          title: addEducationTitle,
+                          course: addEducationCourse,
+                          didGraduate: didGraduate,
+                          graduated: addEducationGraduated,
+                          degree: addEducationDegree
+                        }
+                        saveUserDataToLocalStorage('education', educationData)
+                          toast.success('Education added successfully')
+                          setShowAddEducationModal(false)
+                          setDidGraduate(false)
                         setAddEducationTitle('')
                         setAddEducationCourse('')
                         setAddEducationGraduated('')
@@ -5466,38 +4855,38 @@ export default function ProfilePage() {
                     >
                       Add
                     </button>
-                  </div>
                 </div>
-              </motion.div>
+              </div>
+            </motion.div>
             </div>
-          </>
+        </>
         </AnimatePresence>
       )}
 
       {/* Add Professional Reference Modal */}
       {showAddReferenceModal && (
         <AnimatePresence>
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+        <>
+          {/* Backdrop */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
-              onClick={() => setShowAddReferenceModal(false)}
+            onClick={() => setShowAddReferenceModal(false)}
             />
             
             {/* Modal Container */}
             <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.3, type: "spring" }}
                 className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
+              onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
                   <div className="flex items-center justify-between">
@@ -5507,16 +4896,16 @@ export default function ProfilePage() {
                       </div>
                       <div>
                         <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                          Add Professional Reference
+                        Add Professional Reference
                         </h1>
                         <p className="text-sm font-medium text-gray-500">
                           Professional References
                         </p>
-                      </div>
                     </div>
                   </div>
                 </div>
-                
+                </div>
+
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
                   <div className="space-y-4">
@@ -5531,11 +4920,11 @@ export default function ProfilePage() {
                         <>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Full Name <span className="text-red-500">*</span></label>
-                            <input 
-                              type="text" 
+                      <input
+                        type="text"
                               value={addReferenceName}
                               onChange={(e) => setAddReferenceName(e.target.value)}
-                              placeholder="Enter full name" 
+                        placeholder="Enter full name"
                               className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
                             />
                           </div>
@@ -5562,7 +4951,7 @@ export default function ProfilePage() {
                               icon={Briefcase}
                               disabled={workHistoryOptions.length === 0}
                             >
-                              <option value="">Select from your work history</option>
+                          <option value="">Select from your work history</option>
                               {workHistoryOptions.map(work => (
                                 <option key={work.id} value={work.id}>{work.label}</option>
                               ))}
@@ -5570,37 +4959,37 @@ export default function ProfilePage() {
                             {workHistoryOptions.length === 0 && (
                               <p className="mt-1.5 text-xs text-gray-500">Add work history first to select a reference</p>
                             )}
-                          </div>
+                        </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
+                      <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                               <div className="relative">
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 font-medium">+1</div>
-                                <input 
-                                  type="tel" 
+                          <input
+                            type="tel"
                                   value={addReferencePhone}
                                   onChange={(e) => {
                                     // Only allow digits and limit to 10 digits
                                     const value = e.target.value.replace(/\D/g, '').slice(0, 10)
                                     setAddReferencePhone(value)
                                   }}
-                                  placeholder="Enter 10 digits" 
+                            placeholder="Enter 10 digits"
                                   className="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
-                                  maxLength={10}
-                                />
-                              </div>
-                            </div>
-                            <div>
+                            maxLength={10}
+                          />
+                        </div>
+                      </div>
+                      <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                              <input 
-                                type="email" 
+                        <input
+                          type="email"
                                 value={addReferenceEmail}
                                 onChange={(e) => setAddReferenceEmail(e.target.value)}
-                                placeholder="Enter email address" 
+                          placeholder="Enter email address"
                                 className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
-                              />
-                            </div>
-                          </div>
+                        />
+                      </div>
+                        </div>
                         </>
                       )
                     })()}
@@ -5620,11 +5009,11 @@ export default function ProfilePage() {
                         setAddReferenceEmail('')
                       }} 
                       className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
-                    >
-                      Cancel
+                      >
+                        Cancel
                     </button>
                     <button 
-                      onClick={() => {
+                        onClick={() => {
                         const formData = {
                           name: addReferenceName,
                           title: addReferenceTitle,
@@ -5655,8 +5044,10 @@ export default function ProfilePage() {
                           }
                           return
                         }
-                        toast.success('Reference added successfully')
-                        setShowAddReferenceModal(false)
+                        // Save to localStorage
+                        saveUserDataToLocalStorage('references', formData)
+                          toast.success('Reference added successfully')
+                          setShowAddReferenceModal(false)
                         setAddReferenceName('')
                         setAddReferenceTitle('')
                         setAddReferenceWorkHistoryId('')
@@ -5684,41 +5075,41 @@ export default function ProfilePage() {
                     >
                       Add
                     </button>
-                  </div>
                 </div>
-              </motion.div>
+              </div>
+            </motion.div>
             </div>
-          </>
+        </>
         </AnimatePresence>
       )}
 
       {/* Edit License Modal */}
       {showEditLicenseModal && selectedItem && (
         <AnimatePresence>
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+        <>
+          {/* Backdrop */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
-              onClick={() => {
-                setShowEditLicenseModal(false)
-                setSelectedItem(null)
-              }}
+            onClick={() => {
+              setShowEditLicenseModal(false)
+              setSelectedItem(null)
+            }}
             />
             
             {/* Modal Container */}
             <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.3, type: "spring" }}
                 className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
+              onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
                   <div className="flex items-center justify-between">
@@ -5728,16 +5119,16 @@ export default function ProfilePage() {
                       </div>
                       <div>
                         <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                          Edit Professional License
+                        Edit Professional License
                         </h1>
                         <p className="text-sm font-medium text-gray-500">
                           Professional Licenses
                         </p>
-                      </div>
                     </div>
                   </div>
                 </div>
-                
+                </div>
+
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
                   <div className="space-y-4">
@@ -5750,17 +5141,17 @@ export default function ProfilePage() {
                         onChange={(value) => setEditLicenseType(value)}
                         placeholder="Select license type"
                         icon={Shield}
-                      >
-                        <option value="">Select license type</option>
+                        >
+                          <option value="">Select license type</option>
                         {LICENSE_TYPES.map(type => (
                           <option key={type} value={type}>{type}</option>
                         ))}
                       </CustomSelect>
-                    </div>
+                        </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">License Number</label>
                       <input type="text" value={editLicenseNumber} onChange={(e) => setEditLicenseNumber(e.target.value)} placeholder="Enter license number" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                    </div>
+                      </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
                       <CustomSelect
@@ -5789,16 +5180,16 @@ export default function ProfilePage() {
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                   <div className="flex items-center gap-4">
                     <button 
-                      onClick={() => {
-                        setShowEditLicenseModal(false)
-                        setSelectedItem(null)
-                      }} 
+                        onClick={() => {
+                          setShowEditLicenseModal(false)
+                          setSelectedItem(null)
+                        }}
                       className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
-                    >
-                      Cancel
+                      >
+                        Cancel
                     </button>
                     <button 
-                      onClick={handleUpdateLicense}
+                        onClick={handleUpdateLicense}
                       disabled={!isFormDataValid('licenses', {
                         type: editLicenseType,
                         number: editLicenseNumber,
@@ -5816,43 +5207,43 @@ export default function ProfilePage() {
                           : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                       }`}
                     >
-                      Update
+                          Update
                     </button>
-                  </div>
                 </div>
-              </motion.div>
+              </div>
+            </motion.div>
             </div>
-          </>
+        </>
         </AnimatePresence>
       )}
 
       {/* Edit Professional Certificate Modal */}
       {showEditCertificateModal && selectedItem && (
         <AnimatePresence>
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+        <>
+          {/* Backdrop */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
-              onClick={() => {
-                setShowEditCertificateModal(false)
-                setSelectedItem(null)
-              }}
+            onClick={() => {
+              setShowEditCertificateModal(false)
+              setSelectedItem(null)
+            }}
             />
             
             {/* Modal Container */}
             <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.3, type: "spring" }}
                 className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
+              onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
                   <div className="flex items-center justify-between">
@@ -5867,11 +5258,11 @@ export default function ProfilePage() {
                         <p className="text-sm font-medium text-gray-500">
                           Professional Certificates
                         </p>
-                      </div>
                     </div>
                   </div>
                 </div>
-                
+                </div>
+
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 bg-white">
                   <div className="space-y-4">
@@ -5884,42 +5275,41 @@ export default function ProfilePage() {
                         onChange={(value) => setEditCertificateType(value)}
                         placeholder="Select certificate type"
                         icon={Award}
-                      >
-                        <option value="">Select certificate type</option>
+                        >
+                          <option value="">Select certificate type</option>
                         {CERTIFICATE_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
                       </CustomSelect>
-                    </div>
+                        </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Certificate Number</label>
                       <input type="text" value={editCertificateNumber} onChange={(e) => setEditCertificateNumber(e.target.value)} placeholder="Enter certificate number" className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                    </div>
+                      </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Expiration Date</label>
                       <CustomDatePicker
                         value={editCertificateExpiration}
                         onChange={(value) => setEditCertificateExpiration(value)}
-                        onChange={() => {}}
                         placeholder="Select expiration date"
                         showFormat={true}
                       />
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Footer */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                   <div className="flex items-center gap-4">
                     <button 
-                      onClick={() => {
-                        setShowEditCertificateModal(false)
-                        setSelectedItem(null)
-                      }} 
+                        onClick={() => {
+                          setShowEditCertificateModal(false)
+                          setSelectedItem(null)
+                        }}
                       className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
-                    >
-                      Cancel
+                      >
+                        Cancel
                     </button>
                     <button 
-                      onClick={handleUpdateCertificate}
+                        onClick={handleUpdateCertificate}
                       disabled={!isFormDataValid('certificates', {
                         type: editCertificateType,
                         number: editCertificateNumber,
@@ -5935,43 +5325,43 @@ export default function ProfilePage() {
                           : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                       }`}
                     >
-                      Update
+                          Update
                     </button>
-                  </div>
                 </div>
-              </motion.div>
+              </div>
+            </motion.div>
             </div>
-          </>
+        </>
         </AnimatePresence>
       )}
 
       {/* Edit Certification Specialty Modal */}
       {showEditSpecialtyModal && selectedItem && (
         <AnimatePresence>
-          <>
+        <>
             {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
-              onClick={() => {
-                setShowEditSpecialtyModal(false)
-                setSelectedItem(null)
-              }}
+            onClick={() => {
+              setShowEditSpecialtyModal(false)
+              setSelectedItem(null)
+            }}
             />
             
             {/* Modal Container */}
             <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.3, type: "spring" }}
                 className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
+              onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
                   <div className="flex items-center justify-between">
@@ -5981,14 +5371,14 @@ export default function ProfilePage() {
                       </div>
                       <div>
                         <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                          Edit Certification Specialty
+                        Edit Certification Specialty
                         </h1>
                         <p className="text-sm font-medium text-gray-500">
                           Nursing Specialties
                         </p>
-                      </div>
                     </div>
                   </div>
+                </div>
                 </div>
                 
                 {/* Content */}
@@ -6014,8 +5404,8 @@ export default function ProfilePage() {
                               }}
                               placeholder="Select certification"
                               icon={Award}
-                            >
-                              <option value="">Select certification</option>
+                      >
+                        <option value="">Select certification</option>
                               {CERTIFICATIONS.map(cert => <option key={cert} value={cert}>{cert}</option>)}
                             </CustomSelect>
                             {hasNoSpecialties && (
@@ -6036,7 +5426,7 @@ export default function ProfilePage() {
                         const availableSpecialties = editSpecialtyCertification 
                           ? (CERTIFICATION_SPECIALTIES_MAP[editSpecialtyCertification] || [])
                           : []
-                        const hasNoSpecialties = editSpecialtyCertification && availableSpecialties.length === 0
+                        const hasNoSpecialties = Boolean(editSpecialtyCertification && availableSpecialties.length === 0)
                         
                         return (
                           <>
@@ -6064,24 +5454,24 @@ export default function ProfilePage() {
                           </>
                         )
                       })()}
-                    </div>
                   </div>
+                </div>
                 </div>
                 
                 {/* Footer */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-t from-gray-50/50 via-white to-white border-t border-gray-100 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                   <div className="flex items-center gap-4">
                     <button 
-                      onClick={() => {
-                        setShowEditSpecialtyModal(false)
-                        setSelectedItem(null)
-                      }} 
+                        onClick={() => {
+                          setShowEditSpecialtyModal(false)
+                          setSelectedItem(null)
+                        }}
                       className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
-                    >
-                      Cancel
+                      >
+                        Cancel
                     </button>
                     <button 
-                      onClick={handleUpdateSpecialty}
+                        onClick={handleUpdateSpecialty}
                       disabled={!isFormDataValid('specialties', {
                         certification: editSpecialtyCertification,
                         specialty: editSpecialtySpecialty
@@ -6095,55 +5485,55 @@ export default function ProfilePage() {
                           : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                       }`}
                     >
-                      Update
+                          Update
                     </button>
-                  </div>
                 </div>
-              </motion.div>
+              </div>
+            </motion.div>
             </div>
-          </>
+        </>
         </AnimatePresence>
       )}
 
       {/* Edit Work History Modal */}
       {showEditWorkHistoryModal && selectedItem && (
         <AnimatePresence>
-          <>
+        <>
             {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
-              onClick={() => {
-                setShowEditWorkHistoryModal(false)
-                setSelectedItem(null)
+            onClick={() => {
+              setShowEditWorkHistoryModal(false)
+              setSelectedItem(null)
                 // Reset all form fields
                 setEditWorkHistoryTitle('')
                 setEditWorkHistoryUnit('')
                 setEditWorkHistoryStartDate('')
                 setEditWorkHistoryEndDate('')
-                setEditCurrentlyWorking(false)
+              setEditCurrentlyWorking(false)
                 setEditWorkHistoryAgency('')
                 setEditWorkHistoryDescription('')
                 setEditChargeExperience(false)
                 setEditChargeExperienceComment('')
-                setEditTravelAssignment(false)
-                setEditPerDiem(false)
-              }}
+              setEditTravelAssignment(false)
+              setEditPerDiem(false)
+            }}
             />
             
             {/* Modal Container */}
             <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.3, type: "spring" }}
                 className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
+              onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
                   <div className="flex items-center justify-between">
@@ -6153,14 +5543,14 @@ export default function ProfilePage() {
                       </div>
                       <div>
                         <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                          Edit Work History
+                        Edit Work History
                         </h1>
                         <p className="text-sm font-medium text-gray-500">
                           Work History
                         </p>
-                      </div>
                     </div>
                   </div>
+                </div>
                 </div>
                 
                 {/* Content */}
@@ -6217,12 +5607,12 @@ export default function ProfilePage() {
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
                                 End Date {!editCurrentlyWorking && <span className="text-red-500">*</span>}
-                              </label>
+                      </label>
                               <CustomDatePicker
                                 value={editWorkHistoryEndDate}
                                 onChange={(value) => setEditWorkHistoryEndDate(value)}
                                 placeholder="Select end date"
-                                disabled={editCurrentlyWorking}
+                        disabled={editCurrentlyWorking}
                                 showFormat={false}
                                 minDate={editWorkHistoryStartDate || undefined}
                                 maxDate="today"
@@ -6230,10 +5620,10 @@ export default function ProfilePage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <input 
-                              type="checkbox" 
+                        <input 
+                          type="checkbox" 
                               id="editCurrentlyWorking" 
-                              checked={editCurrentlyWorking} 
+                          checked={editCurrentlyWorking}
                               onChange={(e) => {
                                 setEditCurrentlyWorking(e.target.checked)
                                 if (e.target.checked) {
@@ -6257,10 +5647,10 @@ export default function ProfilePage() {
                           </div>
                           <div className="space-y-3">
                             <div className="flex items-center gap-2">
-                              <input 
-                                type="checkbox" 
+                        <input 
+                          type="checkbox" 
                                 id="editTravelAssignment" 
-                                checked={editTravelAssignment} 
+                          checked={editTravelAssignment}
                                 onChange={(e) => {
                                   setEditTravelAssignment(e.target.checked)
                                   if (e.target.checked) {
@@ -6273,8 +5663,8 @@ export default function ProfilePage() {
                               <label htmlFor="editTravelAssignment" className="text-sm text-gray-700 cursor-pointer">Travel Assignment</label>
                             </div>
                             <div className="flex items-center gap-2">
-                              <input 
-                                type="checkbox" 
+                        <input 
+                          type="checkbox" 
                                 id="editChargeExperience" 
                                 checked={editChargeExperience} 
                                 onChange={(e) => setEditChargeExperience(e.target.checked)} 
@@ -6287,9 +5677,9 @@ export default function ProfilePage() {
                               <input 
                                 type="checkbox" 
                                 id="editPerDiem" 
-                                checked={editPerDiem} 
-                                onChange={(e) => {
-                                  setEditPerDiem(e.target.checked)
+                          checked={editPerDiem}
+                          onChange={(e) => {
+                            setEditPerDiem(e.target.checked)
                                   if (e.target.checked) {
                                     setEditTravelAssignment(false)
                                   }
@@ -6303,7 +5693,7 @@ export default function ProfilePage() {
                           {editTravelAssignment && (
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">Staffing Agency Name <span className="text-red-500">*</span></label>
-                              <input 
+                        <input 
                                 type="text" 
                                 value={editWorkHistoryAgency} 
                                 onChange={(e) => setEditWorkHistoryAgency(e.target.value)} 
@@ -6312,7 +5702,7 @@ export default function ProfilePage() {
                               />
                             </div>
                           )}
-                          {editChargeExperience && (
+                    {editChargeExperience && (
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">Comment <span className="text-red-500">*</span></label>
                               <textarea 
@@ -6383,44 +5773,44 @@ export default function ProfilePage() {
                           : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                       }`}
                     >
-                      Update
+                          Update
                     </button>
-                  </div>
                 </div>
-              </motion.div>
+              </div>
+            </motion.div>
             </div>
-          </>
+        </>
         </AnimatePresence>
       )}
 
       {/* Edit Education History Modal */}
       {showEditEducationModal && selectedItem && (
         <AnimatePresence>
-          <>
+        <>
             {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
-              onClick={() => {
-                setShowEditEducationModal(false)
-                setSelectedItem(null)
-                setEditDidGraduate(false)
-              }}
+            onClick={() => {
+              setShowEditEducationModal(false)
+              setSelectedItem(null)
+              setEditDidGraduate(false)
+            }}
             />
             
             {/* Modal Container */}
             <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.3, type: "spring" }}
                 className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
+              onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
                   <div className="flex items-center justify-between">
@@ -6435,9 +5825,9 @@ export default function ProfilePage() {
                         <p className="text-sm font-medium text-gray-500">
                           Education History
                         </p>
-                      </div>
                     </div>
                   </div>
+                </div>
                 </div>
                 
                 {/* Content */}
@@ -6467,11 +5857,11 @@ export default function ProfilePage() {
                       </CustomSelect>
                     </div>
                     <div className="flex items-center gap-2">
-                      <input 
-                        type="checkbox" 
+                        <input 
+                          type="checkbox" 
                         id="editDidGraduate" 
-                        checked={editDidGraduate} 
-                        onChange={(e) => setEditDidGraduate(e.target.checked)} 
+                          checked={editDidGraduate}
+                          onChange={(e) => setEditDidGraduate(e.target.checked)}
                         className="w-4 h-4 text-primary-600 rounded border-2 border-gray-300 focus:ring-primary-500 cursor-pointer accent-primary-600"
                         style={{ accentColor: '#7F2860' }}
                       />
@@ -6542,43 +5932,43 @@ export default function ProfilePage() {
                           : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                       }`}
                     >
-                      Update
+                          Update
                     </button>
-                  </div>
                 </div>
-              </motion.div>
+              </div>
+            </motion.div>
             </div>
-          </>
+        </>
         </AnimatePresence>
       )}
 
       {/* Edit Professional Reference Modal */}
       {showEditReferenceModal && selectedItem && (
         <AnimatePresence>
-          <>
+        <>
             {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000]"
-              onClick={() => {
-                setShowEditReferenceModal(false)
-                setSelectedItem(null)
-              }}
+            onClick={() => {
+              setShowEditReferenceModal(false)
+              setSelectedItem(null)
+            }}
             />
             
             {/* Modal Container */}
             <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.3, type: "spring" }}
                 className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
+              onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="px-6 sm:px-8 py-5 bg-gradient-to-r from-primary-50 via-primary-50/80 to-white border-b border-primary-100/50 flex-shrink-0">
                   <div className="flex items-center justify-between">
@@ -6651,7 +6041,7 @@ export default function ProfilePage() {
                             {workHistoryOptions.length === 0 && (
                               <p className="mt-1.5 text-xs text-gray-500">Add work history first to select a reference</p>
                             )}
-                          </div>
+                    </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
@@ -6665,8 +6055,8 @@ export default function ProfilePage() {
                                   className="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
                                   maxLength={10}
                                 />
-                              </div>
-                            </div>
+                  </div>
+                </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                               <input 
@@ -6676,12 +6066,12 @@ export default function ProfilePage() {
                                 placeholder="Enter email address" 
                                 className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" 
                               />
-                            </div>
-                          </div>
+                </div>
+                  </div>
                         </>
                       )
                     })()}
-                  </div>
+                </div>
                 </div>
                 
                 {/* Footer */}
@@ -6717,13 +6107,13 @@ export default function ProfilePage() {
                           : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                       }`}
                     >
-                      Update
+                          Update
                     </button>
-                  </div>
                 </div>
-              </motion.div>
+              </div>
+            </motion.div>
             </div>
-          </>
+        </>
         </AnimatePresence>
       )}
 
